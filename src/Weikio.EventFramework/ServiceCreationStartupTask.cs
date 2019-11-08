@@ -22,7 +22,7 @@ namespace Weikio.EventFramework
 
         public async Task Execute(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Starting cloud event router services for event gateways.");
+            _logger.LogInformation("Starting cloud event router services for cloud event gateways.");
 
             var gateways = _cloudEventGatewayCollection.Gateways.ToList();
             _logger.LogDebug("There's {GatewayCount} gateways.", gateways.Count);

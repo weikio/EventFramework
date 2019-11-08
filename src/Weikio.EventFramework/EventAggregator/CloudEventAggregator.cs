@@ -2,7 +2,7 @@
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.Router
+namespace Weikio.EventFramework.EventAggregator
 {
     public class CloudEventAggregator : ICloudEventAggregator
     {

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Configuration;
 
-namespace Weikio.EventFramework.Gateways
+namespace Weikio.EventFramework.Publisher
 {
     public class CloudEventPublisher : ICloudEventPublisher
     {

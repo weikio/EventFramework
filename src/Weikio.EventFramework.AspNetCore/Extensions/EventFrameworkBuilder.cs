@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.Extensions
+namespace Weikio.EventFramework.AspNetCore.Extensions
 {
     public class EventFrameworkBuilder : IEventFrameworkBuilder
     {

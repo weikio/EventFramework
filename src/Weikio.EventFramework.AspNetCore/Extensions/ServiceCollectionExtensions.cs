@@ -1,14 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.AspNetCore.Infrastructure;
 using Weikio.EventFramework.Configuration;
-using Weikio.EventFramework.Gateways;
+using Weikio.EventFramework.EventAggregator;
+using Weikio.EventFramework.Extensions;
+using Weikio.EventFramework.Publisher;
 using Weikio.EventFramework.Router;
 
-namespace Weikio.EventFramework.Extensions
+namespace Weikio.EventFramework.AspNetCore.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -24,6 +27,13 @@ namespace Weikio.EventFramework.Extensions
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
             builder.Services.AddStartupTasks();
             
+            services.AddSingleton<HttpGatewayChangeToken>();
+            services.AddSingleton<IActionDescriptorChangeProvider, HttpGatewayActionDescriptorChangeProvider>();
+            services.AddSingleton<HttpGatewayChangeNotifier>();
+
+            services.AddHttpContextAccessor();
+
+            
             if (setupAction != null)
             {
                 builder.Services.Configure(setupAction);
@@ -31,10 +41,5 @@ namespace Weikio.EventFramework.Extensions
             
             return builder;
         }
-    }
-    
-    public class CloudEventRouteCollection : List<ICloudEventRoute>, ICloudEventRouteCollection
-    {
-        public IEnumerable<ICloudEventRoute> Routes => this;
     }
 }

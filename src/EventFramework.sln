@@ -8,6 +8,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{9A41
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Samples.CodeConfiguration", "..\samples\Weikio.EventFramework.Samples.CodeConfiguration\Weikio.EventFramework.Samples.CodeConfiguration.csproj", "{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.AspNetCore", "Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj", "{523545D3-D54B-4178-B5FA-E57389166EC3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{523545D3-D54B-4178-B5FA-E57389166EC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{523545D3-D54B-4178-B5FA-E57389166EC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{523545D3-D54B-4178-B5FA-E57389166EC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{523545D3-D54B-4178-B5FA-E57389166EC3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}

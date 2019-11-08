@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CloudNative.CloudEvents" Version="0.1.31" />
+    <PackageReference Include="CloudNative.CloudEvents" Version="1.0.60" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
     <PackageReference Include="System.Threading.Channels" Version="4.6.0" />
   </ItemGroup>
