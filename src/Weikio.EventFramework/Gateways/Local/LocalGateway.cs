@@ -11,7 +11,7 @@ namespace Weikio.EventFramework.Gateways
             Name = name;
             var channel = Channel.CreateUnbounded<CloudEvent>();
 
-            IncomingChannel = new LocalIncomingChannel(name + ChannelName.IncomingPostFix, channel);
+            IncomingChannel = new LocalIncomingChannel(name + ChannelName.IncomingPostFix, channel, channel);
             OutgoingChannel = new LocalOutgoingChannel(name + ChannelName.OutgoingPostFix, channel);
         }
 

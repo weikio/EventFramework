@@ -70,6 +70,11 @@ namespace Weikio.EventFramework.Publisher
                 throw new ArgumentNullException(nameof(cloudEvent));
             }
 
+            if (string.IsNullOrWhiteSpace(cloudEvent.Id))
+            {
+                cloudEvent.Id = Guid.NewGuid().ToString();
+            }
+
             var gateway = _gatewayCollection.Get(gatewayName);
 
             if (gateway == null)

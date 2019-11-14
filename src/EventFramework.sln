@@ -10,6 +10,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Sampl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.AspNetCore", "Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj", "{523545D3-D54B-4178-B5FA-E57389166EC3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudNative.CloudEvents", "..\..\..\..\oss\coresdk-csharp\src\CloudNative.CloudEvents\CloudNative.CloudEvents.csproj", "{B42F470E-31AF-41BA-9434-114B9693E81D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudNative.CloudEvents.AspNetCore", "..\..\..\..\oss\coresdk-csharp\src\CloudNative.CloudEvents.AspNetCore\CloudNative.CloudEvents.AspNetCore.csproj", "{C4155A31-1DD3-4A4F-8573-689482C2C7B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +36,14 @@ Global
 		{523545D3-D54B-4178-B5FA-E57389166EC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{523545D3-D54B-4178-B5FA-E57389166EC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{523545D3-D54B-4178-B5FA-E57389166EC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B42F470E-31AF-41BA-9434-114B9693E81D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B42F470E-31AF-41BA-9434-114B9693E81D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B42F470E-31AF-41BA-9434-114B9693E81D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B42F470E-31AF-41BA-9434-114B9693E81D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4155A31-1DD3-4A4F-8573-689482C2C7B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4155A31-1DD3-4A4F-8573-689482C2C7B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4155A31-1DD3-4A4F-8573-689482C2C7B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4155A31-1DD3-4A4F-8573-689482C2C7B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
