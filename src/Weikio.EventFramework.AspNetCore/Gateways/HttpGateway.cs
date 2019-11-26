@@ -1,16 +1,52 @@
-﻿using System.Threading.Channels;
+﻿using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Microsoft.AspNetCore.Mvc;
+using Weikio.ApiFramework.Abstractions;
+using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.Gateways;
 
 namespace Weikio.EventFramework.AspNetCore.Gateways
 {
+    public class HttpGatewayInitializer
+    {
+        private readonly EndpointManager _endpointManager;
+        private readonly IApiProvider _apiProvider;
+
+        public HttpGatewayInitializer(EndpointManager endpointManager, IApiProvider apiProvider)
+        {
+            _endpointManager = endpointManager;
+            _apiProvider = apiProvider;
+        }
+
+        public async Task Initialize(HttpGateway gateway)
+        {
+            var api = await _apiProvider.Get(typeof(HttpCloudEventReceiverApi).FullName);
+            
+            // Create HTTP Endpoint for the gateway
+            var endpoint = new Endpoint(gateway.Endpoint, api, new HttpCloudEventReceiverApiConfiguration()
+            {
+                GatewayName = gateway.Name
+            });
+
+            _endpointManager.AddEndpoint(endpoint);
+            _endpointManager.Update();
+        }
+    }
+    
     public class HttpGateway : ICloudEventGateway
     {
-        public HttpGateway(string name, string endpoint)
+        private readonly Func<HttpGateway, Task> _initializer;
+        private CancellationToken _cancellationToken;
+
+        public HttpGateway(string name, string endpoint, Func<HttpGateway, Task> initializer)
         {
+            Status = CloudEventGatewayStatus.New;
+
+            _initializer = initializer;
             Name = name;
             Endpoint = endpoint;
             
@@ -26,50 +62,26 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
         public IOutgoingChannel OutgoingChannel { get; }
         public bool SupportsIncoming { get; }
         public bool SupportsOutgoing { get; }
-    }
-    
-    public class IncomingHttpChannel : IIncomingChannel
-    {
-        public IncomingHttpChannel(Channel<CloudEvent> channel)
+        
+        public async Task Initialize()
         {
-            Writer = channel.Writer;
-            Reader = channel.Reader;
-        }
-
-        public string Name { get; }
-        public ChannelWriter<CloudEvent> Writer { get; }
-        public ChannelReader<CloudEvent> Reader { get; }
-        public int ReaderCount { get; set; }
-    }
-
-    public class HttpCloudEventReceiverApi
-    {
-        private readonly ICloudEventGatewayCollection _cloudEventGatewayCollection;
-
-        public HttpCloudEventReceiverApi(ICloudEventGatewayCollection cloudEventGatewayCollection)
-        {
-            _cloudEventGatewayCollection = cloudEventGatewayCollection;
-        }
-
-        public HttpCloudEventReceiverApiConfiguration Configuration { get; set; }
-
-        public async Task ReceiveEvent(CloudEvent cloudEvent)
-        {
-            // Assert policy
-
-            var attr = cloudEvent.GetAttributes();
+            if (_initializer != null)
+            {
+                await _initializer(this);
+            }
             
-            var gateway = _cloudEventGatewayCollection.Get(Configuration.GatewayName);
-            var channel = gateway.IncomingChannel;
+            var cancelToken = new CancellationTokenSource();
 
-            await channel.Writer.WriteAsync(cloudEvent);
+            _cancellationToken = new CancellationToken();
+            
+            Status = CloudEventGatewayStatus.Ready;
         }
-    }
 
-    public class HttpCloudEventReceiverApiConfiguration
-    {
-        public string GatewayName { get; set; }
-        public string InputChannelName { get; set; }
-        public string PolicyName { get; set; }
+        public CloudEventGatewayStatus Status { get; set; }
+
+        public void Dispose()
+        {
+            
+        }
     }
 }

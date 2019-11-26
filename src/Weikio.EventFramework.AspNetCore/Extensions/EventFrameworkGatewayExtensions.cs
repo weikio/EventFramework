@@ -21,7 +21,31 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
         public static IEventFrameworkBuilder AddHttp(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = "/api/events")
         {
-            return builder.AddGateway(new HttpGateway(name, endpoint));
+            builder.Services.AddTransient<ICloudEventGateway>(provider =>
+            {
+                var factory = provider.GetRequiredService<HttpGatewayFactory>();
+
+                return factory.Create(name, endpoint);
+            });
+
+            return builder;
+        }
+    }
+
+    public class HttpGatewayFactory
+    {
+        private readonly HttpGatewayInitializer _initializer;
+
+        public HttpGatewayFactory(HttpGatewayInitializer initializer)
+        {
+            _initializer = initializer;
+        }
+
+        public ICloudEventGateway Create(string name, string endpoint)
+        {
+            var result = new HttpGateway(name, endpoint, _initializer.Initialize);
+
+            return result;
         }
     }
 }

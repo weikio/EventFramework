@@ -1,4 +1,5 @@
-﻿using Weikio.EventFramework.Abstractions;
+﻿using System.Threading.Tasks;
+using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.Gateways.Null
 {
@@ -13,5 +14,16 @@ namespace Weikio.EventFramework.Gateways.Null
         public string Name { get; }
         public IIncomingChannel IncomingChannel => null;
         public IOutgoingChannel OutgoingChannel { get; }
+        public Task Initialize()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public CloudEventGatewayStatus Status { get; }
+
+        public void Dispose()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

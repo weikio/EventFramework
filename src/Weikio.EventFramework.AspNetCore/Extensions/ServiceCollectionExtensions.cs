@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -30,11 +31,16 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             var builder = new EventFrameworkBuilder(services);
 
             builder.Services.TryAddSingleton<ICloudEventPublisher, CloudEventPublisher>();
-            builder.Services.TryAddSingleton<ICloudEventGatewayCollection, CloudEventGatewayCollection>();
+            builder.Services.TryAddSingleton<ICloudEventGatewayManager, CloudEventGatewayManager>();
             builder.Services.TryAddSingleton<ICloudEventAggregator, CloudEventAggregator>();
             builder.Services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
             builder.Services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
+            builder.Services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
+            
+            builder.Services.AddTransient<HttpGatewayFactory>();
+            builder.Services.AddTransient<HttpGatewayInitializer>();
+            
             builder.Services.AddStartupTasks();
             
             services.AddHttpContextAccessor();
@@ -59,7 +65,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
             builder.Services.AddSingleton<IEndpointConfigurationProvider>(provider =>
             {
-                var gatewayCollection = provider.GetRequiredService<ICloudEventGatewayCollection>();
+                var gatewayCollection = provider.GetRequiredService<ICloudEventGatewayManager>();
                 var httpGateways = gatewayCollection.Gateways.OfType<HttpGateway>().ToList();
 
                 var endpoints = new List<EndpointDefinition>();

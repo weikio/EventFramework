@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.AspNetCore.Gateways;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 {
@@ -17,15 +19,20 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
     {
         private readonly ILogger<IndexModel> _logger;
         private readonly ICloudEventPublisher _cloudEventPublisher;
+        private readonly ICloudEventGatewayManager _cloudEventGatewayManager;
+        private readonly HttpGatewayFactory _factory;
 
-        public IndexModel(ILogger<IndexModel> logger, ICloudEventPublisher cloudEventPublisher)
+        public IndexModel(ILogger<IndexModel> logger, ICloudEventPublisher cloudEventPublisher, 
+            ICloudEventGatewayManager cloudEventGatewayManager, HttpGatewayFactory factory)
         {
             _logger = logger;
             _cloudEventPublisher = cloudEventPublisher;
+            _cloudEventGatewayManager = cloudEventGatewayManager;
+            _factory = factory;
         }
 
         public CloudEvent CloudEvent { get; set; }
-        
+
         public void OnGet()
         {
             if (TempData.ContainsKey("el"))
@@ -39,6 +46,16 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
             var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent("hello_world", new Uri("http://localhost")));
 
             TempData["el"] = JsonSerializer.Serialize(CloudEvent);
+
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostcreateChannel()
+        {
+            var gateway = _factory.Create("priority", "/api/prioEvents");
+            _cloudEventGatewayManager.Add("priority", gateway);
+
+            await _cloudEventGatewayManager.Update();
 
             return RedirectToPage();
         }

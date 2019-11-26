@@ -11,12 +11,12 @@ namespace Weikio.EventFramework.Publisher
 {
     public class CloudEventPublisher : ICloudEventPublisher
     {
-        private readonly ICloudEventGatewayCollection _gatewayCollection;
+        private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly EventFrameworkOptions _options;
 
-        public CloudEventPublisher(ICloudEventGatewayCollection gatewayCollection, IOptions<EventFrameworkOptions> options)
+        public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<EventFrameworkOptions> options)
         {
-            _gatewayCollection = gatewayCollection;
+            _gatewayManager = gatewayManager;
             _options = options.Value;
         }
 
@@ -75,7 +75,7 @@ namespace Weikio.EventFramework.Publisher
                 cloudEvent.Id = Guid.NewGuid().ToString();
             }
 
-            var gateway = _gatewayCollection.Get(gatewayName);
+            var gateway = _gatewayManager.Get(gatewayName);
 
             if (gateway == null)
             {

@@ -1,4 +1,5 @@
 ﻿using System.Threading.Channels;
+using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
 
@@ -18,5 +19,19 @@ namespace Weikio.EventFramework.Gateways
         public string Name { get; }
         public IIncomingChannel IncomingChannel { get; }
         public IOutgoingChannel OutgoingChannel { get; }
+        public bool SupportsIncoming => true;
+        public bool SupportsOutgoing => true;
+        public Task Initialize()
+        {
+            Status = CloudEventGatewayStatus.Ready;
+            return Task.CompletedTask;
+        }
+
+        public CloudEventGatewayStatus Status { get; set; }
+
+        public void Dispose()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

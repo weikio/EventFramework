@@ -29,7 +29,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0" />
     <PackageReference Include="MinVer" Version="2.0.0" />
-    <PackageReference Include="CloudNative.CloudEvents" Version="1.0.60" />
     <PackageReference Include="Weikio.AspNetCore.StartupTasks" Version="1.0.0-alpha.*" />
   </ItemGroup>
 
@@ -38,14 +37,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\oss\coresdk-csharp\src\CloudNative.CloudEvents\CloudNative.CloudEvents.csproj" />
+    <ProjectReference Include="..\..\lib\CloudEvents\CloudNative.CloudEvents\CloudNative.CloudEvents.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="CloudNative.CloudEvents, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\lib\CloudEvents\CloudNative.CloudEvents.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

@@ -33,10 +33,11 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
 
             services.AddOpenApiDocument();
-            
+
             services.AddEventFramework()
-                .AddLocal()
-                .AddHttp("web", "myevents/incoming");
+                .AddLocal();
+
+//                .AddHttp("web", "myevents/incoming");
 
 //                .AddLocal("localpriority", 3)
 //                .AddHttp()

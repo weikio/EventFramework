@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -9,45 +10,33 @@ namespace Weikio.EventFramework
 {
     public class ServiceCreationStartupTask : IStartupTask
     {
-        private readonly ICloudEventGatewayCollection _cloudEventGatewayCollection;
-        private readonly ICloudEventRouterServiceFactory _serviceFactory;
+        private readonly IEnumerable<ICloudEventGateway> _cloudEventGateways;
+        private readonly ICloudEventGatewayManager _cloudEventGatewayManager;
         private readonly ILogger<ServiceCreationStartupTask> _logger;
 
-        public ServiceCreationStartupTask(ICloudEventGatewayCollection cloudEventGatewayCollection, ICloudEventRouterServiceFactory serviceFactory, ILogger<ServiceCreationStartupTask> logger)
+        public ServiceCreationStartupTask(IEnumerable<ICloudEventGateway> cloudEventGateways, ICloudEventGatewayManager cloudEventGatewayManager, 
+            ILogger<ServiceCreationStartupTask> logger)
         {
-            _cloudEventGatewayCollection = cloudEventGatewayCollection;
-            _serviceFactory = serviceFactory;
+            _cloudEventGateways = cloudEventGateways;
+            _cloudEventGatewayManager = cloudEventGatewayManager;
             _logger = logger;
         }
 
         public async Task Execute(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Starting cloud event router services for cloud event gateways.");
+            _logger.LogInformation("Creating cloud event gateways.");
 
-            var gateways = _cloudEventGatewayCollection.Gateways.ToList();
-            _logger.LogDebug("There's {GatewayCount} gateways.", gateways.Count);
-
-            var gatewaysWithIncomingChannel = gateways.Where(x => x.SupportsIncoming).ToList();
-            _logger.LogInformation("There's {GatewayWithIncomingChannelCount} gateways which have incoming channels.", gatewaysWithIncomingChannel.Count);
-
-            var serviceCount = 0;
-            foreach (var gateway in gatewaysWithIncomingChannel)
+            foreach (var cloudEventGateway in _cloudEventGateways)
             {
-                var incomingChannel = gateway.IncomingChannel;
-                var requiredServiceCount = incomingChannel.ReaderCount;
-                
-                _logger.LogDebug("Starting {Count} services for {Channel}.", requiredServiceCount, incomingChannel);
-
-                for (var i = 0; i < requiredServiceCount; i++)
-                {
-                    var service = await _serviceFactory.Create(incomingChannel);
-                    service.Start(cancellationToken);
-                    
-                    serviceCount += 1;
-                }
+                _cloudEventGatewayManager.Add(cloudEventGateway.Name, cloudEventGateway);
             }
             
-            _logger.LogInformation("Started {ServiceCount} services.", serviceCount);
+            var gateways = _cloudEventGatewayManager.Gateways.ToList();
+            _logger.LogDebug("There's {GatewayCount} gateways to initialize.", gateways.Count);
+
+            await _cloudEventGatewayManager.Update();
+            
+            _logger.LogInformation("Initialized {GatewayCount} gateways.", gateways.Count);
         }
     }
 }

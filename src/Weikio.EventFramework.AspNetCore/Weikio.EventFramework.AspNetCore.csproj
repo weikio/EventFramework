@@ -22,17 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\oss\coresdk-csharp\src\CloudNative.CloudEvents.AspNetCore\CloudNative.CloudEvents.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\lib\CloudEvents\CloudNative.CloudEvents.AspNetCore\CloudNative.CloudEvents.AspNetCore.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
   </ItemGroup>
-
-<!--  <ItemGroup>-->
-<!--    <Reference Include="CloudNative.CloudEvents, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">-->
-<!--      <HintPath>..\..\lib\CloudEvents\CloudNative.CloudEvents.dll</HintPath>-->
-<!--    </Reference>-->
-<!--    <Reference Include="CloudNative.CloudEvents.AspNetCore, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">-->
-<!--      <HintPath>..\..\lib\CloudEvents\CloudNative.CloudEvents.AspNetCore.dll</HintPath>-->
-<!--    </Reference>-->
-<!--  </ItemGroup>-->
 </Project>

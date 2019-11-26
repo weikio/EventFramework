@@ -31,13 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="CloudNative.CloudEvents, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\lib\CloudEvents\CloudNative.CloudEvents.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\lib\CloudEvents\CloudNative.CloudEvents\CloudNative.CloudEvents.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\oss\coresdk-csharp\src\CloudNative.CloudEvents\CloudNative.CloudEvents.csproj" />
-  </ItemGroup>
-  
+    
 </Project>
