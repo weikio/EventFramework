@@ -9,6 +9,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
     {
         public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, string incomingGatewayName, string outgoingGatewayName, Predicate<ICloudEventContext> filter = null, Func<ICloudEventContext, IServiceProvider, Task<CloudEvent>> onRouting = null)
         {
+            
             return builder;
         }
 

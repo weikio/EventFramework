@@ -10,6 +10,7 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
         {
             Writer = channel.Writer;
             Reader = channel.Reader;
+            ReaderCount = 1;
         }
 
         public string Name { get; }

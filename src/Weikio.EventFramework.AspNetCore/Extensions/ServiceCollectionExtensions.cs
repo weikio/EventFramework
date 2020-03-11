@@ -58,10 +58,10 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                 builder.Services.Configure(setupAction);
             }
 
-            builder.Services.Configure<MvcOptions>(options =>
-            {
-                options.InputFormatters.Insert(0, new CloudEventJsonInputFormatter());
-            });
+            // builder.Services.Configure<MvcOptions>(options =>
+            // {
+            //     options.InputFormatters.Insert(0, new CloudEventJsonInputFormatter());
+            // });
 
             builder.Services.AddSingleton<IEndpointConfigurationProvider>(provider =>
             {
@@ -74,7 +74,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                     var endpoint = new EndpointDefinition(httpGateway.Endpoint, typeof(HttpCloudEventReceiverApi).FullName, new HttpCloudEventReceiverApiConfiguration()
                     {
                         GatewayName = httpGateway.Name
-                    }, new EmptyHealthCheck());
+                    }, new EmptyHealthCheck(), string.Empty);
                     
                     endpoints.Add(endpoint);
                 }

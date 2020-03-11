@@ -15,6 +15,7 @@
     <PackageReference Include="MinVer" Version="2.0.0" />
     <PackageReference Include="Weikio.AspNetCore.StartupTasks" Version="1.0.0-alpha.*" />
     <PackageReference Include="Weikio.ApiFramework.Core" Version="1.0.0-alpha.*" />
+    <PackageReference Include="CloudNative.CloudEvents.AspNetCore" Version="1.3.80"/>
   </ItemGroup>
 
   <ItemGroup>
@@ -22,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\CloudEvents\CloudNative.CloudEvents.AspNetCore\CloudNative.CloudEvents.AspNetCore.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
   </ItemGroup>

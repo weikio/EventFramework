@@ -60,7 +60,7 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
         public string Endpoint { get; }
         public IIncomingChannel IncomingChannel { get; }
         public IOutgoingChannel OutgoingChannel { get; }
-        public bool SupportsIncoming { get; }
+        public bool SupportsIncoming { get; } = true;
         public bool SupportsOutgoing { get; }
         
         public async Task Initialize()

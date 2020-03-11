@@ -28,16 +28,19 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
+            services.AddMvc()
+                .AddNewtonsoftJson();;
+            
             services.AddRazorPages();
             services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
 
             services.AddOpenApiDocument();
 
             services.AddEventFramework()
-                .AddLocal();
+                .AddLocal("local")
+                .AddHttp("web", "myevents/incoming")
+                .AddRoute("web", "local");
 
-//                .AddHttp("web", "myevents/incoming");
 
 //                .AddLocal("localpriority", 3)
 //                .AddHttp()

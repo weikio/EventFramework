@@ -11,7 +11,7 @@ namespace Weikio.EventFramework.Gateways
             Name = name;
             Reader = reader;
             Writer = writer;
-            ReaderCount = 1;
+            ReaderCount = readerCount.GetValueOrDefault();
         }
 
         public string Name { get; }

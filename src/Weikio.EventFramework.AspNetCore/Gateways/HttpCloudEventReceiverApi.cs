@@ -1,8 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.AspNetCore.Gateways
@@ -22,8 +27,16 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
 
         public HttpCloudEventReceiverApiConfiguration Configuration { get; set; }
 
-        public async Task<IActionResult> ReceiveEvent(CloudEvent cloudEvent)
+        public async Task<IActionResult> ReceiveEvent()
         {
+            var httpContext = _contextAccessor.HttpContext;
+            
+            var jsonReader = new JsonTextReader(new StreamReader(httpContext.Request.Body, Encoding.UTF8, true, 8192, true));
+            var jObject = await JObject.LoadAsync(jsonReader);
+
+            var cloudEventFormatter = new JsonEventFormatter();
+            var cloudEvent = cloudEventFormatter.DecodeJObject(jObject);
+            
             if (Configuration == null)
             {
                 return new StatusCodeResult(500);
@@ -32,7 +45,6 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
             // Assert policy
             if (!string.IsNullOrWhiteSpace(Configuration?.PolicyName))
             {
-                var httpContext = _contextAccessor.HttpContext;
                 var user = httpContext.User;
 
                 var authResult = await _authorizationService.AuthorizeAsync(user, Configuration.PolicyName);
