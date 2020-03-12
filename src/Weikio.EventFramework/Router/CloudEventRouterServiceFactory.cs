@@ -17,14 +17,14 @@ namespace Weikio.EventFramework.Router
             _logger = logger;
         }
 
-        public Task<ICloudEventRouterService> Create(IIncomingChannel channel)
+        public Task<ICloudEventRouterService> Create(IIncomingChannel channel, ICloudEventGateway gateway)
         {
             try
             {
                 _logger.LogDebug("Creating Event router service for {Channel}", channel);
                 
                 var result = _serviceProvider.GetService<ICloudEventRouterService>();
-                result.Initialize(channel);
+                result.Initialize(channel, gateway);
 
                 _logger.LogDebug("Created and initialized event router service for {Channel}", channel);
 

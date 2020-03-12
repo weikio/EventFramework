@@ -1,8 +1,10 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Context;
 
 namespace Weikio.EventFramework.Router
 {
@@ -12,6 +14,7 @@ namespace Weikio.EventFramework.Router
         private readonly ICloudEventRouteCollection _cloudEventRouteCollection;
         private readonly ICloudEventAggregator _cloudEventAggregator;
         private readonly ILogger _logger;
+        private ICloudEventGateway _gateway;
 
         private bool IsInitialized { get; set; }
 
@@ -22,7 +25,7 @@ namespace Weikio.EventFramework.Router
             _logger = logger;
         }
 
-        public void Initialize(IIncomingChannel incomingChannel)
+        public void Initialize(IIncomingChannel incomingChannel, ICloudEventGateway gateway)
         {
             if (IsInitialized)
             {
@@ -31,6 +34,7 @@ namespace Weikio.EventFramework.Router
             
             _logger.LogDebug("Initializing event route service with {Channel}", incomingChannel);
             _incomingChannel = incomingChannel;
+            _gateway = gateway;
             
             IsInitialized = true;
         }
@@ -62,20 +66,21 @@ namespace Weikio.EventFramework.Router
                     }
 
                     var routes = _cloudEventRouteCollection.Routes;
+                    var context = new CloudEventContext(cloudEvent, _gateway, _incomingChannel);
 
                     foreach (var route in routes)
                     {
-                        var canHandle = await route.CanHandle(cloudEvent);
+                        var canHandle = await route.CanHandle(context);
 
                         if (!canHandle)
                         {
                             continue;
                         }
 
-                        await route.Handle(cloudEvent);
-
-                        await _cloudEventAggregator.Publish(cloudEvent);
+                        await route.Handle(context);
                     }
+                    
+                    await _cloudEventAggregator.Publish(cloudEvent);
                 }
             }
 

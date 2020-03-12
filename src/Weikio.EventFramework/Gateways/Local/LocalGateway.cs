@@ -7,7 +7,7 @@ namespace Weikio.EventFramework.Gateways
 {
     public class LocalGateway : ICloudEventGateway
     {
-        public LocalGateway(string name = GatewayName.Default)
+        public LocalGateway(string name = DefaultName)
         {
             Name = name;
             var channel = Channel.CreateUnbounded<CloudEvent>();
@@ -15,6 +15,8 @@ namespace Weikio.EventFramework.Gateways
             IncomingChannel = new LocalIncomingChannel(name + ChannelName.IncomingPostFix, channel, channel);
             OutgoingChannel = new LocalOutgoingChannel(name + ChannelName.OutgoingPostFix, channel);
         }
+
+        public const string DefaultName = "local";
 
         public string Name { get; }
         public IIncomingChannel IncomingChannel { get; }

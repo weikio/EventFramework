@@ -38,7 +38,7 @@ namespace Weikio.EventFramework
 
                 for (var i = 0; i < requiredServiceCount; i++)
                 {
-                    var service = await _serviceFactory.Create(incomingChannel);
+                    var service = await _serviceFactory.Create(incomingChannel, gateway);
                     service.Start(new CancellationToken());
                 }
 

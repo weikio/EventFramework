@@ -40,6 +40,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             
             builder.Services.AddTransient<HttpGatewayFactory>();
             builder.Services.AddTransient<HttpGatewayInitializer>();
+            builder.Services.TryAddSingleton<RouteInitializer>();
             
             builder.Services.AddStartupTasks();
             

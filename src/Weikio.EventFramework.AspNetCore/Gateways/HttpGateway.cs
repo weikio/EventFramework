@@ -42,7 +42,7 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
         private readonly Func<HttpGateway, Task> _initializer;
         private CancellationToken _cancellationToken;
 
-        public HttpGateway(string name, string endpoint, Func<HttpGateway, Task> initializer)
+        public HttpGateway(string name, string endpoint, Func<HttpGateway, Task> initializer = null)
         {
             Status = CloudEventGatewayStatus.New;
 
@@ -56,6 +56,9 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
             OutgoingChannel = null;
         }
 
+        public const string DefaultName = "http";
+        public const string DefaultEndpoint = "/api/events";
+        
         public string Name { get; }
         public string Endpoint { get; }
         public IIncomingChannel IncomingChannel { get; }

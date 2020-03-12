@@ -19,7 +19,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             return builder.AddGateway(new LocalGateway(name));
         }
 
-        public static IEventFrameworkBuilder AddHttp(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = "/api/events")
+        public static IEventFrameworkBuilder AddHttp(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint)
         {
             builder.Services.AddTransient(provider =>
             {

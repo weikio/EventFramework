@@ -4,6 +4,6 @@ namespace Weikio.EventFramework.Abstractions
 {
     public interface ICloudEventRouterServiceFactory
     {
-        Task<ICloudEventRouterService> Create(IIncomingChannel channel);
+        Task<ICloudEventRouterService> Create(IIncomingChannel channel, ICloudEventGateway gateway);
     }
 }

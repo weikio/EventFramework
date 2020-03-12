@@ -5,7 +5,7 @@ namespace Weikio.EventFramework.Abstractions
 {
     public interface ICloudEventRouterService
     {
-        void Initialize(IIncomingChannel incomingChannel);
+        void Initialize(IIncomingChannel incomingChannel, ICloudEventGateway gateway);
         Task Start(CancellationToken cancellationToken);
     }
 }

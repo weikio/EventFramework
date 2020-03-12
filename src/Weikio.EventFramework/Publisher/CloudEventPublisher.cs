@@ -63,7 +63,14 @@ namespace Weikio.EventFramework.Publisher
             return result;
         }
 
-        public async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName = GatewayName.Default)
+        public async Task<CloudEvent> Publish(CloudEvent cloudEvent)
+        {
+            var gatewayName = _options.DefaultGatewayName;
+
+            return await Publish(cloudEvent, gatewayName);
+        }
+        
+        public async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName)
         {
             if (cloudEvent == null)
             {
