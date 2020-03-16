@@ -5,6 +5,7 @@ namespace Weikio.EventFramework.Abstractions
 {
     public interface ICloudEventAggregator
     {
+        void Subscribe(object subscriber);
         Task Publish(CloudEvent cloudEvent);
     }
 }

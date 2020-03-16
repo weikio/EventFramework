@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -37,13 +34,16 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.Services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
             builder.Services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
-            
+
             builder.Services.AddTransient<HttpGatewayFactory>();
             builder.Services.AddTransient<HttpGatewayInitializer>();
             builder.Services.TryAddSingleton<RouteInitializer>();
-            
+
+            builder.Services.TryAddSingleton<ICloudEventHandlerCollection, CloudEventHandlerCollection>();
+            builder.Services.TryAddSingleton<HandlerInitializer>();
+
             builder.Services.AddStartupTasks();
-            
+
             services.AddHttpContextAccessor();
 
             services.AddApiFrameworkCore(options =>
@@ -53,7 +53,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                 options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
                 options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
             });
-            
+
             if (setupAction != null)
             {
                 builder.Services.Configure(setupAction);
@@ -70,31 +70,30 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                 var httpGateways = gatewayCollection.Gateways.OfType<HttpGateway>().ToList();
 
                 var endpoints = new List<EndpointDefinition>();
+
                 foreach (var httpGateway in httpGateways)
                 {
-                    var endpoint = new EndpointDefinition(httpGateway.Endpoint, typeof(HttpCloudEventReceiverApi).FullName, new HttpCloudEventReceiverApiConfiguration()
-                    {
-                        GatewayName = httpGateway.Name
-                    }, new EmptyHealthCheck(), string.Empty);
-                    
+                    var endpoint = new EndpointDefinition(httpGateway.Endpoint, typeof(HttpCloudEventReceiverApi).FullName,
+                        new HttpCloudEventReceiverApiConfiguration() { GatewayName = httpGateway.Name }, new EmptyHealthCheck(), string.Empty);
+
                     endpoints.Add(endpoint);
                 }
-                
+
                 return new CustomEndpointConfigurationProvider(endpoints);
             });
-            
+
             return builder;
         }
     }
 
-    public class CustomHttpVerbResolver :IEndpointHttpVerbResolver
+    public class CustomHttpVerbResolver : IEndpointHttpVerbResolver
     {
         public string GetHttpVerb(ActionModel action)
         {
             return "POST";
         }
     }
-    
+
     public class CustomEndpointConfigurationProvider : IEndpointConfigurationProvider
     {
         private readonly List<EndpointDefinition> _endpointDefinitions;

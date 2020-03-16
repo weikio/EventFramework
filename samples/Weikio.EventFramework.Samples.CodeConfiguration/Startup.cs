@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
@@ -28,18 +29,28 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc()
-                .AddNewtonsoftJson();;
+            services.AddMvc();
             
             services.AddRazorPages();
             services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
 
             services.AddOpenApiDocument();
-
+            
             services.AddEventFramework()
                 .AddLocal("local")
                 .AddHttp("web", "myevents/incoming")
-                .AddRoute("web", "local");
+                // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
+                // {
+                //     client.BaseAddress = new Uri("https://webhook.site");
+                // })
+                // .AddRoute("web", "local")
+                // .AddRoute("local", "web", filter: context => context.CloudEvent.Subject == "123" , onRouting: (context, provider) =>
+                // {
+                //     context.CloudEvent.Type = "com.eventframework.modified";
+                //
+                //     return Task.FromResult(context);
+                // })
+                .AddHandler<SaveHandler>();
 
 
 //                .AddLocal("localpriority", 3)
@@ -78,7 +89,6 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseOpenApi();
             app.UseSwaggerUi3();

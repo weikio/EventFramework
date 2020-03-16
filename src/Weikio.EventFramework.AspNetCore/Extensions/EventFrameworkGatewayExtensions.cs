@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Net.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Gateways;
 using Weikio.EventFramework.Gateways;
@@ -19,33 +21,25 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             return builder.AddGateway(new LocalGateway(name));
         }
 
-        public static IEventFrameworkBuilder AddHttp(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint)
+        public static IEventFrameworkBuilder AddHttp(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint, 
+            string outgoingEndpoint = HttpGateway.DefaultEndpoint, Action<HttpClient> configureClient = null)
         {
             builder.Services.AddTransient(provider =>
             {
                 var factory = provider.GetRequiredService<HttpGatewayFactory>();
 
-                return factory.Create(name, endpoint);
+                return factory.Create(name, endpoint, outgoingEndpoint);
+            });
+
+            builder.Services.AddHttpClient(name, client =>
+            {
+                if (configureClient != null)
+                {
+                    configureClient(client);
+                }
             });
 
             return builder;
-        }
-    }
-
-    public class HttpGatewayFactory
-    {
-        private readonly HttpGatewayInitializer _initializer;
-
-        public HttpGatewayFactory(HttpGatewayInitializer initializer)
-        {
-            _initializer = initializer;
-        }
-
-        public ICloudEventGateway Create(string name, string endpoint)
-        {
-            var result = new HttpGateway(name, endpoint, _initializer.Initialize);
-
-            return result;
         }
     }
 }

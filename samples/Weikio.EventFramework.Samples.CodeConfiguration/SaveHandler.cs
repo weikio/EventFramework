@@ -6,13 +6,28 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 {
     public class SaveHandler : ICloudEventHandler
     {
-        public Task SaveFile(CloudEvent cloudEvent, string eventType = "new-file")
+        public Task Test(CloudEvent cloudEvent, string eventType = "new-file")
         {
             return Task.CompletedTask;
         }
-        public Task DeleteFile(CloudEvent cloudEvent, string eventType = "delete-file")
+        // public Task SaveFile(CloudEvent cloudEvent, string eventType = "new-file")
+        // {
+        //     return Task.CompletedTask;
+        // }
+        //
+        // public Task DeleteFile(CloudEvent cloudEvent, string eventType = "delete-file")
+        // {
+        //     return Task.CompletedTask;
+        // }
+
+        public Task CanHandle(ICloudEventContext cloudEventContext)
         {
-            return Task.CompletedTask;
+            throw new System.NotImplementedException();
+        }
+
+        public Task Handle(ICloudEventContext cloudEventContext)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

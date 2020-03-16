@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
@@ -9,6 +10,13 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
     {
         public static IEventFrameworkBuilder AddHandler(this IEventFrameworkBuilder builder, ICloudEventHandler handler)
         {
+            return builder;
+        }
+
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder) where THandlerType : class, ICloudEventHandler
+        {
+            builder.Services.AddTransient<ICloudEventHandler, THandlerType>();
+
             return builder;
         }
         

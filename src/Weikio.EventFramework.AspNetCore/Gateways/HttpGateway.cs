@@ -5,55 +5,30 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Weikio.ApiFramework.Abstractions;
-using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.AspNetCore.Gateways
 {
-    public class HttpGatewayInitializer
-    {
-        private readonly EndpointManager _endpointManager;
-        private readonly IApiProvider _apiProvider;
-
-        public HttpGatewayInitializer(EndpointManager endpointManager, IApiProvider apiProvider)
-        {
-            _endpointManager = endpointManager;
-            _apiProvider = apiProvider;
-        }
-
-        public async Task Initialize(HttpGateway gateway)
-        {
-            var api = await _apiProvider.Get(typeof(HttpCloudEventReceiverApi).FullName);
-            
-            // Create HTTP Endpoint for the gateway
-            var endpoint = new Endpoint(gateway.Endpoint, api, new HttpCloudEventReceiverApiConfiguration()
-            {
-                GatewayName = gateway.Name
-            });
-
-            _endpointManager.AddEndpoint(endpoint);
-            _endpointManager.Update();
-        }
-    }
-    
     public class HttpGateway : ICloudEventGateway
     {
         private readonly Func<HttpGateway, Task> _initializer;
+        private readonly string _outgoingEndpoint;
         private CancellationToken _cancellationToken;
 
-        public HttpGateway(string name, string endpoint, Func<HttpGateway, Task> initializer = null)
+        public HttpGateway(string name, string endpoint, Func<HttpGateway, Task> initializer = null, string outgoingEndpoint = null,
+            IHttpClientFactory httpClientFactory = null)
         {
             Status = CloudEventGatewayStatus.New;
 
             _initializer = initializer;
+            _outgoingEndpoint = outgoingEndpoint;
             Name = name;
             Endpoint = endpoint;
             
             var channel = Channel.CreateUnbounded<CloudEvent>();
 
             IncomingChannel = new IncomingHttpChannel(channel);
-            OutgoingChannel = null;
+            OutgoingChannel = new OutgoingHttpChannel(httpClientFactory, name, outgoingEndpoint);
         }
 
         public const string DefaultName = "http";
@@ -64,7 +39,7 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
         public IIncomingChannel IncomingChannel { get; }
         public IOutgoingChannel OutgoingChannel { get; }
         public bool SupportsIncoming { get; } = true;
-        public bool SupportsOutgoing { get; }
+        public bool SupportsOutgoing { get; } = true;
         
         public async Task Initialize()
         {
