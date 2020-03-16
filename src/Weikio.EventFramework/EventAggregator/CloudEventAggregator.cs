@@ -8,6 +8,14 @@ using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.EventAggregator
 {
+    public class HandlerOptions
+    {
+        public Func<object> HandlerFactory { get; set; }
+        public string Criteria { get; set; }
+        public object Handler { get; set; }
+    }
+    
+    
     public class CloudEventAggregator : ICloudEventAggregator
     {
         private readonly List<Handler> _handlers = new List<Handler>();
@@ -179,7 +187,8 @@ namespace Weikio.EventFramework.EventAggregator
 
                 foreach (var task in tasks)
                 {
-                    var arguments = new List<object> { cloudEvent };
+                    var arguments = new List<object>();
+                    arguments.Add(cloudEvent);
 
                     foreach (var parameterInfo in task.Item2.GetParameters())
                     {
@@ -188,7 +197,7 @@ namespace Weikio.EventFramework.EventAggregator
                             continue;
                         }
                         
-                        arguments.Add(parameterInfo);
+                        arguments.Add(parameterInfo.DefaultValue);
                     }
                     
                     var res = (Task) task.Item2.Invoke(target, arguments.ToArray());

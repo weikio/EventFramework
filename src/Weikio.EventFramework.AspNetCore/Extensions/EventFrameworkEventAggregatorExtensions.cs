@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using ImpromptuInterface;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventAggregator;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
 {
@@ -12,10 +14,35 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
         {
             return builder;
         }
-
-        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder) where THandlerType : class, ICloudEventHandler
+        
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder) where THandlerType : class
         {
-            builder.Services.AddTransient<ICloudEventHandler, THandlerType>();
+            builder.Services.AddTransient<THandlerType>();
+
+            builder.Services.AddOptions<HandlerOptions>(typeof(THandlerType).FullName)
+                .Configure<IServiceProvider>((options, provider) =>
+                {
+                    options.HandlerFactory = provider.GetRequiredService<THandlerType>;
+                })
+
+            ;
+            // builder.Services.Configure<HandlerOptions>(typeof(THandlerType).FullName,  (provider, options) =>
+            // {
+            //     options.HandlerFactory = () =>
+            //     {
+            //
+            //     };
+            // });
+            
+            // builder.Services.AddTransient(provider =>
+            // {
+            //     var service = provider.GetRequiredService<THandlerType>();
+            //     ICloudEventHandler result = service.ActLike();
+            //
+            //     return result;
+            // });
+            //
+            
 
             return builder;
         }

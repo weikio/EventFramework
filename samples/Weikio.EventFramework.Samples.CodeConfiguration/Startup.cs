@@ -50,7 +50,8 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                 //
                 //     return Task.FromResult(context);
                 // })
-                .AddHandler<SaveHandler>();
+                .AddHandler<SaveHandler>()
+                .AddHandler<LoadHandler>();
 
 
 //                .AddLocal("localpriority", 3)

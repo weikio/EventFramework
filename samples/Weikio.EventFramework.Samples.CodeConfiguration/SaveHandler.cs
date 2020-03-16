@@ -4,12 +4,26 @@ using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration
 {
-    public class SaveHandler : ICloudEventHandler
+    public class LoadHandler
+    {
+        public Task LoadFile(CloudEvent cloudEvent)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    public class SaveHandler
     {
         public Task Test(CloudEvent cloudEvent, string eventType = "new-file")
         {
             return Task.CompletedTask;
         }
+
+        public Task NewFile(CloudEvent cloudEvent)
+        {
+            return Task.CompletedTask;
+        }
+        
         // public Task SaveFile(CloudEvent cloudEvent, string eventType = "new-file")
         // {
         //     return Task.CompletedTask;
