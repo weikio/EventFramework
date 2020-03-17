@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using CloudNative.CloudEvents;
+using Weikio.EventFramework.EventAggregator;
 
 namespace Weikio.EventFramework.Abstractions
 {
@@ -12,5 +15,11 @@ namespace Weikio.EventFramework.Abstractions
     public interface ICloudEventHandler<TCloudEventDataType>
     {
         
+    }
+
+    public class EventLink
+    {
+        public Predicate<CloudEvent> CanHandle { get; set; }
+        public Func<CloudEvent, Task> Action { get; set; } 
     }
 }

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.Router;
 
 namespace Weikio.EventFramework
 {
@@ -38,31 +37,6 @@ namespace Weikio.EventFramework
             await _cloudEventGatewayManager.Update();
             
             _logger.LogInformation("Initialized {GatewayCount} gateways.", gateways.Count);
-        }
-    }
-    
-    public class EventAggregatorStartupTask : IStartupTask
-    {
-        private readonly IEnumerable<ICloudEventHandler> _eventHandlers;
-        private readonly HandlerInitializer _handlerInitializer;
-        private readonly ILogger<EventAggregatorStartupTask> _logger;
-
-        public EventAggregatorStartupTask(IEnumerable<ICloudEventHandler> eventHandlers, HandlerInitializer handlerInitializer, 
-            ILogger<EventAggregatorStartupTask> logger)
-        {
-            _eventHandlers = eventHandlers;
-            _handlerInitializer = handlerInitializer;
-            _logger = logger;
-        }
-
-        public Task Execute(CancellationToken cancellationToken)
-        {
-            foreach (var cloudEventHandler in _eventHandlers)
-            {
-                _handlerInitializer.Initialize(cloudEventHandler);
-            }
-
-            return Task.CompletedTask;
         }
     }
 }

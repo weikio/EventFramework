@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -35,10 +36,11 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
 
             services.AddOpenApiDocument();
-            
+
             services.AddEventFramework()
                 .AddLocal("local")
                 .AddHttp("web", "myevents/incoming")
+
                 // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
                 // {
                 //     client.BaseAddress = new Uri("https://webhook.site");
@@ -51,8 +53,12 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                 //     return Task.FromResult(context);
                 // })
                 .AddHandler<SaveHandler>()
-                .AddHandler<LoadHandler>();
+                .AddHandler(clo =>
+                {
+                    Debug.WriteLine(clo.Subject);
 
+                    return Task.CompletedTask;
+                });
 
 //                .AddLocal("localpriority", 3)
 //                .AddHttp()

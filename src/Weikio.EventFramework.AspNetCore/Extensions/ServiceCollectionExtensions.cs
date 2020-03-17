@@ -40,7 +40,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.Services.TryAddSingleton<RouteInitializer>();
 
             builder.Services.TryAddSingleton<ICloudEventHandlerCollection, CloudEventHandlerCollection>();
-            builder.Services.TryAddSingleton<HandlerInitializer>();
+            builder.Services.TryAddSingleton<EventLinkInitializer>();
 
             builder.Services.AddStartupTasks();
 
