@@ -49,6 +49,15 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 
             return RedirectToPage();
         }
+        
+        public async Task<IActionResult> OnPostSecond()
+        {
+            var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent("hello_world", new Uri("http://localhost")), "local2");
+
+            TempData["el"] = JsonSerializer.Serialize(CloudEvent);
+
+            return RedirectToPage();
+        }
 
         public async Task<IActionResult> OnPostcreateChannel()
         {

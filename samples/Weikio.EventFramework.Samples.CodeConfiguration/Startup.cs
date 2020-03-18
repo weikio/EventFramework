@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -44,6 +46,18 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                 {
                     client.BaseAddress = new Uri("https://webhook.site");
                 })
+                .AddHttp("web2", "api/events")               
+                .AddHandler(async cloudEvent =>
+                {
+                    var client = new HttpClient();
+                    client.BaseAddress = new Uri("https://webhook.site");
+                    
+                    var content = new CloudEventContent( cloudEvent,
+                        ContentMode.Structured,
+                        new JsonEventFormatter());
+
+                    await client.PostAsync("68d6a3d2-8cb4-4236-b0f5-442ee584558f", content);
+                })
                 .AddHandler<SaveHandler>()
                 .AddHandler<SaveHandler>(handler =>
                 {
@@ -54,11 +68,6 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                     handler.IncomingGatewayName = "web";
                     handler.OutgoingGatewayName = "local";
                 })
-                .AddHandler(typeof(RoutingHandler), new Action<RoutingHandler>(handler =>
-                {
-                    handler.IncomingGatewayName = "web";
-                    handler.OutgoingGatewayName = "local";
-                }))
                 .AddHandler<RoutingHandler>(handler =>
                 {
                     handler.IncomingGatewayName = "local";

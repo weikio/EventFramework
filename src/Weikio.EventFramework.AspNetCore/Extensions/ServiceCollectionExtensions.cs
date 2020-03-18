@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.Core.Apis;
+using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.ApiFramework.Core.Extensions;
 using Weikio.ApiFramework.Core.HealthChecks;
 using Weikio.ApiFramework.Core.Infrastructure;
@@ -45,6 +46,9 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
             services.AddHttpContextAccessor();
 
+            // TODO: Collection concurrent problem in Api Framework
+            services.AddSingleton<IEndpointInitializer, SyncEndpointInitializer>();
+            
             services.AddApiFrameworkCore(options =>
             {
                 options.ApiAddressBase = "";
