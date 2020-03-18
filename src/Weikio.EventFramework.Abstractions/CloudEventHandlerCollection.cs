@@ -2,8 +2,8 @@
 
 namespace Weikio.EventFramework.Abstractions
 {
-    public class CloudEventHandlerCollection : List<ICloudEventHandler>, ICloudEventHandlerCollection
-    {
-        public IEnumerable<ICloudEventHandler> Handlers => this;
-    }
+    // public class CloudEventHandlerCollection : List<ICloudEventHandler>, ICloudEventHandlerCollection
+    // {
+    //     public IEnumerable<ICloudEventHandler> Handlers => this;
+    // }
 }

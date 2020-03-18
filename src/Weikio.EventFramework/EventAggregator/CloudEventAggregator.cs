@@ -61,10 +61,11 @@ namespace Weikio.EventFramework.EventAggregator
                 handlersToNotify = _handlers.ToArray();
             }
 
-            var tasks = handlersToNotify.Select(h => h.Handle(cloudEvent));
-
-            await Task.WhenAll(tasks);
-
+            foreach (var handler in handlersToNotify)
+            {
+                await handler.Handle(cloudEvent);
+            }
+            
             var deadHandlers = handlersToNotify.Where(h => h.IsDead).ToList();
 
             if (deadHandlers.Any())
@@ -97,28 +98,30 @@ namespace Weikio.EventFramework.EventAggregator
                 return _reference.Target == instance;
             }
 
-            public Task Handle(CloudEvent cloudEvent)
+            public async Task Handle(CloudEvent cloudEvent)
             {
                 var target = _reference.Target;
 
                 if (target == null)
                 {
-                    return Task.FromResult(false);
+                    return;
                 }
 
                 var eventLink = target as EventLink;
 
                 if (eventLink == null)
                 {
-                    return Task.FromResult(false);
-                }
-                
-                if (!eventLink.CanHandle(cloudEvent))
-                {
-                    return Task.FromResult(false);
+                    return;
                 }
 
-                return eventLink.Action(cloudEvent);
+                var canHandle = await eventLink.CanHandle(cloudEvent);
+
+                if (!canHandle)
+                {
+                    return;
+                }
+
+                await eventLink.Action(cloudEvent);
             }
         }
     }

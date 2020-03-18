@@ -52,9 +52,9 @@ namespace CloudNative.CloudEvents.Extensions
                     return true;
                 }
 
-                throw new InvalidOperationException(Strings.ErrorPartitioningKeyValueIsaNotAString);
+                throw new InvalidOperationException();
             }
-
+            
             return false;
         }
 

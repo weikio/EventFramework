@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Extensions;
 using Weikio.EventFramework.Gateways;
@@ -39,46 +40,38 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddEventFramework()
                 .AddLocal("local")
-                .AddHttp("web", "myevents/incoming")
-
-                // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
-                // {
-                //     client.BaseAddress = new Uri("https://webhook.site");
-                // })
-                // .AddRoute("web", "local")
-                // .AddRoute("local", "web", filter: context => context.CloudEvent.Subject == "123" , onRouting: (context, provider) =>
-                // {
-                //     context.CloudEvent.Type = "com.eventframework.modified";
-                //
-                //     return Task.FromResult(context);
-                // })
-                .AddHandler<SaveHandler>()
-                .AddHandler(clo =>
+                .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
                 {
-                    Debug.WriteLine(clo.Subject);
+                    client.BaseAddress = new Uri("https://webhook.site");
+                })
+                .AddHandler<SaveHandler>()
+                .AddHandler<SaveHandler>(handler =>
+                {
+                    handler.Path = @"c:\temp";
+                })
+                .AddHandler<RoutingHandler>(handler =>
+                {
+                    handler.IncomingGatewayName = "web";
+                    handler.OutgoingGatewayName = "local";
+                })
+                .AddHandler(typeof(RoutingHandler), new Action<RoutingHandler>(handler =>
+                {
+                    handler.IncomingGatewayName = "web";
+                    handler.OutgoingGatewayName = "local";
+                }))
+                .AddHandler<RoutingHandler>(handler =>
+                {
+                    handler.IncomingGatewayName = "local";
+                    handler.OutgoingGatewayName = "web";
+                    handler.Filter = cloudEvent => cloudEvent.Subject == "123";
 
-                    return Task.CompletedTask;
+                    handler.OnRouting = (cloudevent, provider) =>
+                    {
+                        cloudevent.Type = "com.eventframework.modified";
+
+                        return Task.FromResult(cloudevent);
+                    };
                 });
-
-//                .AddLocal("localpriority", 3)
-//                .AddHttp()
-//                .AddHttp("priority", "/myCloudEvents", 5)
-//                .AddAzureServiceBus("connectionString", "incomingqueue")
-//                .AddGateway(new LocalGateway())
-//                .AddGateway("red", new LocalGateway())
-//                .AddRoute(cloudEvent => true, cloudEvent =>
-//                {
-//                  Console.WriteLine("Hello world");
-//
-//                  return Task.CompletedTask;
-//                }) 
-//                .AddRoute(x => x.Type == "hello_world", (provider, cloudEvent) =>
-//                {
-//                    var logger = provider.GetService<ILogger<Startup>>();
-//                    logger.LogInformation("Handling message");
-//
-//                    return Task.CompletedTask;
-//                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

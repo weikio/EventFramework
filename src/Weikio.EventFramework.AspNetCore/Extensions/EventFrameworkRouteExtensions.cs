@@ -8,8 +8,9 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 {
     public static class EventFrameworkRouteExtensions
     {
-        public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, string incomingGatewayName, string outgoingGatewayName, Predicate<ICloudEventContext> filter = null, Func<ICloudEventContext, IServiceProvider, Task<ICloudEventContext>> onRouting = null)
+        public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, string incomingGatewayName, string outgoingGatewayName, Predicate<CloudEvent> filter = null, Func<CloudEvent, IServiceProvider, Task<CloudEvent>> onRouting = null)
         {
+            
             builder.Services.AddTransient<ICloudEventRoute>(provider =>
             {
                 var route = new RouteCloudEventRoute(incomingGatewayName, outgoingGatewayName, provider, filter, onRouting);
@@ -20,12 +21,12 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             return builder;
         }
 
-        public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, ICloudEventGateway incomingGateway, ICloudEventGateway outgoingGateway, Func<ICloudEventContext, IServiceProvider, Task<CloudEvent>> onRouting = null)
+        public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, ICloudEventGateway incomingGateway, ICloudEventGateway outgoingGateway, Func<CloudEvent, IServiceProvider, Task<CloudEvent>> onRouting = null)
         {
             return builder;
         }
 
-        public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, IIncomingChannel incomingChannel, IOutgoingChannel outgoingChannel, Func<ICloudEventContext, IServiceProvider, Task<CloudEvent>> onRouting = null)
+        public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, IIncomingChannel incomingChannel, IOutgoingChannel outgoingChannel, Func<CloudEvent, IServiceProvider, Task<CloudEvent>> onRouting = null)
         {
             return builder;
         }

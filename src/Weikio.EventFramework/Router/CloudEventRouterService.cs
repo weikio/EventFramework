@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.Hosting;
@@ -65,22 +66,17 @@ namespace Weikio.EventFramework.Router
                         continue;
                     }
 
-                    var routes = _cloudEventRouteCollection.Routes;
-                    var context = new CloudEventContext(cloudEvent, _gateway, _incomingChannel);
+                    var extension = new EventFrameworkCloudEventExtension(_gateway.Name, _incomingChannel.Name);
+                    extension.Attach(cloudEvent);
 
-                    foreach (var route in routes)
+                    try
                     {
-                        var canHandle = await route.CanHandle(context);
-
-                        if (!canHandle)
-                        {
-                            continue;
-                        }
-
-                        await route.Handle(context);
+                        await _cloudEventAggregator.Publish(cloudEvent);
                     }
-                    
-                    await _cloudEventAggregator.Publish(cloudEvent);
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed with {CloudEvent} in {Gateway} {Channel}", cloudEvent, _gateway.Name, _incomingChannel.Name);
+                    }
                 }
             }
 
