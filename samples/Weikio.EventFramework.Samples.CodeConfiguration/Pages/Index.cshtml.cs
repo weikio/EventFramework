@@ -50,6 +50,16 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
             return RedirectToPage();
         }
         
+        public async Task<IActionResult> OnPostCustomer()
+        {
+            var customerCreated = new CustomerCreated(){FirstName = "Mikael", LastName = "Koskinen"};
+            var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent<CustomerCreated>(customerCreated, new Uri("http://localhost")), "local");
+
+            TempData["el"] = JsonSerializer.Serialize(publishedEvent);
+
+            return RedirectToPage();
+        }
+        
         public async Task<IActionResult> OnPostSecond()
         {
             var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent("hello_world", new Uri("http://localhost")), "local2");

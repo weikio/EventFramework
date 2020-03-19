@@ -34,6 +34,7 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.AddHttpClient();
             
             services.AddRazorPages();
             services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
@@ -41,46 +42,49 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             services.AddOpenApiDocument();
 
             services.AddEventFramework()
-                .AddLocal("local")
-                .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
-                {
-                    client.BaseAddress = new Uri("https://webhook.site");
-                })
                 .AddHttp("web2", "api/events")               
-                .AddHandler(async cloudEvent =>
-                {
-                    var client = new HttpClient();
-                    client.BaseAddress = new Uri("https://webhook.site");
-                    
-                    var content = new CloudEventContent( cloudEvent,
-                        ContentMode.Structured,
-                        new JsonEventFormatter());
+                .AddHandler<CustomerCreatedHandler>();
 
-                    await client.PostAsync("68d6a3d2-8cb4-4236-b0f5-442ee584558f", content);
-                })
-                .AddHandler<SaveHandler>()
-                .AddHandler<SaveHandler>(handler =>
-                {
-                    handler.Path = @"c:\temp";
-                })
-                .AddHandler<RoutingHandler>(handler =>
-                {
-                    handler.IncomingGatewayName = "web";
-                    handler.OutgoingGatewayName = "local";
-                })
-                .AddHandler<RoutingHandler>(handler =>
-                {
-                    handler.IncomingGatewayName = "local";
-                    handler.OutgoingGatewayName = "web";
-                    handler.Filter = cloudEvent => cloudEvent.Subject == "123";
-
-                    handler.OnRouting = (cloudevent, provider) =>
-                    {
-                        cloudevent.Type = "com.eventframework.modified";
-
-                        return Task.FromResult(cloudevent);
-                    };
-                });
+            // .AddLocal("local2")
+            // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
+            // {
+            //     client.BaseAddress = new Uri("https://webhook.site");
+            // })
+            // .AddHttp("web2", "api/events")               
+            // .AddHandler(async cloudEvent =>
+            // {
+            //     var client = new HttpClient();
+            //     client.BaseAddress = new Uri("https://webhook.site");
+            //     
+            //     var content = new CloudEventContent( cloudEvent,
+            //         ContentMode.Structured,
+            //         new JsonEventFormatter());
+            //
+            //     await client.PostAsync("68d6a3d2-8cb4-4236-b0f5-442ee584558f", content);
+            // })
+            // .AddHandler<SaveHandler>()
+            // .AddHandler<SaveHandler>(handler =>
+            // {
+            //     handler.Path = @"c:\temp";
+            // })
+            // .AddHandler<RoutingHandler>(handler =>
+            // {
+            //     handler.IncomingGatewayName = "web";
+            //     handler.OutgoingGatewayName = "local";
+            // })
+            // .AddHandler<RoutingHandler>(handler =>
+            // {
+            //     handler.IncomingGatewayName = "local";
+            //     handler.OutgoingGatewayName = "web";
+            //     handler.Filter = cloudEvent => cloudEvent.Subject == "123";
+            //
+            //     handler.OnRouting = (cloudevent, provider) =>
+            //     {
+            //         cloudevent.Type = "com.eventframework.modified";
+            //
+            //         return Task.FromResult(cloudevent);
+            //     };
+            // });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
