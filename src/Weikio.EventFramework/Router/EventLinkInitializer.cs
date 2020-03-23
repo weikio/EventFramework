@@ -6,8 +6,7 @@ namespace Weikio.EventFramework.Router
     {
         private readonly ICloudEventAggregator _cloudEventAggregator;
 
-        public EventLinkInitializer(ICloudEventAggregator cloudEventAggregator
-        )
+        public EventLinkInitializer(ICloudEventAggregator cloudEventAggregator)
         {
             _cloudEventAggregator = cloudEventAggregator;
         }

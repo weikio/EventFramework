@@ -36,6 +36,16 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             return Task.CompletedTask;
         }
         
+        public Task MyGeneric(CloudEvent<CustomerCreated> cloudEvent)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task MyTyped(CustomerCreated cloudEvent)
+        {
+            return Task.CompletedTask;
+        }
+
         // public Task SaveFile(CloudEvent cloudEvent, string eventType = "new-file")
         // {
         //     return Task.CompletedTask;
@@ -45,15 +55,5 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
         // {
         //     return Task.CompletedTask;
         // }
-
-        public Task CanHandle(CloudEvent cloudEventContext)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task Handle(CloudEvent cloudEventContext)
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }

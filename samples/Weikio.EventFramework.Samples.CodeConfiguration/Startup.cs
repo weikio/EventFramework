@@ -16,6 +16,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Configuration;
+using Weikio.EventFramework.EventLinks;
+using Weikio.EventFramework.EventLinks.EventLinkFactories;
 using Weikio.EventFramework.Extensions;
 using Weikio.EventFramework.Gateways;
 
@@ -41,12 +44,18 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddOpenApiDocument();
 
-            services.AddEventFramework()
-                .AddHttp("web2", "api/events")
-                .AddHandler<CustomerDeletedHandler>(clo =>
+            services.AddEventFramework(options =>
                 {
-                    return clo.Subject == "1234";
-                });
+                    options.TypeToEventLinksHandlerTypes.Clear();
+                    options.TypeToEventLinksHandlerTypes.Add(typeof(PublicTasksToHandlers));
+                    options.TypeToEventLinksHandlerTypes.Add(typeof(CloudEventsToTypeHandlers));
+                    options.TypeToEventLinksHandlerTypes.Add(typeof(GenericCloudEventsToTypeHandlers));
+
+                    // options.TypeToEventLinksFactoryTypes.Clear();
+                    // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
+                })
+                .AddHttp("web2", "api/events")
+                .AddHandler<SaveHandler>(clo => clo.Subject == "1234");
 
             // .AddHandler<CustomerCreatedHandler>();
 

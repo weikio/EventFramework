@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.Core.Apis;
 using Weikio.ApiFramework.Core.Endpoints;
@@ -16,6 +17,8 @@ using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Gateways;
 using Weikio.EventFramework.Configuration;
 using Weikio.EventFramework.EventAggregator;
+using Weikio.EventFramework.EventLinks;
+using Weikio.EventFramework.EventLinks.EventLinkFactories;
 using Weikio.EventFramework.Extensions;
 using Weikio.EventFramework.Publisher;
 using Weikio.EventFramework.Router;
@@ -41,14 +44,13 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.Services.TryAddSingleton<RouteInitializer>();
 
             builder.Services.TryAddSingleton<EventLinkInitializer>();
-
+            builder.Services.TryAddTransient<IEventLinkRunner, DefaultEventLinkRunner>();
+            
             builder.Services.AddStartupTasks();
-
-            services.AddHttpContextAccessor();
 
             // TODO: Collection concurrent problem in Api Framework
             services.AddSingleton<IEndpointInitializer, SyncEndpointInitializer>();
-            
+
             services.AddApiFrameworkCore(options =>
             {
                 options.ApiAddressBase = "";
@@ -57,15 +59,24 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                 options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
             });
 
-            if (setupAction != null)
-            {
-                builder.Services.Configure(setupAction);
-            }
+            var options = new EventFrameworkOptions();
+            setupAction?.Invoke(options);
 
-            // builder.Services.Configure<MvcOptions>(options =>
+            var conf = Options.Create(options);
+            builder.Services.AddSingleton<IOptions<EventFrameworkOptions>>(conf);
+
+            // foreach (var typeToEventLinksFactoryType in options.TypeToEventLinksFactoryTypes)
             // {
-            //     options.InputFormatters.Insert(0, new CloudEventJsonInputFormatter());
-            // });
+            //     builder.Services.AddTransient(typeof(ITypeToEventLinksFactory), typeToEventLinksFactoryType);
+            //     builder.Services.AddTransient(typeToEventLinksFactoryType);
+            // }
+            
+            builder.Services.TryAddSingleton<ITypeToEventLinksConverter, DefaultTypeToEventLinksConverter>();
+            foreach (var typeToEventLinksFactoryType in options.TypeToEventLinksHandlerTypes)
+            {
+                builder.Services.AddTransient(typeof(ITypeToHandlers), typeToEventLinksFactoryType);
+                builder.Services.AddTransient(typeToEventLinksFactoryType);
+            }
 
             builder.Services.AddSingleton<IEndpointConfigurationProvider>(provider =>
             {

@@ -24,6 +24,8 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
         public static IEventFrameworkBuilder AddHttp(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint, 
             string outgoingEndpoint = HttpGateway.DefaultEndpoint, Action<HttpClient> configureClient = null)
         {
+            builder.Services.AddHttpContextAccessor();
+
             builder.Services.AddTransient(provider =>
             {
                 var factory = provider.GetRequiredService<HttpGatewayFactory>();
