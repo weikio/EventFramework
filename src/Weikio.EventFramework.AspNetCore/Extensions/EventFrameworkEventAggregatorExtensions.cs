@@ -73,15 +73,52 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
         public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, Action<THandlerType> configure = null)
             where THandlerType : class
         {
-            return builder.AddHandler(typeof(THandlerType), configure);
+            return builder.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(true), configure);
+        }
+        
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, CloudEventCriteria criteria, Action<THandlerType> configure = null)
+            where THandlerType : class
+        {
+            return builder.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(criteria.CanHandle(cloudEvent)), configure);
+        }
+        
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, Func<CloudEvent, Task<bool>> canHandle, Action<THandlerType> configure = null)
+            where THandlerType : class
+        {
+            return builder.AddHandler(typeof(THandlerType), canHandle, configure);
+        }
+        
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, Predicate<CloudEvent> canHandle, Action<THandlerType> configure = null)
+            where THandlerType : class
+        {
+            return builder.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(canHandle(cloudEvent)), configure);
+        }
+        
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder,string eventType, Action<THandlerType> configure = null) where THandlerType : class
+        {
+            return builder.AddHandler<THandlerType>(eventType, string.Empty, configure);
         }
 
-        public static IEventFrameworkBuilder AddHandler(this IEventFrameworkBuilder builder, Type handlerType, MulticastDelegate configure = null)
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder,  string eventType, string source, Action<THandlerType> configure = null) where THandlerType : class
+        {
+            return builder.AddHandler<THandlerType>(eventType, source, string.Empty, configure);
+        }
+
+        public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, string eventType, string source,
+            string subject, Action<THandlerType> configure = null) where THandlerType : class
+        {
+            var criteria = new CloudEventCriteria() { Type = eventType, Source = source, Subject = subject };
+
+            return builder.AddHandler<THandlerType>(criteria, configure);
+        }        
+
+        public static IEventFrameworkBuilder AddHandler(this IEventFrameworkBuilder builder, Type handlerType, Func<CloudEvent, Task<bool>> canHandle, MulticastDelegate configure = null)
         {
             builder.Services.TryAddTransient(handlerType);
 
             var supportedCloudEventTypes = GetSupportedCloudEventTypes(handlerType);
             var supportedGenericCloudEventTypes = GetSupportedGenericCloudEventTypes(handlerType);
+            var supportedPublicHandlers = GetSupportedPublicTasks(handlerType);
 
             foreach (var supportedCloudEventType in supportedCloudEventTypes)
             {
@@ -125,15 +162,25 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                                 return false;
                             }
 
-                            if (supportedCloudEventType.Guard == null)
+                            if (canHandle != null)
                             {
-                                return true;
+                                var res = await canHandle.Invoke(cloudEvent);
+
+                                if (res == false)
+                                {
+                                    return res;
+                                }
+                            }
+                            
+                            if (supportedCloudEventType.Guard != null)
+                            {
+                                var res = (Task<bool>) supportedCloudEventType.Guard.Invoke(handler, new[] { cloudEvent });
+                                await res;
+
+                                return res.Result;
                             }
 
-                            var res = (Task<bool>) supportedCloudEventType.Guard.Invoke(handler, new[] { cloudEvent });
-                            await res;
-
-                            return res.Result;
+                            return true;
                         }
                         catch (Exception e)
                         {
@@ -147,7 +194,6 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
                     return result;
                 });
-                
             }
 
             foreach (var supportedGenericCloudEventType in supportedGenericCloudEventTypes)
@@ -162,10 +208,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                     {
                         try
                         {
-                            var arguments = new List<object>
-                            {
-                                ConvertCloudEventDataToObject(cloudEvent, supportedGenericCloudEventType)
-                            };
+                            var arguments = new List<object> { ConvertCloudEventDataToGeneric(cloudEvent, supportedGenericCloudEventType) };
 
                             foreach (var parameterInfo in supportedGenericCloudEventType.Handler.GetParameters())
                             {
@@ -195,15 +238,25 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                                 return false;
                             }
 
-                            if (supportedGenericCloudEventType.Guard == null)
+                            if (canHandle != null)
                             {
-                                return true;
+                                var res = await canHandle.Invoke(cloudEvent);
+
+                                if (res == false)
+                                {
+                                    return res;
+                                }
+                            }
+                            
+                            if (supportedGenericCloudEventType.Guard != null)
+                            {
+                                var res = (Task<bool>) supportedGenericCloudEventType.Guard.Invoke(handler, new[] { cloudEvent });
+                                await res;
+
+                                return res.Result;
                             }
 
-                            var res = (Task<bool>) supportedGenericCloudEventType.Guard.Invoke(handler, new[] { cloudEvent });
-                            await res;
-
-                            return res.Result;
+                            return true;
                         }
                         catch (Exception e)
                         {
@@ -218,14 +271,97 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
                     return result;
                 });
             }
-            
+
+            foreach (var supportedPublicHandler in supportedPublicHandlers.Where(x => !supportedCloudEventTypes.Select(m => m.Handler).Contains(x.Handler))
+                .Where(x => !supportedGenericCloudEventTypes.Select(m => m.Handler).Contains(x.Handler)))
+            {
+                builder.Services.AddTransient(provider =>
+                {
+                    var handler = provider.GetRequiredService(handlerType);
+
+                    configure?.DynamicInvoke(handler);
+
+                    async Task Handle(CloudEvent cloudEvent)
+                    {
+                        try
+                        {
+                            var arguments = new List<object>();
+
+                            foreach (var parameterInfo in supportedPublicHandler.Handler.GetParameters())
+                            {
+                                if (!parameterInfo.HasDefaultValue)
+                                {
+                                    var arg = ConvertCloudEventDataToObject(cloudEvent, parameterInfo.ParameterType);
+                                    arguments.Add(arg);
+
+                                    continue;
+                                }
+
+                                arguments.Add(parameterInfo.DefaultValue);
+                            }
+
+                            var res = (Task) supportedPublicHandler.Handler.Invoke(handler, arguments.ToArray());
+                            await res;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                        }
+                    }
+
+                    async Task<bool> CanHandle(CloudEvent cloudEvent)
+                    {
+                        try
+                        {
+                            if (!supportedPublicHandler.Criteria.CanHandle(cloudEvent))
+                            {
+                                return false;
+                            }
+
+                            if (canHandle != null)
+                            {
+                                var res = await canHandle.Invoke(cloudEvent);
+
+                                if (res == false)
+                                {
+                                    return res;
+                                }
+                            }
+                            
+                            if (supportedPublicHandler.Guard != null)
+                            {
+                                var res = (Task<bool>) supportedPublicHandler.Guard.Invoke(handler, new[] { cloudEvent });
+                                await res;
+
+                                return res.Result;
+                            }
+
+                            return true;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+
+                            return false;
+                        }
+                    }
+
+                    var result = new EventLink { CanHandle = CanHandle, Action = Handle };
+
+                    return result;
+                });
+            }
+
             return builder;
         }
 
-        private static object ConvertCloudEventDataToObject(CloudEvent cloudEvent, (CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard) supportedGenericCloudEventType)
+        private static object ConvertCloudEventDataToGeneric(CloudEvent cloudEvent,
+            (CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard) supportedGenericCloudEventType)
         {
             var method = supportedGenericCloudEventType.Handler;
-            var cloudEventParameter = method.GetParameters().FirstOrDefault(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>));
+
+            var cloudEventParameter = method.GetParameters()
+                .FirstOrDefault(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>));
 
             if (cloudEventParameter == null)
             {
@@ -235,6 +371,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             var dataType = cloudEvent.DataContentType?.MediaType;
             var isJson = true;
             var isXml = false;
+
             if (string.IsNullOrWhiteSpace(dataType))
             {
                 // By default expect to have json-content
@@ -268,20 +405,47 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             var obj = JsonConvert.DeserializeObject(cloudEvent.Data.ToString(), cloudEventObjectType);
 
             var d1 = typeof(CloudEvent<>);
-            var constructed = d1.MakeGenericType(new[] {cloudEventObjectType});
-            
+            var constructed = d1.MakeGenericType(new[] { cloudEventObjectType });
+
             var mi = constructed.GetMethod("Create");
-            // var gen = mi.MakeGenericMethod(new[] { cloudEventObjectType });
+
             var result = mi.Invoke(null, new[] { obj, cloudEvent });
 
             return result;
-            // throw new NotSupportedException($"Content type {dataType} is not supported. Event type: {cloudEvent?.Type}");
+        }
 
+        private static object ConvertCloudEventDataToObject(CloudEvent cloudEvent, Type parameterType)
+        {
+            var dataType = cloudEvent.DataContentType?.MediaType;
+            var isJson = true;
+            var isXml = false;
 
-            // if (isJson)
-            // {
-            //     var result = JsonConvert.de
-            // }
+            if (string.IsNullOrWhiteSpace(dataType))
+            {
+                // By default expect to have json-content
+            }
+            else if (string.Equals(dataType, "text/xaml", StringComparison.InvariantCultureIgnoreCase))
+            {
+                isXml = true;
+                isJson = false;
+            }
+            else if (string.Equals(dataType, "application/json", StringComparison.InvariantCultureIgnoreCase))
+            {
+                isJson = true;
+            }
+            else
+            {
+                isJson = false;
+            }
+
+            if (!isJson && !isXml)
+            {
+                throw new NotSupportedException($"Content type {dataType} is not supported. Event type: {cloudEvent?.Type}");
+            }
+
+            var result = JsonConvert.DeserializeObject(cloudEvent.Data.ToString(), parameterType);
+
+            return result;
         }
 
         private static List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)> GetSupportedCloudEventTypes(Type handlerType)
@@ -334,10 +498,65 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
             return supportedCloudEventTypes;
         }
+
         private static List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)> GetSupportedGenericCloudEventTypes(Type handlerType)
         {
             var methods = handlerType.GetTypeInfo().DeclaredMethods.ToList();
-            var handlerMethods = methods.Where(x => !x.Name.StartsWith("Can") && x.GetParameters().Any(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>))).ToList();
+
+            var handlerMethods = methods.Where(x =>
+                !x.Name.StartsWith("Can") && x.GetParameters()
+                    .Any(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>))).ToList();
+            var guardMethods = methods.Where(x => x.Name.StartsWith("Can") && x.GetParameters().Any(p => p.ParameterType == typeof(CloudEvent))).ToList();
+
+            var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>();
+
+            foreach (var handlerMethod in handlerMethods)
+            {
+                var supportedEventType = string.Empty;
+                var supportedSource = string.Empty;
+                var supportedSubject = string.Empty;
+
+                var cloudEventTypeParameter = handlerMethod.GetParameters()
+                    .FirstOrDefault(x =>
+                        string.Equals(x.Name, "eventType", StringComparison.InvariantCultureIgnoreCase) && x.ParameterType == typeof(string));
+
+                if (cloudEventTypeParameter != null)
+                {
+                    supportedEventType = cloudEventTypeParameter.DefaultValue as string;
+                }
+
+                var cloudEventSourceParameter = handlerMethod.GetParameters()
+                    .FirstOrDefault(x => string.Equals(x.Name, "source", StringComparison.InvariantCultureIgnoreCase) && x.ParameterType == typeof(string));
+
+                if (cloudEventSourceParameter != null)
+                {
+                    supportedSource = cloudEventSourceParameter.DefaultValue as string;
+                }
+
+                var cloudEventSubjectParameter = handlerMethod.GetParameters()
+                    .FirstOrDefault(x =>
+                        string.Equals(x.Name, "subject", StringComparison.InvariantCultureIgnoreCase) && x.ParameterType == typeof(string));
+
+                if (cloudEventSubjectParameter != null)
+                {
+                    supportedSubject = cloudEventSubjectParameter.DefaultValue as string;
+                }
+
+                var criteria = new CloudEventCriteria() { Type = supportedEventType, Source = supportedSource, Subject = supportedSubject };
+
+                var guardMethod = guardMethods.FirstOrDefault(x =>
+                    string.Equals(x.Name, "Can" + handlerMethod.Name, StringComparison.InvariantCultureIgnoreCase));
+
+                supportedCloudEventTypes.Add((criteria, handlerMethod, guardMethod));
+            }
+
+            return supportedCloudEventTypes;
+        }
+
+        private static List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)> GetSupportedPublicTasks(Type handlerType)
+        {
+            var methods = handlerType.GetTypeInfo().DeclaredMethods.ToList();
+            var handlerMethods = methods.Where(x => !x.Name.StartsWith("Can") && x.ReturnType == typeof(Task) && x.IsPublic && !x.IsStatic).ToList();
             var guardMethods = methods.Where(x => x.Name.StartsWith("Can") && x.GetParameters().Any(p => p.ParameterType == typeof(CloudEvent))).ToList();
 
             var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>();

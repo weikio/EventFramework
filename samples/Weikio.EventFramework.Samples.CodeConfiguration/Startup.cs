@@ -42,8 +42,13 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             services.AddOpenApiDocument();
 
             services.AddEventFramework()
-                .AddHttp("web2", "api/events")               
-                .AddHandler<CustomerCreatedHandler>();
+                .AddHttp("web2", "api/events")
+                .AddHandler<CustomerDeletedHandler>(clo =>
+                {
+                    return clo.Subject == "1234";
+                });
+
+            // .AddHandler<CustomerCreatedHandler>();
 
             // .AddLocal("local2")
             // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
