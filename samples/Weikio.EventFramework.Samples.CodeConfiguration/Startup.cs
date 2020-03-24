@@ -1,14 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.Http;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,13 +11,27 @@ using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Configuration;
-using Weikio.EventFramework.EventLinks;
 using Weikio.EventFramework.EventLinks.EventLinkFactories;
-using Weikio.EventFramework.Extensions;
-using Weikio.EventFramework.Gateways;
+using Weikio.EventFramework.Files;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration
 {
+    public class FileCreatedHandler
+    {
+        private readonly ILogger<FileCreatedHandler> _logger;
+
+        public FileCreatedHandler(ILogger<FileCreatedHandler> logger)
+        {
+            _logger = logger;
+        }
+
+        public Task Handle(FileCreatedEvent createdEvent)
+        {
+            _logger.LogInformation("Received {Created}", createdEvent);
+            return Task.CompletedTask;
+        }
+    }
+    
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -46,16 +54,33 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddEventFramework(options =>
                 {
-                    options.TypeToEventLinksHandlerTypes.Clear();
-                    options.TypeToEventLinksHandlerTypes.Add(typeof(PublicTasksToHandlers));
-                    options.TypeToEventLinksHandlerTypes.Add(typeof(CloudEventsToTypeHandlers));
-                    options.TypeToEventLinksHandlerTypes.Add(typeof(GenericCloudEventsToTypeHandlers));
+                    options.DefaultGatewayName = "local";
 
-                    // options.TypeToEventLinksFactoryTypes.Clear();
-                    // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
+                    // options.TypeToEventLinksHandlerTypes.Clear();
+                    // options.TypeToEventLinksHandlerTypes.Add(typeof(PublicTasksToHandlers));
+                    // options.TypeToEventLinksHandlerTypes.Add(typeof(CloudEventsToTypeHandlers));
+                    // options.TypeToEventLinksHandlerTypes.Add(typeof(GenericCloudEventsToTypeHandlers));
+                    //
+                    // // options.TypeToEventLinksFactoryTypes.Clear();
+                    // // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
                 })
-                .AddHttp("web2", "api/events")
-                .AddHandler<SaveHandler>(clo => clo.Subject == "1234");
+                .AddLocal("local")
+                .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
+                {
+                    client.BaseAddress = new Uri("https://webhook.site");
+                })
+                .AddHandler<RoutingHandler>(handler =>
+                {
+                    handler.IncomingGatewayName = "local";
+                    handler.OutgoingGatewayName = "web";
+                })                
+                .AddHandler<FileCreatedHandler>(nameof(FileCreatedEvent));
+
+            services.AddHostedService<FileEventSource>();
+            
+
+            // .AddHttp("web2", "api/events")
+            // .AddHandler<SaveHandler>(clo => clo.Subject == "1234");
 
             // .AddHandler<CustomerCreatedHandler>();
 

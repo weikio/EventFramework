@@ -84,6 +84,11 @@ namespace Weikio.EventFramework.EventLinks.EventLinkFactories
                 throw new NotSupportedException($"Content type {dataType} is not supported. Event type: {cloudEvent?.Type}");
             }
 
+            if (cloudEvent.Data.GetType() == parameterType)
+            {
+                return cloudEvent.Data;
+            }
+            
             var result = JsonConvert.DeserializeObject(cloudEvent.Data.ToString(), parameterType);
 
             return result;

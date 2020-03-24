@@ -18,12 +18,12 @@ namespace Weikio.EventFramework.AspNetCore.Gateways
         }
 
         public string Name { get; }
-        
+
         public async Task Send(CloudEvent cloudEvent)
         {
             var client = _httpClientFactory.CreateClient(Name);
-            
-            var content = new CloudEventContent( cloudEvent,
+
+            var content = new CloudEventContent(cloudEvent,
                 ContentMode.Structured,
                 new JsonEventFormatter());
 

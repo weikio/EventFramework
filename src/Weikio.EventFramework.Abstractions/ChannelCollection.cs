@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Weikio.EventFramework.Abstractions
 {
@@ -18,6 +19,19 @@ namespace Weikio.EventFramework.Abstractions
             }
 
             return result;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    public class EventDescriptionAttribute : Attribute
+    {
+        public string EventType { get; }
+        public string Subject { get; }
+
+        public EventDescriptionAttribute(string eventType = null, string subject = null)
+        {
+            EventType = eventType;
+            Subject = subject;
         }
     }
 }
