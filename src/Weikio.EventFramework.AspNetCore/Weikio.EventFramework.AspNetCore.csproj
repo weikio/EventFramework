@@ -2,6 +2,23 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <LangVersion>8.0</LangVersion>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Weik.io</Authors>
+    <Company>Weik.io</Company>
+    <Description>Event Framework with ASP.NET Core made easy. Event Framework is a CloudEvents router and gateway for .NET.</Description>
+    <PackageDescription>Event Framework with ASP.NET Core made easy. Event Framework is a CloudEvents router and gateway for .NET.</PackageDescription>
+    <PackageProjectUrl>https://www.weik.io</PackageProjectUrl>
+    <Copyright>©2020 Weik.io</Copyright>
+    <PackageId>Weikio.EventFramework.AspNetCore</PackageId>
+    <Product>Weikio.EventFramework.AspNetCore</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/weikio/Weikio.EventFramework</RepositoryUrl>
+    <PackageTags>cloudevents;event gateway;event router</PackageTags>
+    <PackageIcon>logo_256.png</PackageIcon>
+    <Title>Event Framework for ASP.NET Core</Title>
+    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
   </PropertyGroup>
 
 
@@ -26,6 +43,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
   </ItemGroup>
 </Project>

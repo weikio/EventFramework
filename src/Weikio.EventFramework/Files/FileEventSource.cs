@@ -1,77 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JsonDiffPatchDotNet;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.Files
 {
-    public class EventSourceHostingService : IHostedService, IDisposable
-    {
-        private readonly ILogger<EventSourceHostingService> _logger;
-        private readonly IServiceProvider _serviceProvider;
-        private Func<Task> _start;
-        private Func<Task> _stop;
-        private Func<List<object>> _run;
-        private Action _dispose;
-
-        public EventSourceHostingService(ILogger<EventSourceHostingService> logger, IServiceProvider serviceProvider)
-        {
-            _logger = logger;
-            _serviceProvider = serviceProvider;
-        }
-
-        public void Initialize(Func<Task> start = null, Func<Task> stop = null, Func<List<object>> run = null, Action dispose = null)
-        {
-            _logger.LogDebug("Initializing event source host");
-            _start = start;
-            _stop = stop;
-            _run = run;
-            _dispose = dispose;
-            
-            IsInitialized = true;
-        }
-
-        public bool IsInitialized { get; set; }
-
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            if (_start != null)
-            {
-                return _start();
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            if (_stop != null)
-            {
-                return _stop();
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            _dispose?.Invoke();
-        }
-    }
-
-
-    public interface IContinuousHostedService
-    {
-        Task StartAsync(CancellationToken stoppingToken);
-        Task StopAsync(CancellationToken stoppingToken);
-        void Dispose();
-    }
-    
-    
     public class FileEventSource 
     {
         private readonly ILogger<FileEventSource> _logger;
@@ -125,4 +65,109 @@ namespace Weikio.EventFramework.Files
             _fileSystemWatcher.Dispose();
         }
     }
+
+    // public class TextFileContentEventSource: IHostedService, IDisposable
+    // {
+    //     private readonly ILogger<TextFileContentEventSource> _logger;
+    //     private readonly ICloudEventPublisher _cloudEventPublisher;
+    //     private Timer _timer;
+    //     private List<string> _allLines = new List<string>();
+    //
+    //     // private object _currentState;
+    //     
+    //     public TextFileContentEventSource(ILogger<TextFileContentEventSource> logger, ICloudEventPublisher cloudEventPublisher)
+    //     {
+    //         _logger = logger;
+    //         _cloudEventPublisher = cloudEventPublisher;
+    //     }
+    //
+    //     private void DoWork(object state)
+    //     {
+    //         var lines = File.ReadLines(@"c:\temp\contentfile.txt").ToList();
+    //
+    //         var myState = (MyState) state;
+    //         
+    //         var currentState = JToken.FromObject(myState.Data);
+    //         var newState = JToken.FromObject(lines);
+    //         
+    //         var diff = new JsonDiffPatch();
+    //         var res = diff.Diff(currentState, newState);
+    //
+    //         if (res?.Any() != true)
+    //         {
+    //             return;
+    //         }
+    //         
+    //         if (lines.Count <= _allLines.Count)
+    //         {
+    //             return;
+    //         }
+    //
+    //         var newLines = lines.Skip(_allLines.Count).ToList();
+    //
+    //         var result = new NewLinesAddedEvent(newLines);
+    //
+    //         myState.Data = lines;
+    //         // state = lines;
+    //
+    //         _cloudEventPublisher.Publish(result);
+    //     }
+    //
+    //     public class MyState
+    //     {
+    //         public object Data { get; set; }
+    //     }
+    //     
+    //     public Task StartAsync(CancellationToken stoppingToken)
+    //     {
+    //         var startingState = File.ReadLines(@"c:\temp\contentfile.txt").ToList();
+    //
+    //         var myState = new MyState() { Data = startingState };
+    //         
+    //         // _timer = new Timer(DoWork, myState, TimeSpan.Zero, 
+    //         //     TimeSpan.FromSeconds(15));
+    //         //
+    //         return Task.CompletedTask;
+    //         //
+    //         // _fileSystemWatcher = new FileSystemWatcher(@"c:\temp\eventf") { IncludeSubdirectories = true };
+    //         //
+    //         // _fileSystemWatcher.Created += (sender, args) =>
+    //         // {
+    //         //     _cloudEventPublisher.Publish(new FileCreatedEvent(args.Name, args.FullPath));
+    //         // };
+    //         //
+    //         // _fileSystemWatcher.Deleted += (sender, args) =>
+    //         // {
+    //         //     _cloudEventPublisher.Publish(new FileDeletedEvent(args.Name, args.FullPath));
+    //         // };
+    //         //
+    //         // _fileSystemWatcher.Changed += (sender, args) =>
+    //         // {
+    //         // };
+    //         //
+    //         // _fileSystemWatcher.Renamed += (sender, args) =>
+    //         // {
+    //         //     _cloudEventPublisher.Publish(new FileRenamed(args.Name, args.FullPath, args.OldName, args.OldFullPath));
+    //         // };
+    //         //
+    //         // _fileSystemWatcher.EnableRaisingEvents = true;
+    //
+    //         return Task.CompletedTask;
+    //     }
+    //
+    //     public Task StopAsync(CancellationToken stoppingToken)
+    //     {
+    //         _logger.LogInformation("Timed Hosted Service is stopping.");
+    //         _timer?.Change(Timeout.Infinite, 0);
+    //
+    //         return Task.CompletedTask;
+    //     }
+    //
+    //     public void Dispose()
+    //     {
+    //         _timer?.Dispose();
+    //     }
+    // }
+
+
 }

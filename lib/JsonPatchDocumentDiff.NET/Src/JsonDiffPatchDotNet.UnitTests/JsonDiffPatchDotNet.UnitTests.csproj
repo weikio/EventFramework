@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks Condition="'$(TestFrameworks)'==''">net45</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TestFrameworks)'!=''">$(TestFrameworks)</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>JsonDiffPatchDotNet.UnitTests</RootNamespace>
+    <AssemblyName>JsonDiffPatchDotNet.UnitTests</AssemblyName>
+    <DebugType>Full</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="NUnit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JsonDiffPatchDotNet\JsonDiffPatchDotNet.csproj" />
+  </ItemGroup>
+</Project>

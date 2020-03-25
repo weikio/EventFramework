@@ -32,6 +32,22 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
         }
     }
     
+    // public class NewLinesAddedHandler
+    // {
+    //     private readonly ILogger<NewLinesAddedHandler> _logger;
+    //
+    //     public NewLinesAddedHandler(ILogger<NewLinesAddedHandler> logger)
+    //     {
+    //         _logger = logger;
+    //     }
+    //
+    //     public Task Handle(NewLinesAddedEvent createdEvent)
+    //     {
+    //         _logger.LogInformation("Received {Created}", createdEvent);
+    //         return Task.CompletedTask;
+    //     }
+    // }
+    
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -64,19 +80,20 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                     // // options.TypeToEventLinksFactoryTypes.Clear();
                     // // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
                 })
-                .AddLocal("local")
-                .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
-                {
-                    client.BaseAddress = new Uri("https://webhook.site");
-                })
-                .AddHandler<RoutingHandler>(handler =>
-                {
-                    handler.IncomingGatewayName = "local";
-                    handler.OutgoingGatewayName = "web";
-                })                
-                .AddHandler<FileCreatedHandler>(nameof(FileCreatedEvent));
+                .AddLocal("local");
+                
+                // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
+                // {
+                //     client.BaseAddress = new Uri("https://webhook.site");
+                // })
+                // .AddHandler<RoutingHandler>(handler =>
+                // {
+                //     handler.IncomingGatewayName = "local";
+                //     handler.OutgoingGatewayName = "web";
+                // })                
+                // .AddHandler<NewLinesAddedHandler>(nameof(NewLinesAddedEvent));
 
-            services.AddHostedService<FileEventSource>();
+            // services.AddHostedService<TextFileContentEventSource>();
             
 
             // .AddHttp("web2", "api/events")

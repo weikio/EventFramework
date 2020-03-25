@@ -19,6 +19,7 @@ using Weikio.EventFramework.Configuration;
 using Weikio.EventFramework.EventAggregator;
 using Weikio.EventFramework.EventLinks;
 using Weikio.EventFramework.EventLinks.EventLinkFactories;
+using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Extensions;
 using Weikio.EventFramework.Publisher;
 using Weikio.EventFramework.Router;
@@ -95,6 +96,8 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
                 return new CustomEndpointConfigurationProvider(endpoints);
             });
+
+            builder.AddEventSources();
 
             return builder;
         }
