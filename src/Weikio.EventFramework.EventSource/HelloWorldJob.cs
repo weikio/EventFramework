@@ -39,18 +39,20 @@ namespace Weikio.EventFramework.EventSource
     public class HelloWorld2
     {
         private readonly ILogger<HelloWorld2> _logger;
+        
+        public int State { get; set; }
 
         public HelloWorld2(ILogger<HelloWorld2> logger)
         {
             _logger = logger;
         }
 
-        public Task<int> Execute(int state)
+        public Task Execute()
         {
-            state += 1;
-            _logger.LogInformation("Hello world! " + state);
+            State += 1;
+            _logger.LogInformation("Hello world! " + State);
 
-            return Task.FromResult(state);
+            return Task.CompletedTask;
         }
     }
 }

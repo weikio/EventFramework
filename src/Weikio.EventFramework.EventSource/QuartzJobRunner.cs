@@ -32,18 +32,60 @@ namespace Weikio.EventFramework.EventSource
                 var jobName = context.JobDetail.JobDataMap.GetString("jobtype");
 
                 var jobType = Type.GetType(jobName);
-                dynamic job = scope.ServiceProvider.GetRequiredService(jobType);
-
-                if (!context.JobDetail.JobDataMap.ContainsKey("state"))
+                if (jobType == null)
                 {
-                    context.JobDetail.JobDataMap["state"] = 0;
+                    throw new Exception($"Couldn't create type from {jobName}");
                 }
                 
-                var currentState = (int) context.JobDetail.JobDataMap["state"];
+                dynamic job = scope.ServiceProvider.GetRequiredService(jobType);
 
-                var updatedState = await job.Execute(currentState);
+                var stateProperty = jobType.GetProperties().FirstOrDefault(x =>
+                    x.CanRead && x.CanWrite && string.Equals(x.Name, "State", StringComparison.InvariantCultureIgnoreCase));
 
-                context.JobDetail.JobDataMap["state"] = updatedState;
+                if (stateProperty != null)
+                {
+                    var statePropertyType = stateProperty.PropertyType;
+                    if (!context.JobDetail.JobDataMap.ContainsKey("state"))
+                    {
+                        context.JobDetail.JobDataMap["state"] = GetDefaultValue(statePropertyType);
+                    }
+                    
+                    var currentState = context.JobDetail.JobDataMap["state"];
+
+                    stateProperty.SetValue(job, currentState);
+                }
+                
+                // if (!context.JobDetail.JobDataMap.ContainsKey("state"))
+                // {
+                //     context.JobDetail.JobDataMap["state"] = 0;
+                // }
+                //
+                // var currentState = (int) context.JobDetail.JobDataMap["state"];
+
+                await job.Execute();
+
+                if (stateProperty != null)
+                {
+                    var updatedState = stateProperty.GetValue(job);
+                    context.JobDetail.JobDataMap["state"] = updatedState;
+                }
+                //
+                // context.JobDetail.JobDataMap["state"] = updatedState;
+            }
+            
+            object GetDefaultValue(Type t)
+            {
+                if (t.IsValueType)
+                {
+                    return Activator.CreateInstance(t);
+                }
+
+                if (t.GetConstructor(Type.EmptyTypes) != null)
+                {
+                    return Activator.CreateInstance(t);
+                }
+
+                return null;
             }
         }
     }

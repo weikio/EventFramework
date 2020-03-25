@@ -26,9 +26,9 @@ namespace Weikio.EventFramework.EventSource
 
             services.AddTransient<HelloWorld2>();
             
-            services.AddSingleton(new JobSchedule(
-                jobType: typeof(HelloWorld2),
-                cronExpression: "0/30 * * * * ?"));
+            // services.AddSingleton(new JobSchedule(
+            //     jobType: typeof(HelloWorld2),
+            //     cronExpression: "0/30 * * * * ?"));
 
             services.AddSingleton(new JobSchedule(
                 jobType: typeof(HelloWorld2),
