@@ -26,6 +26,7 @@ namespace Weikio.EventFramework.EventSource
             _logger = logger;
             _jobFactory = jobFactory;
         }
+
         public IScheduler Scheduler { get; set; }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -58,23 +59,46 @@ namespace Weikio.EventFramework.EventSource
 
         private static IJobDetail CreateJob(JobSchedule schedule)
         {
-            var jobType = schedule.JobType;
-            return JobBuilder
+            var data = new JobDataMap { { "schedule", schedule } };
+
+            dynamic jobDetail = JobBuilder
                 .Create(typeof(QuartzJobRunner))
                 .WithIdentity(Guid.NewGuid().ToString())
-                .WithDescription(jobType.Name)
-                .UsingJobData("jobtype", jobType.FullName)
+                .WithDescription(Guid.NewGuid().ToString())
+                .UsingJobData(data)
                 .Build();
+
+            return jobDetail;
         }
 
         private static ITrigger CreateTrigger(JobSchedule schedule)
         {
-            return TriggerBuilder
+            if (string.IsNullOrWhiteSpace(schedule.CronExpression) && schedule.Interval == null)
+            {
+                throw new ArgumentException("Job schedule must include either cron expression or interval");
+            }
+
+            var triggerBuilder = TriggerBuilder
                 .Create()
                 .WithIdentity($"{Guid.NewGuid().ToString()}.trigger")
-                .WithCronSchedule(schedule.CronExpression)
-                .WithDescription(schedule.CronExpression)
-                .Build();
+                .WithDescription(schedule.CronExpression);
+
+            if (!string.IsNullOrWhiteSpace(schedule.CronExpression))
+            {
+                triggerBuilder = triggerBuilder.WithCronSchedule(schedule.CronExpression);
+            }
+            else
+            {
+                triggerBuilder = triggerBuilder.WithSimpleSchedule(x =>
+                {
+                    x.WithInterval(schedule.Interval.GetValueOrDefault());
+                    x.RepeatForever();
+                });
+            }
+
+            var result = triggerBuilder.Build();
+
+            return result;
         }
     }
 }

@@ -19,73 +19,31 @@ namespace Weikio.EventFramework.EventSource
     public class QuartzJobRunner : IJob
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ICloudEventPublisher _publisher;
 
-        public QuartzJobRunner(IServiceProvider serviceProvider)
+        public QuartzJobRunner(IServiceProvider serviceProvider, ICloudEventPublisher publisher)
         {
             _serviceProvider = serviceProvider;
+            _publisher = publisher;
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                var jobName = context.JobDetail.JobDataMap.GetString("jobtype");
+                var jobSchedule = (JobSchedule) context.JobDetail.JobDataMap["schedule"];
+                var action = jobSchedule.Action;
 
-                var jobType = Type.GetType(jobName);
-                if (jobType == null)
-                {
-                    throw new Exception($"Couldn't create type from {jobName}");
-                }
+                var t = action(scope.ServiceProvider, context);
+
+                await t;
                 
-                dynamic job = scope.ServiceProvider.GetRequiredService(jobType);
-
-                var stateProperty = jobType.GetProperties().FirstOrDefault(x =>
-                    x.CanRead && x.CanWrite && string.Equals(x.Name, "State", StringComparison.InvariantCultureIgnoreCase));
-
-                if (stateProperty != null)
-                {
-                    var statePropertyType = stateProperty.PropertyType;
-                    if (!context.JobDetail.JobDataMap.ContainsKey("state"))
-                    {
-                        context.JobDetail.JobDataMap["state"] = GetDefaultValue(statePropertyType);
-                    }
-                    
-                    var currentState = context.JobDetail.JobDataMap["state"];
-
-                    stateProperty.SetValue(job, currentState);
-                }
                 
-                // if (!context.JobDetail.JobDataMap.ContainsKey("state"))
+                //
+                // if (res?.Any() == true)
                 // {
-                //     context.JobDetail.JobDataMap["state"] = 0;
+                //     await _publisher.Publish(res);
                 // }
-                //
-                // var currentState = (int) context.JobDetail.JobDataMap["state"];
-
-                await job.Execute();
-
-                if (stateProperty != null)
-                {
-                    var updatedState = stateProperty.GetValue(job);
-                    context.JobDetail.JobDataMap["state"] = updatedState;
-                }
-                //
-                // context.JobDetail.JobDataMap["state"] = updatedState;
-            }
-            
-            object GetDefaultValue(Type t)
-            {
-                if (t.IsValueType)
-                {
-                    return Activator.CreateInstance(t);
-                }
-
-                if (t.GetConstructor(Type.EmptyTypes) != null)
-                {
-                    return Activator.CreateInstance(t);
-                }
-
-                return null;
             }
         }
     }

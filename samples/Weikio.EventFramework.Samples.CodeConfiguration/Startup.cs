@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -12,6 +13,7 @@ using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Configuration;
 using Weikio.EventFramework.EventLinks.EventLinkFactories;
+using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Files;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration
@@ -68,7 +70,7 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddOpenApiDocument();
 
-            services.AddEventFramework(options =>
+            var builder = services.AddEventFramework(options =>
                 {
                     options.DefaultGatewayName = "local";
 
@@ -80,7 +82,25 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                     // // options.TypeToEventLinksFactoryTypes.Clear();
                     // // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
                 })
-                .AddLocal("local");
+                .AddLocal("local")
+                .AddHandler(cl =>
+                {
+                    Debug.WriteLine("Received event");
+
+                    return Task.CompletedTask;
+                });
+
+
+            builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(5), null, new Action<HelloWorld2>(x => x.Folder = @"c:\short"));
+            builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(10), null, new Action<HelloWorld2>(x => x.Folder = @"c:\longer"));
+            
+            // var jobSchedule = new JobSchedule(typeof(HelloWorld2), "0/30 * * * * ?") { Configure = new Action<HelloWorld2>(x => x.Folder = @"c:\temp\long") };
+            // services.AddSingleton(jobSchedule);
+            //
+            // var implementationInstance =
+            //     new JobSchedule(typeof(HelloWorld2), TimeSpan.FromSeconds(5)) { Configure = new Action<HelloWorld2>(x => x.Folder = @"c:\short") };
+            //
+            // services.AddSingleton(implementationInstance);
                 
                 // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
                 // {

@@ -35,24 +35,4 @@ namespace Weikio.EventFramework.EventSource
             return Task.CompletedTask;
         }
     }
-    
-    public class HelloWorld2
-    {
-        private readonly ILogger<HelloWorld2> _logger;
-        
-        public int State { get; set; }
-
-        public HelloWorld2(ILogger<HelloWorld2> logger)
-        {
-            _logger = logger;
-        }
-
-        public Task Execute()
-        {
-            State += 1;
-            _logger.LogInformation("Hello world! " + State);
-
-            return Task.CompletedTask;
-        }
-    }
 }
