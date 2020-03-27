@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Threading.Tasks;
+using Dynamitey.DynamicObjects;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -30,10 +32,11 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
         public Task Handle(FileCreatedEvent createdEvent)
         {
             _logger.LogInformation("Received {Created}", createdEvent);
+
             return Task.CompletedTask;
         }
     }
-    
+
     // public class NewLinesAddedHandler
     // {
     //     private readonly ILogger<NewLinesAddedHandler> _logger;
@@ -49,7 +52,7 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
     //         return Task.CompletedTask;
     //     }
     // }
-    
+
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -59,12 +62,22 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
         public IConfiguration Configuration { get; }
 
+        public class CounterHandler
+        {
+            public Task Handle(CounterEvent counterEvent)
+            {
+                Console.WriteLine($"{DateTime.Now}: {counterEvent.Count}");
+
+                return Task.CompletedTask;
+            }
+        }
+
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
             services.AddHttpClient();
-            
+
             services.AddRazorPages();
             services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
 
@@ -83,17 +96,71 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                     // // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
                 })
                 .AddLocal("local")
-                .AddHandler(cl =>
-                {
-                    Debug.WriteLine("Received event");
+                .AddHandler<CounterHandler>();
 
-                    return Task.CompletedTask;
-                });
+            // .AddHandler(cl =>
+            // {
+            //     Console.WriteLine($"{DateTime.Now.ToString()} Received event");
+            //
+            //     return Task.CompletedTask;
+            // });
 
+            // builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(5), null, new Action<HelloWorld2>(x => x.Folder = @"c:\short"));
+            // builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(10), null, new Action<HelloWorld2>(x => x.Folder = @"c:\longer"));
 
-            builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(5), null, new Action<HelloWorld2>(x => x.Folder = @"c:\short"));
-            builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(10), null, new Action<HelloWorld2>(x => x.Folder = @"c:\longer"));
             
+            // builder.AddSource<int>(currentCount =>
+            // {
+            //     currentCount += 1;
+            //     var result = new CounterEvent(currentCount);
+            //
+            //     return (result, currentCount);
+            // }, TimeSpan.FromSeconds(3));
+            
+            builder.AddSource<int>(async currentCount =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                currentCount += 10;
+                var result = new CounterEvent(currentCount);
+
+                return (result, currentCount);
+            }, TimeSpan.FromSeconds(2));
+            
+            // builder.AddSource(currentCount =>
+            // {
+            //     var count = 0;
+            //
+            //     if (currentCount != null)
+            //     {
+            //         count = (int) currentCount;
+            //     }
+            //
+            //     var result = new CounterEvent(count);
+            //
+            //     // updateState(count + 1);
+            //
+            //     return Task.FromResult<(object, object)>((result, count + 1));
+            // }, TimeSpan.FromSeconds(3));
+
+            // builder.AddSource(() =>
+            // {
+            //     var res = new NewLinesAddedEvent(new List<string>());
+            //
+            //     return Task.FromResult<object>(res);
+            // }, TimeSpan.FromSeconds(3));
+
+            // builder.AddSource(() =>
+            // {
+            //     var result = new List<object>();
+            //
+            //     for (var i = 0; i < 5; i++)
+            //     {
+            //         result.Add(new NewLinesAddedEvent(new List<string>()));
+            //     }
+            //     
+            //     return Task.FromResult(result);
+            // }, TimeSpan.FromSeconds(10));
+
             // var jobSchedule = new JobSchedule(typeof(HelloWorld2), "0/30 * * * * ?") { Configure = new Action<HelloWorld2>(x => x.Folder = @"c:\temp\long") };
             // services.AddSingleton(jobSchedule);
             //
@@ -101,20 +168,19 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             //     new JobSchedule(typeof(HelloWorld2), TimeSpan.FromSeconds(5)) { Configure = new Action<HelloWorld2>(x => x.Folder = @"c:\short") };
             //
             // services.AddSingleton(implementationInstance);
-                
-                // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
-                // {
-                //     client.BaseAddress = new Uri("https://webhook.site");
-                // })
-                // .AddHandler<RoutingHandler>(handler =>
-                // {
-                //     handler.IncomingGatewayName = "local";
-                //     handler.OutgoingGatewayName = "web";
-                // })                
-                // .AddHandler<NewLinesAddedHandler>(nameof(NewLinesAddedEvent));
+
+            // .AddHttp("web", "myevents/incoming", "68d6a3d2-8cb4-4236-b0f5-442ee584558f", client =>
+            // {
+            //     client.BaseAddress = new Uri("https://webhook.site");
+            // })
+            // .AddHandler<RoutingHandler>(handler =>
+            // {
+            //     handler.IncomingGatewayName = "local";
+            //     handler.OutgoingGatewayName = "web";
+            // })                
+            // .AddHandler<NewLinesAddedHandler>(nameof(NewLinesAddedEvent));
 
             // services.AddHostedService<TextFileContentEventSource>();
-            
 
             // .AddHttp("web2", "api/events")
             // .AddHandler<SaveHandler>(clo => clo.Subject == "1234");

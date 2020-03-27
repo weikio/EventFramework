@@ -41,10 +41,27 @@ namespace Weikio.EventFramework.EventSource
             Interval = interval;
         }
 
+        public JobSchedule(Func<object, Task<object>> myFunc, TimeSpan? interval, string cronExpression)
+        {
+            MyFunc = myFunc;
+            CronExpression = cronExpression;
+            Interval = interval;
+        }
+        
+        public JobSchedule(MulticastDelegate myFunc, TimeSpan? interval, string cronExpression)
+        {
+            MyFunc2 = myFunc;
+            CronExpression = cronExpression;
+            Interval = interval;
+        }
+        
         public Func<IServiceProvider, IJobExecutionContext, Task> Action { get; set; }
         public Func<IServiceProvider, Task> Factory { get; }
         public Type JobType { get; }
         public TimeSpan? Interval { get; }
+        public Func<object, Task<object>> MyFunc { get; }
+        
+        public MulticastDelegate MyFunc2 { get; }
         public string CronExpression { get; }
         public MulticastDelegate Configure { get; set; }
     }

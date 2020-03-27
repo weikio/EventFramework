@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using JsonDiffPatchDotNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,20 +34,46 @@ namespace Weikio.EventFramework.EventSource
             using (var scope = _serviceProvider.CreateScope())
             {
                 var jobSchedule = (JobSchedule) context.JobDetail.JobDataMap["schedule"];
-                var action = jobSchedule.Action;
+                var action = jobSchedule.MyFunc2;
 
-                var t = action(scope.ServiceProvider, context);
+                var currentState = context.JobDetail.JobDataMap["state"];
 
-                await t;
-                
-                
-                //
-                // if (res?.Any() == true)
-                // {
-                //     await _publisher.Publish(res);
-                // }
+                var task = (Task) action.DynamicInvoke(new[] { currentState });
+
+                await task;
+
+                if (!task.GetType().IsGenericType)
+                {
+                    return;
+                }
+
+                var updatedState = (object) ((dynamic) task).Result;
+
+                context.JobDetail.JobDataMap["state"] = updatedState;
             }
         }
+    }
+
+    public class EventSource
+    {
+        public EventSource(Func<CloudEvent, Task<bool>> canHandle, Func<CloudEvent, Task> action)
+        {
+            CanHandle = canHandle;
+            Action = action;
+        }
+
+        public Func<CloudEvent, Task<bool>> CanHandle { get; set; }
+        public Func<CloudEvent, Task> Action { get; set; }
+    }
+
+    public class EventPublisherSource
+    {
+        public EventPublisherSource(Func<Task> action)
+        {
+            Action = action;
+        }
+
+        public Func<Task> Action { get; set; }
     }
 
     public class NewLinesAddedEvent
@@ -57,6 +85,17 @@ namespace Weikio.EventFramework.EventSource
 
         public List<string> NewLines { get; }
     }
+
+    public class CounterEvent
+    {
+        public CounterEvent(int count)
+        {
+            Count = count;
+        }
+
+        public int Count { get; }
+    }
+
     //
     // public class TextFileContentEventSource : IHostedService, IDisposable
     // {

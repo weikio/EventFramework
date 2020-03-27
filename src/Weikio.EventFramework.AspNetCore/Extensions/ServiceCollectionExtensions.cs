@@ -39,6 +39,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.Services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
             builder.Services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
+            builder.Services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
 
             builder.Services.AddTransient<HttpGatewayFactory>();
             builder.Services.AddTransient<HttpGatewayInitializer>();
@@ -46,7 +47,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
             builder.Services.TryAddSingleton<EventLinkInitializer>();
             builder.Services.TryAddTransient<IEventLinkRunner, DefaultEventLinkRunner>();
-            
+
             builder.Services.AddStartupTasks();
 
             // TODO: Collection concurrent problem in Api Framework
@@ -71,8 +72,9 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             //     builder.Services.AddTransient(typeof(ITypeToEventLinksFactory), typeToEventLinksFactoryType);
             //     builder.Services.AddTransient(typeToEventLinksFactoryType);
             // }
-            
+
             builder.Services.TryAddSingleton<ITypeToEventLinksConverter, DefaultTypeToEventLinksConverter>();
+
             foreach (var typeToEventLinksFactoryType in options.TypeToEventLinksHandlerTypes)
             {
                 builder.Services.AddTransient(typeof(ITypeToHandlers), typeToEventLinksFactoryType);

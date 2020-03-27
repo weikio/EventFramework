@@ -45,15 +45,17 @@ namespace Weikio.EventFramework.Publisher
         private readonly IOptionsMonitor<CloudEventPublisherOptions> _optionsMonitor;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CloudEventPublisher> _logger;
+        private readonly ICloudEventCreator _cloudEventCreator;
         private readonly EventFrameworkOptions _options;
 
         public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<EventFrameworkOptions> options,
-            IOptionsMonitor<CloudEventPublisherOptions> optionsMonitor, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger)
+            IOptionsMonitor<CloudEventPublisherOptions> optionsMonitor, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger, ICloudEventCreator cloudEventCreator)
         {
             _gatewayManager = gatewayManager;
             _optionsMonitor = optionsMonitor;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _cloudEventCreator = cloudEventCreator;
             _options = options.Value;
         }
 
@@ -64,6 +66,11 @@ namespace Weikio.EventFramework.Publisher
             {
                 throw new ArgumentNullException(nameof(objects));
             }
+            
+            if (string.Equals(gatewayName, GatewayName.Default))
+            {
+                gatewayName = _options.DefaultGatewayName;
+            }
 
             var cloudEvents = new List<CloudEvent>();
 
@@ -71,7 +78,7 @@ namespace Weikio.EventFramework.Publisher
             {
                 var obj = objects[index];
 
-                var cloudEvent = CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) });
+                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) });
                 cloudEvents.Add(cloudEvent);
             }
 
@@ -94,7 +101,7 @@ namespace Weikio.EventFramework.Publisher
                 throw new ArgumentNullException(nameof(obj));
             }
 
-            var cloudEvent = CreateCloudEvent(obj, eventTypeName, id, source);
+            var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source);
 
             if (string.Equals(gatewayName, GatewayName.Default))
             {
@@ -147,49 +154,6 @@ namespace Weikio.EventFramework.Publisher
             await outgoingChannel.Send(cloudEvent);
 
             return cloudEvent;
-        }
-
-        private CloudEvent CreateCloudEvent(object obj, string eventTypeName, string id, Uri source, ICloudEventExtension[] extensions = null,
-            string subject = null)
-        {
-            var options = _optionsMonitor.Get(obj.GetType().FullName);
-
-            if (string.IsNullOrEmpty(eventTypeName))
-            {
-                eventTypeName = options.GetEventTypeName(options, _serviceProvider, obj);
-            }
-
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                id = options.GetId(options, _serviceProvider, obj);
-            }
-
-            if (extensions == null)
-            {
-                extensions = options.GetExtensions(options, _serviceProvider, obj);
-            }
-
-            if (subject == null)
-            {
-                subject = options.GetSubject(options, _serviceProvider, obj);
-            }
-
-            if (source == null)
-            {
-                source = _options.DefaultSource;
-            }
-
-            try
-            {
-                var cloudEvent = new CloudEvent(eventTypeName, source, id, DateTime.UtcNow, extensions) { Data = obj, Subject = subject };
-
-                return cloudEvent;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Failed to create cloud event from {Object}", obj);
-                throw;
-            }
         }
     }
 }
