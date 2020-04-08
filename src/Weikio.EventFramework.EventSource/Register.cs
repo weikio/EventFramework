@@ -45,16 +45,22 @@ namespace Weikio.EventFramework.EventSource
                 pollingFrequency = TimeSpan.FromSeconds(30);
             }
 
+            var id = Guid.NewGuid();
+
             builder.Services.AddSingleton(provider =>
             {
-                var wrapper = provider.GetRequiredService<Wrapper>();
-                var result = wrapper.Create(action);
-                
-                var schedule = new JobSchedule(result, pollingFrequency, cronExpression);
+                var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
             });
 
+            builder.Services.AddOptions<JobOptions>(id.ToString())
+                .Configure<Wrapper>((jobOptions, wrapper) =>
+                {
+                    var act = wrapper.Create(action);
+                    jobOptions.Action = act;
+                });
+            
             return builder;
         }
         
@@ -77,15 +83,26 @@ namespace Weikio.EventFramework.EventSource
                 pollingFrequency = TimeSpan.FromSeconds(30);
             }
 
+            var id = Guid.NewGuid();
+
             builder.Services.AddSingleton(provider =>
             {
-                var wrapper = provider.GetRequiredService<Wrapper>();
-                var result = wrapper.Create(action);
-                
-                var schedule = new JobSchedule(result, pollingFrequency, cronExpression);
+                var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
             });
+
+            builder.Services.AddOptions<JobOptions>(id.ToString())
+                .Configure<Wrapper>((jobOptions, wrapper) =>
+                {
+                    var act = wrapper.Create(action);
+                    jobOptions.Action = act;
+                });
+            // builder.Services.Configure<JobOptions>(id.ToString(), (jobOptions, provider) =>
+            // {
+            //
+            // });
+            // var options = new JobOptions();
 
             return builder;
         }
@@ -100,17 +117,23 @@ namespace Weikio.EventFramework.EventSource
                 // Todo: Default form options
                 pollingFrequency = TimeSpan.FromSeconds(30);
             }
+            
+            var id = Guid.NewGuid();
 
             builder.Services.AddSingleton(provider =>
             {
-                var wrapper = provider.GetRequiredService<Wrapper>();
-                var result = wrapper.Create(action);
-                
-                var schedule = new JobSchedule(result, pollingFrequency, cronExpression);
+                var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
             });
 
+            builder.Services.AddOptions<JobOptions>(id.ToString())
+                .Configure<Wrapper>((jobOptions, wrapper) =>
+                {
+                    var act = wrapper.Create(action);
+                    jobOptions.Action = act;
+                });
+            
             return builder;
         }
 
@@ -199,87 +222,87 @@ namespace Weikio.EventFramework.EventSource
             }
         }
 
-        public static IEventFrameworkBuilder AddSource(this IEventFrameworkBuilder builder, Type sourceType, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null)
-        {
-            builder.AddEventSources();
-
-            if (sourceType == null)
-            {
-                throw new ArgumentNullException(nameof(sourceType));
-            }
-
-            if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
-            {
-                // Todo: Default form options
-                pollingFrequency = TimeSpan.FromSeconds(30);
-            }
-
-            if (builder.Services.All(x => x.ServiceType != sourceType))
-            {
-                builder.Services.AddTransient(sourceType);
-            }
-
-            builder.Services.AddSingleton(provider =>
-            {
-                var action = new Func<IServiceProvider, IJobExecutionContext, Task>((serviceProvider, context) =>
-                {
-                    dynamic job = serviceProvider.GetRequiredService(sourceType);
-
-                    if (configure != null)
-                    {
-                        configure.DynamicInvoke(new[] { job });
-                    }
-
-                    var stateProperty = sourceType.GetProperties().FirstOrDefault(x =>
-                        x.CanRead && x.CanWrite && string.Equals(x.Name, "State", StringComparison.InvariantCultureIgnoreCase));
-
-                    if (stateProperty != null)
-                    {
-                        var statePropertyType = stateProperty.PropertyType;
-
-                        if (!context.JobDetail.JobDataMap.ContainsKey("state"))
-                        {
-                            context.JobDetail.JobDataMap["state"] = GetDefaultValue(statePropertyType);
-                        }
-
-                        var currentState = context.JobDetail.JobDataMap["state"];
-
-                        stateProperty.SetValue(job, currentState);
-                    }
-
-                    // var r = new Func<Task>(async () =>
-                    // {
-                    //     var result = await job.Execute();
-                    //
-                    //     if (stateProperty != null)
-                    //     {
-                    //         var updatedState = stateProperty.GetValue(job);
-                    //         context.JobDetail.JobDataMap["state"] = updatedState;
-                    //     }
-                    //
-                    //     return result;
-                    // });
-                    // var result =  await job.Execute();
-                    //
-                    // if (stateProperty != null)
-                    // {
-                    //     var updatedState = stateProperty.GetValue(job);
-                    //     context.JobDetail.JobDataMap["state"] = updatedState;
-                    // }
-                    //
-                    // return result;
-
-                    return job.Execute();
-                });
-
-                var schedule = new JobSchedule(action, pollingFrequency, cronExpression);
-
-                return schedule;
-            });
-
-            return builder;
-        }
+        // public static IEventFrameworkBuilder AddSource(this IEventFrameworkBuilder builder, Type sourceType, TimeSpan? pollingFrequency = null,
+        //     string cronExpression = null, MulticastDelegate configure = null)
+        // {
+        //     builder.AddEventSources();
+        //
+        //     if (sourceType == null)
+        //     {
+        //         throw new ArgumentNullException(nameof(sourceType));
+        //     }
+        //
+        //     if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
+        //     {
+        //         // Todo: Default form options
+        //         pollingFrequency = TimeSpan.FromSeconds(30);
+        //     }
+        //
+        //     if (builder.Services.All(x => x.ServiceType != sourceType))
+        //     {
+        //         builder.Services.AddTransient(sourceType);
+        //     }
+        //
+        //     builder.Services.AddSingleton(provider =>
+        //     {
+        //         var action = new Func<IServiceProvider, IJobExecutionContext, Task>((serviceProvider, context) =>
+        //         {
+        //             dynamic job = serviceProvider.GetRequiredService(sourceType);
+        //
+        //             if (configure != null)
+        //             {
+        //                 configure.DynamicInvoke(new[] { job });
+        //             }
+        //
+        //             var stateProperty = sourceType.GetProperties().FirstOrDefault(x =>
+        //                 x.CanRead && x.CanWrite && string.Equals(x.Name, "State", StringComparison.InvariantCultureIgnoreCase));
+        //
+        //             if (stateProperty != null)
+        //             {
+        //                 var statePropertyType = stateProperty.PropertyType;
+        //
+        //                 if (!context.JobDetail.JobDataMap.ContainsKey("state"))
+        //                 {
+        //                     context.JobDetail.JobDataMap["state"] = GetDefaultValue(statePropertyType);
+        //                 }
+        //
+        //                 var currentState = context.JobDetail.JobDataMap["state"];
+        //
+        //                 stateProperty.SetValue(job, currentState);
+        //             }
+        //
+        //             // var r = new Func<Task>(async () =>
+        //             // {
+        //             //     var result = await job.Execute();
+        //             //
+        //             //     if (stateProperty != null)
+        //             //     {
+        //             //         var updatedState = stateProperty.GetValue(job);
+        //             //         context.JobDetail.JobDataMap["state"] = updatedState;
+        //             //     }
+        //             //
+        //             //     return result;
+        //             // });
+        //             // var result =  await job.Execute();
+        //             //
+        //             // if (stateProperty != null)
+        //             // {
+        //             //     var updatedState = stateProperty.GetValue(job);
+        //             //     context.JobDetail.JobDataMap["state"] = updatedState;
+        //             // }
+        //             //
+        //             // return result;
+        //
+        //             return job.Execute();
+        //         });
+        //
+        //         var schedule = new JobSchedule(action, pollingFrequency, cronExpression);
+        //
+        //         return schedule;
+        //     });
+        //
+        //     return builder;
+        // }
 
         static object GetDefaultValue(Type t)
         {

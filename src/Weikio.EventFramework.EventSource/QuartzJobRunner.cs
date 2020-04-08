@@ -10,6 +10,7 @@ using JsonDiffPatchDotNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using Quartz;
 using Weikio.EventFramework.Abstractions;
@@ -22,19 +23,28 @@ namespace Weikio.EventFramework.EventSource
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ICloudEventPublisher _publisher;
+        private readonly IOptionsMonitor<JobOptions> _optionsMonitor;
 
-        public QuartzJobRunner(IServiceProvider serviceProvider, ICloudEventPublisher publisher)
+        public QuartzJobRunner(IServiceProvider serviceProvider, ICloudEventPublisher publisher, IOptionsMonitor<JobOptions> optionsMonitor)
         {
             _serviceProvider = serviceProvider;
             _publisher = publisher;
+            _optionsMonitor = optionsMonitor;
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                var jobSchedule = (JobSchedule) context.JobDetail.JobDataMap["schedule"];
-                var action = jobSchedule.MyFunc2;
+                var id = Guid.Parse(context.JobDetail.Key.Name);
+                var options = _optionsMonitor.Get(id.ToString());
+                if (options.Action == null)
+                {
+                    throw new Exception("Unknown action to run");
+                }
+                
+                // var jobSchedule = (JobSchedule) context.JobDetail.JobDataMap["schedule"];
+                var action = options.Action;
 
                 var currentState = context.JobDetail.JobDataMap["state"];
 

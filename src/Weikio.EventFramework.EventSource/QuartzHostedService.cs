@@ -59,13 +59,13 @@ namespace Weikio.EventFramework.EventSource
 
         private static IJobDetail CreateJob(JobSchedule schedule)
         {
-            var data = new JobDataMap { { "schedule", schedule } };
+            // var data = new JobDataMap { { "schedule", schedule }, {"myId", schedule.Id } };
 
             dynamic jobDetail = JobBuilder
                 .Create(typeof(QuartzJobRunner))
-                .WithIdentity(Guid.NewGuid().ToString())
-                .WithDescription(Guid.NewGuid().ToString())
-                .UsingJobData(data)
+                .WithIdentity(schedule.Id.ToString())
+                .WithDescription(schedule.Id.ToString())
+                // .UsingJobData(data)
                 .Build();
 
             return jobDetail;
@@ -80,7 +80,7 @@ namespace Weikio.EventFramework.EventSource
 
             var triggerBuilder = TriggerBuilder
                 .Create()
-                .WithIdentity($"{Guid.NewGuid().ToString()}.trigger")
+                .WithIdentity($"{schedule.Id}.trigger")
                 .WithDescription(schedule.CronExpression);
 
             if (!string.IsNullOrWhiteSpace(schedule.CronExpression))
