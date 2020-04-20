@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Weik.io</Authors>
+    <Company>Weik.io</Company>
+    <Description>CloudEvent Creator provides functionality for converting objects to CloudEvents.</Description>
+    <PackageDescription>CloudEvent Creator provides functionality for converting objects to CloudEvents.</PackageDescription>
+    <PackageProjectUrl>https://www.weik.io</PackageProjectUrl>
+    <Copyright>©2020 Weik.io</Copyright>
+    <PackageId>Weikio.EventFramework.EventCreator</PackageId>
+    <Product>Weikio.EventFramework.EventCreator</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/weikio/Weikio.EventFramework</RepositoryUrl>
+    <PackageTags>cloudevents;event framework</PackageTags>
+    <PackageIcon>logo_256.png</PackageIcon>
+    <Title>CloudEvent Creator for .NET</Title>
+    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="2.0.0" />
+    <PackageReference Include="CloudNative.CloudEvents" Version="1.3.80" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../docs/logo_256.png" Pack="true" Visible="false" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -59,13 +59,10 @@ namespace Weikio.EventFramework.EventSource
 
         private static IJobDetail CreateJob(JobSchedule schedule)
         {
-            // var data = new JobDataMap { { "schedule", schedule }, {"myId", schedule.Id } };
-
             dynamic jobDetail = JobBuilder
                 .Create(typeof(QuartzJobRunner))
                 .WithIdentity(schedule.Id.ToString())
                 .WithDescription(schedule.Id.ToString())
-                // .UsingJobData(data)
                 .Build();
 
             return jobDetail;

@@ -16,6 +16,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibrary1", "..\lib\Jso
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource", "Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj", "{F4061501-E075-4A8A-951A-B6A9782A60F5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventCreator", "Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj", "{42C5A117-FE39-4565-AD8F-C4DB948CF15F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventFramework.EventCreator.IntegrationTests", "..\tests\integration\EventFramework.EventCreator.IntegrationTests\EventFramework.EventCreator.IntegrationTests.csproj", "{B2B719A5-2239-403A-8700-DC1458DC9C73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventCreation", "..\tests\integration\WebSites\EventCreation\EventCreation.csproj", "{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{30403192-0863-4425-AD5E-B218C34615CD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebSites", "WebSites", "{E03DFF5E-E29E-4652-85BC-22F22D049AFF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,9 +56,24 @@ Global
 		{F4061501-E075-4A8A-951A-B6A9782A60F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4061501-E075-4A8A-951A-B6A9782A60F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4061501-E075-4A8A-951A-B6A9782A60F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42C5A117-FE39-4565-AD8F-C4DB948CF15F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42C5A117-FE39-4565-AD8F-C4DB948CF15F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42C5A117-FE39-4565-AD8F-C4DB948CF15F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42C5A117-FE39-4565-AD8F-C4DB948CF15F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2B719A5-2239-403A-8700-DC1458DC9C73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2B719A5-2239-403A-8700-DC1458DC9C73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2B719A5-2239-403A-8700-DC1458DC9C73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2B719A5-2239-403A-8700-DC1458DC9C73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
 		{31999C92-BF2C-4307-8F3B-F5CA9E8A6D99} = {B1DB1B6F-EE76-4913-9D13-4B9FAAACB330}
+		{E03DFF5E-E29E-4652-85BC-22F22D049AFF} = {30403192-0863-4425-AD5E-B218C34615CD}
+		{6E0B6885-4CA4-4C5E-975B-4440363FA8F7} = {E03DFF5E-E29E-4652-85BC-22F22D049AFF}
+		{B2B719A5-2239-403A-8700-DC1458DC9C73} = {30403192-0863-4425-AD5E-B218C34615CD}
 	EndGlobalSection
 EndGlobal

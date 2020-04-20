@@ -83,20 +83,20 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddOpenApiDocument();
 
-            var builder = services.AddEventFramework(options =>
-                {
-                    options.DefaultGatewayName = "local";
-
-                    // options.TypeToEventLinksHandlerTypes.Clear();
-                    // options.TypeToEventLinksHandlerTypes.Add(typeof(PublicTasksToHandlers));
-                    // options.TypeToEventLinksHandlerTypes.Add(typeof(CloudEventsToTypeHandlers));
-                    // options.TypeToEventLinksHandlerTypes.Add(typeof(GenericCloudEventsToTypeHandlers));
-                    //
-                    // // options.TypeToEventLinksFactoryTypes.Clear();
-                    // // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
-                })
-                .AddLocal("local")
-                .AddHandler<CounterHandler>();
+            // var builder = services.AddEventFramework(options =>
+            //     {
+            //         options.DefaultGatewayName = "local";
+            //
+            //         // options.TypeToEventLinksHandlerTypes.Clear();
+            //         // options.TypeToEventLinksHandlerTypes.Add(typeof(PublicTasksToHandlers));
+            //         // options.TypeToEventLinksHandlerTypes.Add(typeof(CloudEventsToTypeHandlers));
+            //         // options.TypeToEventLinksHandlerTypes.Add(typeof(GenericCloudEventsToTypeHandlers));
+            //         //
+            //         // // options.TypeToEventLinksFactoryTypes.Clear();
+            //         // // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
+            //     })
+            //     .AddLocal("local")
+            //     .AddHandler<CounterHandler>();
 
             // .AddHandler(cl =>
             // {
@@ -116,15 +116,15 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             //
             //     return (result, currentCount);
             // }, TimeSpan.FromSeconds(3));
-            
-            builder.AddSource<int>(async currentCount =>
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1));
-                currentCount += 10;
-                var result = new CounterEvent(currentCount);
-
-                return (result, currentCount);
-            }, TimeSpan.FromSeconds(2));
+            //
+            // builder.AddSource<int>(async currentCount =>
+            // {
+            //     await Task.Delay(TimeSpan.FromSeconds(1));
+            //     currentCount += 10;
+            //     var result = new CounterEvent(currentCount);
+            //
+            //     return (result, currentCount);
+            // }, TimeSpan.FromSeconds(2));
             
             // builder.AddSource(currentCount =>
             // {

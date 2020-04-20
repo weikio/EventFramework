@@ -220,6 +220,33 @@ namespace Weikio.EventFramework.EventSource
 
                 return result;
             }
+            
+            public Func<TStateType, Task<TStateType>> Create<TStateType>(Func<TStateType, IServiceProvider, Task<(object CloudEvent, TStateType UpdatedState)>> action)
+            {
+                var result = new Func<TStateType, Task<TStateType>>(async (state) =>
+                {
+                    try
+                    {
+                        var cloudEvent = action(state, _serviceProvider);
+                        var res = await cloudEvent;
+
+                        if (res.CloudEvent != null)
+                        {
+                            await _publisher.Publish(res.CloudEvent);
+                        }
+
+                        return res.UpdatedState;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+
+                        throw;
+                    }
+                });
+
+                return result;
+            }
         }
 
         // public static IEventFrameworkBuilder AddSource(this IEventFrameworkBuilder builder, Type sourceType, TimeSpan? pollingFrequency = null,

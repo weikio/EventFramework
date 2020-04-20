@@ -17,6 +17,7 @@ using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Gateways;
 using Weikio.EventFramework.Configuration;
 using Weikio.EventFramework.EventAggregator;
+using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventLinks;
 using Weikio.EventFramework.EventLinks.EventLinkFactories;
 using Weikio.EventFramework.EventSource;
@@ -39,8 +40,9 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.Services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
             builder.Services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
-            builder.Services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
 
+            builder.AddEventCreation();
+            
             builder.Services.AddTransient<HttpGatewayFactory>();
             builder.Services.AddTransient<HttpGatewayInitializer>();
             builder.Services.TryAddSingleton<RouteInitializer>();
