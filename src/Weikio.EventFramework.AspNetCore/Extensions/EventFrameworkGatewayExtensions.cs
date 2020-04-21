@@ -2,6 +2,7 @@
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.AspNetCore.Gateways;
 using Weikio.EventFramework.Gateways;
 

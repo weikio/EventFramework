@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.EventAggregator;
-using Weikio.EventFramework.EventLinks.EventLinkFactories;
+using Weikio.EventFramework.Abstractions.DependencyInjection;
+using Weikio.EventFramework.EventAggregator.AspNetCore;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
 {

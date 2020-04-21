@@ -40,7 +40,14 @@
   <ItemGroup>
     <ProjectReference Include="..\..\lib\JsonPatchDocumentDiff.NET\Src\ClassLibrary1\ClassLibrary1.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventAggregator.Core\Weikio.EventFramework.EventAggregator.Core.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventGateway\Weikio.EventFramework.EventGateway.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventPublisher\Weikio.EventFramework.EventPublisher.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Files" />
   </ItemGroup>
 
 </Project>

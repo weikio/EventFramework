@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
+      <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+      <ProjectReference Include="..\Weikio.EventFramework.EventAggregator.Core\Weikio.EventFramework.EventAggregator.Core.csproj" />
+    </ItemGroup>
+
+</Project>

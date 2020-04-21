@@ -2,20 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
-using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.Configuration;
+using Weikio.EventFramework.Abstractions.DependencyInjection;
+using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource
 {
     public static class Register
     {
-        public static IEventFrameworkBuilder AddEventSources(this IEventFrameworkBuilder builder, Action<EventFrameworkOptions> setupAction = null)
+        public static IEventFrameworkBuilder AddEventSources(this IEventFrameworkBuilder builder, Action<EventSourceOptions> setupAction = null)
         {
             var services = builder.Services;
 
@@ -29,6 +28,11 @@ namespace Weikio.EventFramework.EventSource
             if (services.All(x => x.ImplementationType != typeof(QuartzHostedService)))
             {
                 services.AddHostedService<QuartzHostedService>();
+            }
+
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
             }
 
             return builder;
@@ -345,5 +349,9 @@ namespace Weikio.EventFramework.EventSource
 
             return null;
         }
+    }
+
+    public class EventSourceOptions
+    {
     }
 }

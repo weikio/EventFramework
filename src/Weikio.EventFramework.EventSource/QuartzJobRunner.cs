@@ -1,19 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using JsonDiffPatchDotNet;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
 using Quartz;
-using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource
 {

@@ -1,20 +1,20 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Abstractions.DependencyInjection;
 
 namespace Weikio.EventFramework.EventCreator
 {
     public static class ServiceCollectionExtensions
     {
-        public static IEventFrameworkBuilder AddEventCreation(this IEventFrameworkBuilder builder, Action<EventCreationOptions> setupAction = null)
+        public static IEventFrameworkBuilder AddEventCreator(this IEventFrameworkBuilder builder, Action<EventCreationOptions> setupAction = null)
         {
-            AddEventCreation(builder.Services, setupAction);
+            AddEventCreator(builder.Services, setupAction);
 
             return builder;
         }
 
-        public static IServiceCollection AddEventCreation(this IServiceCollection services, Action<EventCreationOptions> setupAction = null)
+        public static IServiceCollection AddEventCreator(this IServiceCollection services, Action<EventCreationOptions> setupAction = null)
         {
             services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
 

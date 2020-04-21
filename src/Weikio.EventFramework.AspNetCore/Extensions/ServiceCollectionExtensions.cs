@@ -14,15 +14,14 @@ using Weikio.ApiFramework.Core.HealthChecks;
 using Weikio.ApiFramework.Core.Infrastructure;
 using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.AspNetCore.Gateways;
-using Weikio.EventFramework.Configuration;
-using Weikio.EventFramework.EventAggregator;
+using Weikio.EventFramework.EventAggregator.AspNetCore;
 using Weikio.EventFramework.EventCreator;
-using Weikio.EventFramework.EventLinks;
-using Weikio.EventFramework.EventLinks.EventLinkFactories;
+using Weikio.EventFramework.EventGateway;
+using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Extensions;
-using Weikio.EventFramework.Publisher;
 using Weikio.EventFramework.Router;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
@@ -33,22 +32,18 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
         {
             var builder = new EventFrameworkBuilder(services);
 
-            builder.Services.TryAddSingleton<ICloudEventPublisher, CloudEventPublisher>();
-            builder.Services.TryAddSingleton<ICloudEventGatewayManager, CloudEventGatewayManager>();
-            builder.Services.TryAddSingleton<ICloudEventAggregator, CloudEventAggregator>();
+            builder.AddEventPublisher();
+            builder.AddEventCreator();
+            builder.AddEventAggregator();
+            builder.AddEventGateway();
+            
             builder.Services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
             builder.Services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
-            builder.Services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
 
-            builder.AddEventCreation();
-            
             builder.Services.AddTransient<HttpGatewayFactory>();
             builder.Services.AddTransient<HttpGatewayInitializer>();
             builder.Services.TryAddSingleton<RouteInitializer>();
-
-            builder.Services.TryAddSingleton<EventLinkInitializer>();
-            builder.Services.TryAddTransient<IEventLinkRunner, DefaultEventLinkRunner>();
 
             builder.Services.AddStartupTasks();
 
@@ -65,23 +60,9 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
             var options = new EventFrameworkOptions();
             setupAction?.Invoke(options);
-
+            
             var conf = Options.Create(options);
             builder.Services.AddSingleton<IOptions<EventFrameworkOptions>>(conf);
-
-            // foreach (var typeToEventLinksFactoryType in options.TypeToEventLinksFactoryTypes)
-            // {
-            //     builder.Services.AddTransient(typeof(ITypeToEventLinksFactory), typeToEventLinksFactoryType);
-            //     builder.Services.AddTransient(typeToEventLinksFactoryType);
-            // }
-
-            builder.Services.TryAddSingleton<ITypeToEventLinksConverter, DefaultTypeToEventLinksConverter>();
-
-            foreach (var typeToEventLinksFactoryType in options.TypeToEventLinksHandlerTypes)
-            {
-                builder.Services.AddTransient(typeof(ITypeToHandlers), typeToEventLinksFactoryType);
-                builder.Services.AddTransient(typeToEventLinksFactoryType);
-            }
 
             builder.Services.AddSingleton<IEndpointConfigurationProvider>(provider =>
             {
@@ -105,6 +86,10 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
 
             return builder;
         }
+    }
+
+    public class EventFrameworkOptions
+    {
     }
 
     public class CustomHttpVerbResolver : IEndpointHttpVerbResolver

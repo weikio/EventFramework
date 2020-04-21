@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Context;
+using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.Router
 {

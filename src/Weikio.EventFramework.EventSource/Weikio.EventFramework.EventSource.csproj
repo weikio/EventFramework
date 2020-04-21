@@ -31,7 +31,9 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Router\Weikio.EventFramework.Router.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
   </ItemGroup>
 

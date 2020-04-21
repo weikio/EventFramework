@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.AspNetCore.Gateways;
+using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 {

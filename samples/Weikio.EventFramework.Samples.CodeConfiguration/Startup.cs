@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection.Metadata;
 using System.Threading.Tasks;
-using Dynamitey.DynamicObjects;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -11,10 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.AspNetCore.Extensions;
-using Weikio.EventFramework.Configuration;
-using Weikio.EventFramework.EventLinks.EventLinkFactories;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Files;
 

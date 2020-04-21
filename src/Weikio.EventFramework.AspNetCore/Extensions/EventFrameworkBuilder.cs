@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Abstractions.DependencyInjection;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
 {
