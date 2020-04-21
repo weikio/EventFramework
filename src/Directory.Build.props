@@ -1,0 +1,24 @@
+<Project>
+  
+  <PropertyGroup>
+    <Authors>Weik.io</Authors>
+    <Company>Weik.io</Company>
+    <PackageIcon>logo_256.png</PackageIcon>
+    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/weikio/Weikio.EventFramework</RepositoryUrl>
+    <PackageProjectUrl>https://www.weik.io</PackageProjectUrl>
+    <Copyright>©2020 Weik.io</Copyright>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="2.0.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="../../docs/logo_256.png" Pack="true" Visible="false" PackagePath="" />
+  </ItemGroup>
+  
+  
+</Project>

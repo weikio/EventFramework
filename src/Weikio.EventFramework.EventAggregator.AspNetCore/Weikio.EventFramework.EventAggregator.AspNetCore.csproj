@@ -4,20 +4,12 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Weik.io</Authors>
-    <Company>Weik.io</Company>
     <Description>Event Aggregator for handling Cloud Events. Built on top of the Event Framework.</Description>
     <PackageDescription>Event Aggregator for handling Cloud Events. Built on top of the Event Framework.</PackageDescription>
-    <PackageProjectUrl>https://www.weik.io</PackageProjectUrl>
-    <Copyright>©2020 Weik.io</Copyright>
     <PackageId>Weikio.EventFramework.EventAggregator</PackageId>
     <Product>Weikio.EventFramework.EventAggregator</Product>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/weikio/Weikio.EventFramework</RepositoryUrl>
     <PackageTags>event aggregator;cloudevents;event gateway;</PackageTags>
-    <PackageIcon>logo_256.png</PackageIcon>
     <Title>Cloud Events Aggregator for ASP.NET Core</Title>
-    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
   </PropertyGroup>
 
   <ItemGroup>

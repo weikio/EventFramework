@@ -2,23 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <LangVersion>8.0</LangVersion>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Weik.io</Authors>
-    <Company>Weik.io</Company>
     <Description>Event Source hosting for Event Framework. Event Framework is a CloudEvents router and gateway for .NET.</Description>
     <PackageDescription>Event Source hosting for Event Framework. Event Framework is a CloudEvents router and gateway for .NET.</PackageDescription>
-    <PackageProjectUrl>https://www.weik.io</PackageProjectUrl>
-    <Copyright>©2020 Weik.io</Copyright>
     <PackageId>Weikio.EventFramework.EventSource</PackageId>
     <Product>Weikio.EventFramework.EventSource</Product>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/weikio/Weikio.EventFramework</RepositoryUrl>
     <PackageTags>cloudevents;event gateway;event router</PackageTags>
-    <PackageIcon>logo_256.png</PackageIcon>
     <Title>Event Source hosting for ASP.NET Core</Title>
-    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MinVer" Version="2.0.0" />
     <PackageReference Include="Quartz" Version="3.0.7" />
   </ItemGroup>
   
@@ -36,9 +26,5 @@
     <ProjectReference Include="..\Weikio.EventFramework.Router\Weikio.EventFramework.Router.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Include="../../docs/logo_256.png" Pack="true" Visible="false" PackagePath="" />
-  </ItemGroup>
-  
+ 
 </Project>

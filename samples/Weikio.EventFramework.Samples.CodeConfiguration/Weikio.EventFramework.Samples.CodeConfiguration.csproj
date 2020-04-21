@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\src\Weikio.EventFramework.Plugins.Files\Weikio.EventFramework.Plugins.Files.csproj" />
   </ItemGroup>
 
   <ItemGroup>
