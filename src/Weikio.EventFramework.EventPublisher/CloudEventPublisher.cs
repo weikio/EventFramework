@@ -6,6 +6,7 @@ using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventGateway;
 
 namespace Weikio.EventFramework.EventPublisher
 {

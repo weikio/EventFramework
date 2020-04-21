@@ -35,23 +35,22 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.AddCloudEventCreator();
             builder.AddCloudEventAggregator();
             builder.AddCloudEventGateway();
-            
-            builder.Services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
-            builder.Services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
+            builder.AddEventSources();
+
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
 
+            services.AddHostedService<ServiceCreationHostedService>();
+            services.AddHostedService<RouteInitializationStartupTask>();
+            
             builder.Services.TryAddSingleton<RouteInitializer>();
 
-            builder.Services.AddStartupTasks();
-
+            // builder.Services.AddStartupTasks();
 
             var options = new EventFrameworkOptions();
             setupAction?.Invoke(options);
             
             var conf = Options.Create(options);
             builder.Services.AddSingleton<IOptions<EventFrameworkOptions>>(conf);
-
-            builder.AddEventSources();
 
             return builder;
         }

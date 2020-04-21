@@ -7,8 +7,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.EventGateway.Http;
+using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.Extensions.EventAggregator;
 using Weikio.EventFramework.Files;
+using Weikio.EventFramework.Router;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration
 {
@@ -75,20 +80,20 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddOpenApiDocument();
 
-            // var builder = services.AddEventFramework(options =>
-            //     {
-            //         options.DefaultGatewayName = "local";
+            // services.Configure<CloudEventPublisherOptions>(options =>
+            // {
+            //     options.DefaultGatewayName = "local";
+            // });
             //
-            //         // options.TypeToEventLinksHandlerTypes.Clear();
-            //         // options.TypeToEventLinksHandlerTypes.Add(typeof(PublicTasksToHandlers));
-            //         // options.TypeToEventLinksHandlerTypes.Add(typeof(CloudEventsToTypeHandlers));
-            //         // options.TypeToEventLinksHandlerTypes.Add(typeof(GenericCloudEventsToTypeHandlers));
-            //         //
-            //         // // options.TypeToEventLinksFactoryTypes.Clear();
-            //         // // options.TypeToEventLinksFactoryTypes.Add(typeof(PublicTasksToEventLinksFactory));
-            //     })
-            //     .AddLocal("local")
-            //     .AddHandler<CounterHandler>();
+            var builder = services.AddEventFramework()
+                .AddLocal("local")
+                .AddHttpGateway("web", "myevents/incoming", "16247d99-b297-4711-899a-e4e8f78c13d5", client =>
+                {
+                    client.BaseAddress = new Uri("https://webhook.site");
+                })
+                .AddRoute("local", "web");
+
+            // .AddHandler<CounterHandler>();
 
             // .AddHandler(cl =>
             // {
@@ -100,7 +105,6 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             // builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(5), null, new Action<HelloWorld2>(x => x.Folder = @"c:\short"));
             // builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(10), null, new Action<HelloWorld2>(x => x.Folder = @"c:\longer"));
 
-            
             // builder.AddSource<int>(currentCount =>
             // {
             //     currentCount += 1;
@@ -117,7 +121,7 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             //
             //     return (result, currentCount);
             // }, TimeSpan.FromSeconds(2));
-            
+
             // builder.AddSource(currentCount =>
             // {
             //     var count = 0;

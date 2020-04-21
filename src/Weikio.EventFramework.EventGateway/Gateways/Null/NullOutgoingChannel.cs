@@ -1,8 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.Gateways.Null
+namespace Weikio.EventFramework.EventGateway.Gateways.Null
 {
     public class NullOutgoingChannel : IOutgoingChannel
     {

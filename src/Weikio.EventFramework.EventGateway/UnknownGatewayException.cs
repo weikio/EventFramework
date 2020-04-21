@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Weikio.EventFramework.Abstractions
+namespace Weikio.EventFramework.EventGateway
 {
     public class UnknownGatewayException : Exception
     {

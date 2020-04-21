@@ -1,28 +1,25 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.Context;
 using Weikio.EventFramework.EventAggregator.Core;
+using Weikio.EventFramework.Router;
 
-namespace Weikio.EventFramework.Router
+namespace Weikio.EventFramework.EventGateway
 {
     public class CloudEventRouterService : BackgroundService, ICloudEventRouterService
     {
         private IIncomingChannel _incomingChannel;
-        private readonly ICloudEventRouteCollection _cloudEventRouteCollection;
         private readonly ICloudEventAggregator _cloudEventAggregator;
         private readonly ILogger _logger;
         private ICloudEventGateway _gateway;
 
         private bool IsInitialized { get; set; }
 
-        public CloudEventRouterService(ILogger<CloudEventRouterService> logger, ICloudEventRouteCollection cloudEventRouteCollection, ICloudEventAggregator cloudEventAggregator)
+        public CloudEventRouterService(ILogger<CloudEventRouterService> logger, ICloudEventAggregator cloudEventAggregator)
         {
-            _cloudEventRouteCollection = cloudEventRouteCollection;
             _cloudEventAggregator = cloudEventAggregator;
             _logger = logger;
         }

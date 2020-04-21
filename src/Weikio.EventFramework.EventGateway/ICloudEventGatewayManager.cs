@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Weikio.EventFramework.Abstractions
+namespace Weikio.EventFramework.EventGateway
 {
     public interface ICloudEventGatewayManager
     {

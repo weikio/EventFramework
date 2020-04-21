@@ -1,8 +1,7 @@
 ﻿using System.Threading.Channels;
 using CloudNative.CloudEvents;
-using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.Gateways
+namespace Weikio.EventFramework.EventGateway.Gateways.Local
 {
     public class LocalIncomingChannel : IIncomingChannel
     {

@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
-using Weikio.EventFramework.Gateways;
+using Weikio.EventFramework.EventGateway;
+using Weikio.EventFramework.EventGateway.Gateways.Local;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
 {

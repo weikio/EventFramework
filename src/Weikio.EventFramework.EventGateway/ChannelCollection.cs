@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 
-namespace Weikio.EventFramework.Abstractions
+namespace Weikio.EventFramework.EventGateway
 {
     public class ChannelCollection : List<IChannel>, IChannelCollection
     {

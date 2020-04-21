@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Weikio.AspNetCore.StartupTasks;
-using Weikio.EventFramework.EventAggregator.Core;
 
-namespace Weikio.EventFramework.EventAggregator.AspNetCore
+namespace Weikio.EventFramework.EventAggregator.Core
 {
-    public class EventLinkStartupTask : IStartupTask
+    public class EventLinkStartupTask : IHostedService //IStartupTask
     {
         private readonly IEnumerable<EventLink> _eventLinks;
         private readonly IEnumerable<EventLinkSource> _eventLinkSources;
@@ -23,7 +22,7 @@ namespace Weikio.EventFramework.EventAggregator.AspNetCore
             _logger = logger;
         }
 
-        public Task Execute(CancellationToken cancellationToken)
+        public void Execute(CancellationToken cancellationToken)
         {
             foreach (var eventLink in _eventLinks)
             {
@@ -42,8 +41,19 @@ namespace Weikio.EventFramework.EventAggregator.AspNetCore
             {
                 _handlerInitializer.Initialize(eventLink);
             }
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            Execute(cancellationToken);
 
             return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+            // throw new System.NotImplementedException();
         }
     }
 }

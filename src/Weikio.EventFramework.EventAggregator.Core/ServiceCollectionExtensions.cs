@@ -24,6 +24,7 @@ namespace Weikio.EventFramework.EventAggregator.Core
             services.TryAddTransient<IEventLinkRunner, DefaultEventLinkRunner>();
 
             services.TryAddSingleton<ITypeToEventLinksConverter, DefaultTypeToEventLinksConverter>();
+            services.AddHostedService<EventLinkStartupTask>();
 
             var options = new CloudEventAggregatorOptions();
             setupAction?.Invoke(options);

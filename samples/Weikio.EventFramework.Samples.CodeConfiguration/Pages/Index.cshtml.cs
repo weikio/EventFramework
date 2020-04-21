@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages

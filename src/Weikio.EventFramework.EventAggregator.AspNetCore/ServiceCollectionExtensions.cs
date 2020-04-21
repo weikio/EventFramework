@@ -19,7 +19,7 @@ namespace Weikio.EventFramework.EventAggregator.AspNetCore
         {
             services.AddCloudEventAggregatorCore();
             services.AddStartupTasks();
-
+            
             return services;
         }
     }

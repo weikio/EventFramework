@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.Gateways
+namespace Weikio.EventFramework.EventGateway
 {
     public class CloudEventGateway : ICloudEventGateway
     {

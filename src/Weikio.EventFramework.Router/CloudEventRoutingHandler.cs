@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.Router

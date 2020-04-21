@@ -9,7 +9,6 @@ using Weikio.ApiFramework.Core.Apis;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.ApiFramework.Core.Extensions;
 using Weikio.ApiFramework.Core.HealthChecks;
-using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration;
 
@@ -17,6 +16,8 @@ namespace Weikio.EventFramework.EventGateway.Http
 {
     public static class EventFrameworkHttpGatewayExtensions
     {
+        private static bool _apiFrameworkAdded = false;
+        
         public static IEventFrameworkBuilder AddHttpGateways(this IEventFrameworkBuilder builder)
         {
             AddHttpGateways(builder.Services);
@@ -26,20 +27,28 @@ namespace Weikio.EventFramework.EventGateway.Http
         
         public static IServiceCollection AddHttpGateways(this IServiceCollection services)
         {
+            services.AddCloudEventGateway();
+            
             services.AddHttpContextAccessor();
 
             services.TryAddTransient<HttpGatewayFactory>();
             services.TryAddTransient<HttpGatewayInitializer>();
             // TODO: Collection concurrent problem in Api Framework
             services.TryAddSingleton<IEndpointInitializer, SyncEndpointInitializer>();
-            
-            services.AddApiFrameworkCore(options =>
+
+            // TODO: Fix AddApiFrameworkCore so that it can be called multiple times. Now breaks because of the health check
+            if (_apiFrameworkAdded == false)
             {
-                options.ApiAddressBase = "";
-                options.AutoResolveEndpoints = false;
-                options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
-                options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
-            });
+                services.AddApiFrameworkCore(options =>
+                {
+                    options.ApiAddressBase = "";
+                    options.AutoResolveEndpoints = false;
+                    options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
+                    options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
+                });
+
+                _apiFrameworkAdded = true;
+            }
             
             services.TryAddSingleton<IEndpointConfigurationProvider>(provider =>
             {
@@ -62,7 +71,7 @@ namespace Weikio.EventFramework.EventGateway.Http
             return services;
         }
         
-        public static IEventFrameworkBuilder AddHttp(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint, 
+        public static IEventFrameworkBuilder AddHttpGateway(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint, 
             string outgoingEndpoint = HttpGateway.DefaultEndpoint, Action<HttpClient> configureClient = null)
         {
             AddHttpGateways(builder.Services);
@@ -80,6 +89,25 @@ namespace Weikio.EventFramework.EventGateway.Http
             });
 
             return builder;
+        }
+        public static IServiceCollection AddHttpGateway(this IServiceCollection services, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint, 
+            string outgoingEndpoint = HttpGateway.DefaultEndpoint, Action<HttpClient> configureClient = null)
+        {
+            AddHttpGateways(services);
+            
+            services.AddTransient(provider =>
+            {
+                var factory = provider.GetRequiredService<HttpGatewayFactory>();
+
+                return factory.Create(name, endpoint, outgoingEndpoint);
+            });
+
+            services.AddHttpClient(name, client =>
+            {
+                configureClient?.Invoke(client);
+            });
+
+            return services;
         }
     }
 }

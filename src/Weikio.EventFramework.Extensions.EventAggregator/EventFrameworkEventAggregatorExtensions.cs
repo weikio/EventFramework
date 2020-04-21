@@ -76,6 +76,12 @@ namespace Weikio.EventFramework.Extensions.EventAggregator
         {
             return builder.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(true), configure);
         }
+        
+        public static IServiceCollection AddHandler<THandlerType>(this IServiceCollection services, Action<THandlerType> configure = null)
+            where THandlerType : class
+        {
+            return services.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(true), configure);
+        }
 
         public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, CloudEventCriteria criteria,
             Action<THandlerType> configure = null)
@@ -83,12 +89,27 @@ namespace Weikio.EventFramework.Extensions.EventAggregator
         {
             return builder.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(criteria.CanHandle(cloudEvent)), configure);
         }
+        
+        public static IServiceCollection AddHandler<THandlerType>(this IServiceCollection services, CloudEventCriteria criteria,
+            Action<THandlerType> configure = null)
+            where THandlerType : class
+        {
+            return services.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(criteria.CanHandle(cloudEvent)), configure);
+        }
+
 
         public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, Func<CloudEvent, Task<bool>> canHandle,
             Action<THandlerType> configure = null)
             where THandlerType : class
         {
             return builder.AddHandler(typeof(THandlerType), canHandle, configure);
+        }
+        
+        public static IServiceCollection AddHandler<THandlerType>(this IServiceCollection services, Func<CloudEvent, Task<bool>> canHandle,
+            Action<THandlerType> configure = null)
+            where THandlerType : class
+        {
+            return services.AddHandler(typeof(THandlerType), canHandle, configure);
         }
 
         public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, Predicate<CloudEvent> canHandle,
@@ -98,18 +119,41 @@ namespace Weikio.EventFramework.Extensions.EventAggregator
             return builder.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(canHandle(cloudEvent)), configure);
         }
 
+        public static IServiceCollection AddHandler<THandlerType>(this IServiceCollection services, Predicate<CloudEvent> canHandle,
+            Action<THandlerType> configure = null)
+            where THandlerType : class
+        {
+            return services.AddHandler(typeof(THandlerType), cloudEvent => Task.FromResult(canHandle(cloudEvent)), configure);
+        }
+
+        
         public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, string eventType,
             Action<THandlerType> configure = null) where THandlerType : class
         {
             return builder.AddHandler<THandlerType>(eventType, string.Empty, configure);
         }
 
+                
+        public static IServiceCollection AddHandler<THandlerType>(this IServiceCollection services, string eventType,
+            Action<THandlerType> configure = null) where THandlerType : class
+        {
+            return services.AddHandler<THandlerType>(eventType, string.Empty, configure);
+        }
+
+        
         public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, string eventType, string source,
             Action<THandlerType> configure = null) where THandlerType : class
         {
             return builder.AddHandler<THandlerType>(eventType, source, string.Empty, configure);
         }
 
+        public static IServiceCollection AddHandler<THandlerType>(this IServiceCollection services, string eventType, string source,
+            Action<THandlerType> configure = null) where THandlerType : class
+        {
+            return services.AddHandler<THandlerType>(eventType, source, string.Empty, configure);
+        }
+
+        
         public static IEventFrameworkBuilder AddHandler<THandlerType>(this IEventFrameworkBuilder builder, string eventType, string source,
             string subject, Action<THandlerType> configure = null) where THandlerType : class
         {
@@ -118,12 +162,28 @@ namespace Weikio.EventFramework.Extensions.EventAggregator
             return builder.AddHandler<THandlerType>(criteria, configure);
         }
 
+        public static IServiceCollection AddHandler<THandlerType>(this IServiceCollection services, string eventType, string source,
+            string subject, Action<THandlerType> configure = null) where THandlerType : class
+        {
+            var criteria = new CloudEventCriteria() { Type = eventType, Source = source, Subject = subject };
+
+            return services.AddHandler<THandlerType>(criteria, configure);
+        }
+        
         public static IEventFrameworkBuilder AddHandler(this IEventFrameworkBuilder builder, Type handlerType, Func<CloudEvent, Task<bool>> canHandle,
             MulticastDelegate configure = null)
         {
-            builder.Services.TryAddTransient(handlerType);
+            builder.Services.AddHandler(handlerType, canHandle, configure);
 
-            builder.Services.AddTransient(provider =>
+            return builder;
+        }
+        
+        public static IServiceCollection AddHandler(this IServiceCollection services, Type handlerType, Func<CloudEvent, Task<bool>> canHandle,
+            MulticastDelegate configure = null)
+        {
+            services.TryAddTransient(handlerType);
+
+            services.AddTransient(provider =>
             {
                 var typeToEventLinksConverter = provider.GetRequiredService<ITypeToEventLinksConverter>();
                 
@@ -139,7 +199,7 @@ namespace Weikio.EventFramework.Extensions.EventAggregator
                 return result;
             });
 
-            return builder;
+            return services;
         }
 
         private static object ConvertCloudEventDataToGeneric(CloudEvent cloudEvent,

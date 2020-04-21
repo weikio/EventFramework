@@ -1,4 +1,5 @@
 ﻿using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventGateway;
 
 namespace Weikio.EventFramework.EventPublisher
 {

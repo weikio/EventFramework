@@ -1,9 +1,8 @@
 ﻿using System.Threading.Channels;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.Gateways
+namespace Weikio.EventFramework.EventGateway.Gateways.Local
 {
     public class LocalGateway : ICloudEventGateway
     {

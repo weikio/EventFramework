@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventGateway;
 
 namespace Weikio.EventFramework.EventPublisher
 {

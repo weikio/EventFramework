@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.Router
 {
-    public class RouteInitializationStartupTask : IStartupTask
+    public class RouteInitializationStartupTask : IHostedService //IStartupTask
     {
         private readonly IEnumerable<ICloudEventRoute> _routes;
         private readonly RouteInitializer _initializer;
@@ -24,6 +25,16 @@ namespace Weikio.EventFramework.Router
                 _initializer.Initialize(route);
             }
             
+            return Task.CompletedTask;
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            return Execute(cancellationToken);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
             return Task.CompletedTask;
         }
     }

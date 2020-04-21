@@ -1,4 +1,4 @@
-﻿namespace Weikio.EventFramework.Abstractions
+﻿namespace Weikio.EventFramework.EventGateway
 {
     public static class GatewayName
     {
