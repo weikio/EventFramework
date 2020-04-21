@@ -7,7 +7,4 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-  </ItemGroup>
 </Project>

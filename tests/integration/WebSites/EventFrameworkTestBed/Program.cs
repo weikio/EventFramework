@@ -1,8 +1,7 @@
-﻿using EventCreation;
-using Microsoft.AspNetCore;
+﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace CodeConfiguration
+namespace EventFrameworkTestBed
 {
     public class Program
     {

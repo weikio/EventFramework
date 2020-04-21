@@ -8,14 +8,14 @@ namespace Weikio.EventFramework.EventGateway
 {
     public static class ServiceCollectionExtensions
     {
-        public static IEventFrameworkBuilder AddEventGateway(this IEventFrameworkBuilder builder, Action<CloudEventGatewayOptions> setupAction = null)
+        public static IEventFrameworkBuilder AddCloudEventGateway(this IEventFrameworkBuilder builder, Action<CloudEventGatewayOptions> setupAction = null)
         {
-            AddEventGateway(builder.Services, setupAction);
+            AddCloudEventGateway(builder.Services, setupAction);
 
             return builder;
         }
 
-        public static IServiceCollection AddEventGateway(this IServiceCollection services, Action<CloudEventGatewayOptions> setupAction = null)
+        public static IServiceCollection AddCloudEventGateway(this IServiceCollection services, Action<CloudEventGatewayOptions> setupAction = null)
         {
             services.TryAddSingleton<ICloudEventGatewayManager, CloudEventGatewayManager>();
             services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();

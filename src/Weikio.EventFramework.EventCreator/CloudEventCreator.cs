@@ -11,10 +11,10 @@ namespace Weikio.EventFramework.EventCreator
     public class CloudEventCreator : ICloudEventCreator
     {
         private readonly ILogger<CloudEventCreator> _logger;
-        private readonly IOptionsMonitor<EventCreationOptions> _optionsMonitor;
+        private readonly IOptionsMonitor<CloudEventCreationOptions> _optionsMonitor;
         private readonly IServiceProvider _serviceProvider;
 
-        public CloudEventCreator(ILogger<CloudEventCreator> logger, IOptionsMonitor<EventCreationOptions> optionsMonitor, IServiceProvider serviceProvider)
+        public CloudEventCreator(ILogger<CloudEventCreator> logger, IOptionsMonitor<CloudEventCreationOptions> optionsMonitor, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _optionsMonitor = optionsMonitor;

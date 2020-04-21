@@ -1,4 +1,4 @@
-﻿namespace Weikio.EventFramework.AspNetCore.Gateways
+﻿namespace Weikio.EventFramework.EventGateway.Http
 {
     public class HttpCloudEventReceiverApiConfiguration
     {

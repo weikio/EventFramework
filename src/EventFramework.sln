@@ -14,9 +14,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventCreator", "Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj", "{42C5A117-FE39-4565-AD8F-C4DB948CF15F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventFramework.EventCreator.IntegrationTests", "..\tests\integration\EventFramework.EventCreator.IntegrationTests\EventFramework.EventCreator.IntegrationTests.csproj", "{B2B719A5-2239-403A-8700-DC1458DC9C73}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventCreator.IntegrationTests", "..\tests\integration\Weikio.EventFramework.EventCreator.IntegrationTests\Weikio.EventFramework.EventCreator.IntegrationTests.csproj", "{B2B719A5-2239-403A-8700-DC1458DC9C73}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventCreation", "..\tests\integration\WebSites\EventCreation\EventCreation.csproj", "{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventFrameworkTestBed", "..\tests\integration\WebSites\EventFrameworkTestBed\EventFrameworkTestBed.csproj", "{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{30403192-0863-4425-AD5E-B218C34615CD}"
 EndProject
@@ -42,6 +42,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build properties", "Build p
 ProjectSection(SolutionItems) = preProject
 	Directory.Build.props = Directory.Build.props
 EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventGateway.Http", "Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj", "{E1F88763-FADA-4533-99B2-81307E85A945}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -113,6 +115,10 @@ Global
 		{B6F012DB-3900-48E1-9E94-26105BC01871}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6F012DB-3900-48E1-9E94-26105BC01871}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6F012DB-3900-48E1-9E94-26105BC01871}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1F88763-FADA-4533-99B2-81307E85A945}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1F88763-FADA-4533-99B2-81307E85A945}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1F88763-FADA-4533-99B2-81307E85A945}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1F88763-FADA-4533-99B2-81307E85A945}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}

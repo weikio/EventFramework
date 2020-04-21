@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Channels;
@@ -7,7 +6,7 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.AspNetCore.Gateways
+namespace Weikio.EventFramework.EventGateway.Http
 {
     public class HttpGateway : ICloudEventGateway
     {

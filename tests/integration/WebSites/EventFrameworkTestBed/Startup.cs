@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.EventCreator;
 
-namespace EventCreation
+namespace EventFrameworkTestBed
 {
     public class Startup
     {
@@ -24,7 +24,6 @@ namespace EventCreation
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Latest);
 
-            services.AddEventCreator();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

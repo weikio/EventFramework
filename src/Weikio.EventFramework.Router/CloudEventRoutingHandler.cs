@@ -6,7 +6,7 @@ using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.Router
 {
-    public class RoutingHandler
+    public class CloudEventRoutingHandler
     {
         private readonly ICloudEventPublisher _cloudEventPublisher;
         private readonly ICloudEventGatewayManager _cloudEventGatewayManager;
@@ -16,7 +16,7 @@ namespace Weikio.EventFramework.Router
         public Predicate<CloudEvent> Filter { get; set; }
         public Func<CloudEvent, IServiceProvider, Task<CloudEvent>> OnRouting { get; set; }
 
-        public RoutingHandler(IServiceProvider serviceProvider, ICloudEventPublisher cloudEventPublisher, ICloudEventGatewayManager cloudEventGatewayManager)
+        public CloudEventRoutingHandler(IServiceProvider serviceProvider, ICloudEventPublisher cloudEventPublisher, ICloudEventGatewayManager cloudEventGatewayManager)
         {
             ServiceProvider = serviceProvider;
             _cloudEventPublisher = cloudEventPublisher;

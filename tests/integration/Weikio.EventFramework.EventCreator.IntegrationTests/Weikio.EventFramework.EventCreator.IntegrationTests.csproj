@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WebSites\EventCreation\EventCreation.csproj" />
+    <ProjectReference Include="..\WebSites\EventFrameworkTestBed\EventFrameworkTestBed.csproj" />
   </ItemGroup>
 
 </Project>

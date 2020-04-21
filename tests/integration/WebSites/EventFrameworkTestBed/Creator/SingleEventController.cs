@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventCreator;
 
-namespace EventCreation
+namespace EventFrameworkTestBed.Creator
 {
-    [Route("single")]
+    [Route("creator/single")]
     public class SingleEventController : ControllerBase
     {
         private readonly ObjectFactoryOptions _factory;

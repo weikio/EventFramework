@@ -7,14 +7,14 @@ namespace Weikio.EventFramework.EventCreator
 {
     public static class ServiceCollectionExtensions
     {
-        public static IEventFrameworkBuilder AddEventCreator(this IEventFrameworkBuilder builder, Action<EventCreationOptions> setupAction = null)
+        public static IEventFrameworkBuilder AddCloudEventCreator(this IEventFrameworkBuilder builder, Action<CloudEventCreationOptions> setupAction = null)
         {
-            AddEventCreator(builder.Services, setupAction);
+            AddCloudEventCreator(builder.Services, setupAction);
 
             return builder;
         }
 
-        public static IServiceCollection AddEventCreator(this IServiceCollection services, Action<EventCreationOptions> setupAction = null)
+        public static IServiceCollection AddCloudEventCreator(this IServiceCollection services, Action<CloudEventCreationOptions> setupAction = null)
         {
             services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
 
@@ -26,7 +26,7 @@ namespace Weikio.EventFramework.EventCreator
             return services;
         }
 
-        public static IServiceCollection ConfigureCloudEvent<TEventType>(this IServiceCollection services, Action<EventCreationOptions> setupAction)
+        public static IServiceCollection ConfigureCloudEvent<TEventType>(this IServiceCollection services, Action<CloudEventCreationOptions> setupAction)
         {
             services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
 

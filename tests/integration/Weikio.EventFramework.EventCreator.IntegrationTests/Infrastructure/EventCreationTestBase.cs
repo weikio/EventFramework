@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using EventCreation;
+using EventFrameworkTestBed;
+using EventFrameworkTestBed.Creator;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.EventCreator;
 using Xunit;
 
-namespace EventFramework.EventCreator.IntegrationTests.Infrastructure
+namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
 {
     public abstract class EventCreationTestBase : IClassFixture<WebApplicationFactory<Startup>>
     {
@@ -39,6 +41,8 @@ namespace EventFramework.EventCreator.IntegrationTests.Infrastructure
 
                         services.AddSingleton(optionsConfigure);
                     }
+                    
+                    services.AddCloudEventCreator();
                 });
                 
             }).CreateClient();

@@ -15,7 +15,6 @@ using Weikio.ApiFramework.Core.Infrastructure;
 using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
-using Weikio.EventFramework.AspNetCore.Gateways;
 using Weikio.EventFramework.EventAggregator.AspNetCore;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
@@ -32,55 +31,25 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
         {
             var builder = new EventFrameworkBuilder(services);
 
-            builder.AddEventPublisher();
-            builder.AddEventCreator();
-            builder.AddEventAggregator();
-            builder.AddEventGateway();
+            builder.AddCloudEventPublisher();
+            builder.AddCloudEventCreator();
+            builder.AddCloudEventAggregator();
+            builder.AddCloudEventGateway();
             
             builder.Services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
             builder.Services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
 
-            builder.Services.AddTransient<HttpGatewayFactory>();
-            builder.Services.AddTransient<HttpGatewayInitializer>();
             builder.Services.TryAddSingleton<RouteInitializer>();
 
             builder.Services.AddStartupTasks();
 
-            // TODO: Collection concurrent problem in Api Framework
-            services.AddSingleton<IEndpointInitializer, SyncEndpointInitializer>();
-
-            services.AddApiFrameworkCore(options =>
-            {
-                options.ApiAddressBase = "";
-                options.AutoResolveEndpoints = false;
-                options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
-                options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
-            });
 
             var options = new EventFrameworkOptions();
             setupAction?.Invoke(options);
             
             var conf = Options.Create(options);
             builder.Services.AddSingleton<IOptions<EventFrameworkOptions>>(conf);
-
-            builder.Services.AddSingleton<IEndpointConfigurationProvider>(provider =>
-            {
-                var gatewayCollection = provider.GetRequiredService<ICloudEventGatewayManager>();
-                var httpGateways = gatewayCollection.Gateways.OfType<HttpGateway>().ToList();
-
-                var endpoints = new List<EndpointDefinition>();
-
-                foreach (var httpGateway in httpGateways)
-                {
-                    var endpoint = new EndpointDefinition(httpGateway.Endpoint, typeof(HttpCloudEventReceiverApi).FullName,
-                        new HttpCloudEventReceiverApiConfiguration() { GatewayName = httpGateway.Name }, new EmptyHealthCheck(), string.Empty);
-
-                    endpoints.Add(endpoint);
-                }
-
-                return new CustomEndpointConfigurationProvider(endpoints);
-            });
 
             builder.AddEventSources();
 
@@ -92,26 +61,4 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
     {
     }
 
-    public class CustomHttpVerbResolver : IEndpointHttpVerbResolver
-    {
-        public string GetHttpVerb(ActionModel action)
-        {
-            return "POST";
-        }
-    }
-
-    public class CustomEndpointConfigurationProvider : IEndpointConfigurationProvider
-    {
-        private readonly List<EndpointDefinition> _endpointDefinitions;
-
-        public CustomEndpointConfigurationProvider(List<EndpointDefinition> endpointDefinitions)
-        {
-            _endpointDefinitions = endpointDefinitions;
-        }
-
-        public Task<List<EndpointDefinition>> GetEndpointConfiguration()
-        {
-            return Task.FromResult(_endpointDefinitions);
-        }
-    }
 }

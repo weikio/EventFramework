@@ -19,7 +19,7 @@ namespace ApiFramework.IntegrationTests
     {
         public static async Task<CloudEvent> GetSingle(this HttpClient httpClient)
         {
-            var stringContent = await httpClient.GetStringAsync("/single");
+            var stringContent = await httpClient.GetStringAsync("/creator/single");
             var formatter = new JsonEventFormatter();
 
             var result = formatter.DecodeJObject(JObject.Parse(stringContent));
@@ -29,7 +29,7 @@ namespace ApiFramework.IntegrationTests
 
         public static async Task<List<dynamic>> GetMulti(this HttpClient httpClient)
         {
-            var stringContent = await httpClient.GetStringAsync("/multi");
+            var stringContent = await httpClient.GetStringAsync("/creator/multi");
             var array = JArray.Parse(stringContent);
 
             var result = new List<dynamic>();

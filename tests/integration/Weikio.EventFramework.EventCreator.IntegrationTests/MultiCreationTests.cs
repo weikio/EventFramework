@@ -2,14 +2,14 @@
 using System.Threading.Tasks;
 using ApiFramework.IntegrationTests;
 using CloudNative.CloudEvents.Extensions;
-using EventCreation;
-using EventFramework.EventCreator.IntegrationTests.Events;
-using EventFramework.EventCreator.IntegrationTests.Infrastructure;
+using EventFrameworkTestBed;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventCreator.IntegrationTests.Events;
+using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
 using Xunit;
 
-namespace EventFramework.EventCreator.IntegrationTests
+namespace Weikio.EventFramework.EventCreator.IntegrationTests
 {
     public class MultiCreationTests : EventCreationTestBase
     {

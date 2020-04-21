@@ -1,4 +1,4 @@
-namespace EventFramework.EventCreator.IntegrationTests.Events
+namespace Weikio.EventFramework.EventCreator.IntegrationTests.Events
 {
     public class CustomerCreatedEvent
     {

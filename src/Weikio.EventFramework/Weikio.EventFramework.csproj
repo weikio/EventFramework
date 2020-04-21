@@ -31,8 +31,4 @@
     <ProjectReference Include="..\Weikio.EventFramework.EventPublisher\Weikio.EventFramework.EventPublisher.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Files" />
-  </ItemGroup>
-
 </Project>

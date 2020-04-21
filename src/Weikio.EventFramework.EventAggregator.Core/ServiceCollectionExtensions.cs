@@ -10,14 +10,14 @@ namespace Weikio.EventFramework.EventAggregator.Core
 {
     public static class ServiceCollectionExtensions
     {
-        public static IEventFrameworkBuilder AddEventAggregatorCore(this IEventFrameworkBuilder builder, Action<CloudEventAggregatorOptions> setupAction = null)
+        public static IEventFrameworkBuilder AddCloudEventAggregatorCore(this IEventFrameworkBuilder builder, Action<CloudEventAggregatorOptions> setupAction = null)
         {
-            AddEventAggregatorCore(builder.Services, setupAction);
+            AddCloudEventAggregatorCore(builder.Services, setupAction);
 
             return builder;
         }
 
-        public static IServiceCollection AddEventAggregatorCore(this IServiceCollection services, Action<CloudEventAggregatorOptions> setupAction = null)
+        public static IServiceCollection AddCloudEventAggregatorCore(this IServiceCollection services, Action<CloudEventAggregatorOptions> setupAction = null)
         {
             services.TryAddSingleton<ICloudEventAggregator, CloudEventAggregator>();
             services.TryAddSingleton<EventLinkInitializer>();

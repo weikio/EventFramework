@@ -9,34 +9,8 @@ using Weikio.ApiFramework.Core.Configuration;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.ApiFramework.Core.Infrastructure;
 
-namespace Weikio.EventFramework.AspNetCore.Gateways
+namespace Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration
 {
-    public class HttpGatewayInitializer
-    {
-        private readonly EndpointManager _endpointManager;
-        private readonly IApiProvider _apiProvider;
-
-        public HttpGatewayInitializer(EndpointManager endpointManager, IApiProvider apiProvider)
-        {
-            _endpointManager = endpointManager;
-            _apiProvider = apiProvider;
-        }
-
-        public async Task Initialize(HttpGateway gateway)
-        {
-            var api = await _apiProvider.Get(typeof(HttpCloudEventReceiverApi).FullName);
-            
-            // Create HTTP Endpoint for the gateway
-            var endpoint = new Endpoint(gateway.Endpoint, api, new HttpCloudEventReceiverApiConfiguration()
-            {
-                GatewayName = gateway.Name
-            });
-
-            _endpointManager.AddEndpoint(endpoint);
-            _endpointManager.Update();
-        }
-    }
-    
     public class SyncEndpointInitializer : IEndpointInitializer
     {
         private readonly ILogger<EndpointInitializer> _logger;

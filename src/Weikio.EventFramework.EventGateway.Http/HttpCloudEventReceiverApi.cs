@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -10,7 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.AspNetCore.Gateways
+namespace Weikio.EventFramework.EventGateway.Http
 {
     public class HttpCloudEventReceiverApi
     {

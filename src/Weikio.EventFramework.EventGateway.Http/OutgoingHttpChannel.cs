@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
 
-namespace Weikio.EventFramework.AspNetCore.Gateways
+namespace Weikio.EventFramework.EventGateway.Http
 {
     public class OutgoingHttpChannel : IOutgoingChannel
     {

@@ -8,16 +8,16 @@ namespace Weikio.EventFramework.EventAggregator.AspNetCore
 {
     public static class ServiceCollectionExtensions
     {
-        public static IEventFrameworkBuilder AddEventAggregator(this IEventFrameworkBuilder builder, Action<CloudEventAggregatorOptions> setupAction = null)
+        public static IEventFrameworkBuilder AddCloudEventAggregator(this IEventFrameworkBuilder builder, Action<CloudEventAggregatorOptions> setupAction = null)
         {
-            AddEventAggregator(builder.Services, setupAction);
+            AddCloudEventAggregator(builder.Services, setupAction);
 
             return builder;
         }
 
-        public static IServiceCollection AddEventAggregator(this IServiceCollection services, Action<CloudEventAggregatorOptions> setupAction = null)
+        public static IServiceCollection AddCloudEventAggregator(this IServiceCollection services, Action<CloudEventAggregatorOptions> setupAction = null)
         {
-            services.AddEventAggregatorCore();
+            services.AddCloudEventAggregatorCore();
             services.AddStartupTasks();
 
             return services;

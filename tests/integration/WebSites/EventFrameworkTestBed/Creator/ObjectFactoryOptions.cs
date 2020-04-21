@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EventCreation
+namespace EventFrameworkTestBed.Creator
 {
     public class ObjectFactoryOptions
     {

@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventCreator;
 
-namespace EventCreation
+namespace EventFrameworkTestBed.Creator
 {
-    [Route("multi")]
+    [Route("creator/multi")]
     public class MultiEventsController : ControllerBase
     {
         private readonly ObjectFactoryOptions _factory;

@@ -9,7 +9,7 @@
     <PackageId>Weikio.EventFramework.EventGateway</PackageId>
     <Product>Weikio.EventFramework.EventGateway</Product>
     <PackageTags>cloudevents;event gateway</PackageTags>
-    <Title>Cloud Event publisher for .NET</Title>
+    <Title>Cloud Event Gateway for .NET</Title>
   </PropertyGroup>
 
   <ItemGroup>

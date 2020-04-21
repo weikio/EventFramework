@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
-using Weikio.EventFramework.EventAggregator;
 using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.Extensions.EventAggregator

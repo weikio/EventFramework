@@ -10,7 +10,7 @@ namespace Weikio.EventFramework.Router
     {
         public static IEventFrameworkBuilder AddRoute(this IEventFrameworkBuilder builder, string incomingGatewayName, string outgoingGatewayName, Predicate<CloudEvent> filter = null, Func<CloudEvent, IServiceProvider, Task<CloudEvent>> onRouting = null)
         {
-            builder.AddHandler<RoutingHandler>(handler =>
+            builder.AddHandler<CloudEventRoutingHandler>(handler =>
             {
                 handler.IncomingGatewayName = incomingGatewayName;
                 handler.OutgoingGatewayName = outgoingGatewayName;
