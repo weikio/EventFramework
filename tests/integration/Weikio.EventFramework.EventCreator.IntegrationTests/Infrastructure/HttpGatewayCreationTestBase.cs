@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using EventFrameworkTestBed;
-using EventFrameworkTestBed.Creator;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Weikio.EventFramework.EventCreator;
 using Xunit;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure

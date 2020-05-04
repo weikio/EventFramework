@@ -67,7 +67,7 @@ namespace Weikio.EventFramework.EventPublisher
 
             var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source);
 
-            if (string.Equals(gatewayName, GatewayName.Default))
+            if (string.Equals(gatewayName, GatewayName.Default) && !string.IsNullOrWhiteSpace(_options.DefaultGatewayName))
             {
                 gatewayName = _options.DefaultGatewayName;
             }

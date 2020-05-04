@@ -71,7 +71,9 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks
 
                 if (_guardMethod != null)
                 {
-                    var res = (Task<bool>) _guardMethod.Invoke(_handler, new[] { cloudEvent });
+                    var arguments = _getArguments(_guardMethod, cloudEvent);
+                    
+                    var res = (Task<bool>) _guardMethod.Invoke(_handler, arguments.ToArray());
                     await res;
 
                     return res.Result;

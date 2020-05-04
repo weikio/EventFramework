@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Weikio.EventFramework.EventPublisher;
 
 namespace EventFrameworkTestBed.Router
 {
     [Route("router/endpoint")]
-    public class SingleEventController : ControllerBase
+    public class RouterController : ControllerBase
     {
         private static int _callCount = 0;
 

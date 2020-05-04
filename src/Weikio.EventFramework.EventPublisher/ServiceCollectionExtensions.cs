@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventGateway;
 
 namespace Weikio.EventFramework.EventPublisher
 {
@@ -20,7 +21,8 @@ namespace Weikio.EventFramework.EventPublisher
         {
             services.TryAddSingleton<ICloudEventPublisher, CloudEventPublisher>();
             services.AddCloudEventCreator();
-
+            services.AddCloudEventGateway();
+            
             if (setupAction != null)
             {
                 services.Configure(setupAction);

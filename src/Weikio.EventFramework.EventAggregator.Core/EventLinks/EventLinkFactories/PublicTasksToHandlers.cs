@@ -21,7 +21,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
                                                     && x.GetParameters().All(p => p.ParameterType != typeof(CloudEvent))
                                                     && !x.GetParameters().Any(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>)));
             
-            var guardMethods = methods.Where(x => x.Name.StartsWith("Can") && x.GetParameters().Any(p => p.ParameterType == typeof(CloudEvent))).ToList();
+            var guardMethods = methods.Where(x => x.Name.StartsWith("Can")).ToList();
 
             var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>();
 
@@ -36,9 +36,20 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
         
         private static List<object> GetArguments(MethodInfo handler, CloudEvent cloudEvent)
         {
-            var result = new List<object>();
+            var parameters = handler.GetParameters();
 
-            foreach (var parameterInfo in handler.GetParameters())
+            if (!parameters.Any())
+            {
+                return new List<object>();
+            }
+
+            if (parameters.Length == 1 && parameters.First().ParameterType == typeof(CloudEvent))
+            {
+                return new List<object>() { cloudEvent };
+            }
+            
+            var result = new List<object>();
+            foreach (var parameterInfo in parameters)
             {
                 if (!parameterInfo.HasDefaultValue)
                 {

@@ -1,9 +1,6 @@
-﻿using System.Threading.Tasks;
-using ApiFramework.IntegrationTests;
-using EventFrameworkTestBed;
+﻿using EventFrameworkTestBed;
+using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Weikio.EventFramework.EventCreator;
-using Weikio.EventFramework.EventCreator.IntegrationTests.Events;
 using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
 using Xunit;
 
@@ -13,23 +10,22 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
     {
         public EventCreationOptionTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
-            ObjectFactory = () => new CustomerCreatedEvent() { Name = "John Smith" };
         }
 
         [Fact]
-        public async Task CanUseDefaultOptions()
+        public void CanUseDefaultOptions()
         {
             var server = Init();
 
             // Act 
-            var result = await server.GetSingle();
+            var result = server.CreateCloudEvent(new CustomerCreatedEvent() { Name = "John Smith" });
 
             // Assert
             Assert.Equal(nameof(CustomerCreatedEvent), result.Type);
         }
 
         [Fact]
-        public async Task CanConfigureEventType()
+        public void CanConfigureEventType()
         {
             var server = Init(services =>
             {
@@ -38,16 +34,16 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
                     options.EventTypeName = "Hello";
                 });
             });
-
+        
             // Act 
-            var result = await server.GetSingle();
-
+            var result = server.CreateCloudEvent(new CustomerCreatedEvent() { Name = "John Smith" });
+        
             // Assert
             Assert.Equal("Hello", result.Type);
         }
-
+        
         [Fact]
-        public async Task CanConfigureSubject()
+        public void CanConfigureSubject()
         {
             var server = Init(services =>
             {
@@ -56,15 +52,15 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
                     options.GetSubject = (creationOptions, provider, arg3) =>
                     {
                         var ev = (CustomerCreatedEvent) arg3;
-
+        
                         return ev.Name;
                     };
                 });
             });
-
+        
             // Act 
-            var result = await server.GetSingle();
-
+            var result = server.CreateCloudEvent(new CustomerCreatedEvent() { Name = "John Smith" });
+        
             // Assert
             Assert.Equal("John Smith", result.Subject);
         }

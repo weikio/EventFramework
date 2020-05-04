@@ -12,13 +12,19 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
     {
         public int Priority { get; } = 0;
 
-        public (List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>, Func<MethodInfo, CloudEvent, List<object>>) GetHandlerMethods(Type handlerType)
+        public (List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>, Func<MethodInfo, CloudEvent, List<object>>)
+            GetHandlerMethods(Type handlerType)
         {
             var methods = handlerType.GetTypeInfo().DeclaredMethods.ToList();
+
             var handlerMethods = methods.Where(x =>
                 !x.Name.StartsWith("Can") && x.GetParameters()
                     .Any(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>))).ToList();
             var guardMethods = methods.Where(x => x.Name.StartsWith("Can") && x.GetParameters().Any(p => p.ParameterType == typeof(CloudEvent))).ToList();
+
+            guardMethods.AddRange(methods.Where(x =>
+                x.Name.StartsWith("Can") && x.GetParameters()
+                    .Any(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>))).ToList());
 
             var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>();
 
@@ -33,10 +39,19 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
 
         private static List<object> GetArguments(MethodInfo handler, CloudEvent cloudEvent)
         {
-            var result = new List<object>()
+            var parameters = handler.GetParameters();
+
+            if (!parameters.Any())
             {
-                ConvertCloudEventDataToGeneric(cloudEvent, handler)
-            };
+                return new List<object>();
+            }
+
+            if (parameters.Length == 1 && parameters.First().ParameterType == typeof(CloudEvent))
+            {
+                return new List<object>() { cloudEvent };
+            }
+
+            var result = new List<object>() { ConvertCloudEventDataToGeneric(cloudEvent, handler) };
 
             foreach (var parameterInfo in handler.GetParameters())
             {
@@ -50,8 +65,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
 
             return result;
         }
-        
-        
+
         private static object ConvertCloudEventDataToGeneric(CloudEvent cloudEvent, MethodInfo handler)
         {
             var method = handler;
@@ -98,12 +112,26 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
                 throw new NotSupportedException($"Content type {dataType} is not supported. Event type: {cloudEvent?.Type}");
             }
 
-            var obj = JsonConvert.DeserializeObject(cloudEvent.Data.ToString(), cloudEventObjectType);
+            object obj;
 
-            var d1 = typeof(CloudEvent<>);
-            var constructed = d1.MakeGenericType(new[] { cloudEventObjectType });
+            if (cloudEvent.Data.GetType() == cloudEventObjectType)
+            {
+                obj = cloudEvent.Data;
+            }
+            else
+            {
+                obj = JsonConvert.DeserializeObject(cloudEvent.Data.ToString(), cloudEventObjectType);
+            }
+
+            var genericCloudEvent = typeof(CloudEvent<>);
+            var constructed = genericCloudEvent.MakeGenericType(new[] { cloudEventObjectType });
 
             var mi = constructed.GetMethod("Create");
+
+            if (mi == null)
+            {
+                throw new Exception("Couldn't find Create method from generic CloudEvent");
+            }
 
             var result = mi.Invoke(null, new[] { obj, cloudEvent });
 
