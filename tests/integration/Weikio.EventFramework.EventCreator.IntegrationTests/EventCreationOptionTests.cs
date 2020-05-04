@@ -9,9 +9,9 @@ using Xunit;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests
 {
-    public class OptionTests : EventCreationTestBase
+    public class EventCreationOptionTests : EventCreationTestBase
     {
-        public OptionTests(WebApplicationFactory<Startup> factory) : base(factory)
+        public EventCreationOptionTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
             ObjectFactory = () => new CustomerCreatedEvent() { Name = "John Smith" };
         }

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
+using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.Extensions.EventAggregator;
 
 namespace Weikio.EventFramework.Router
@@ -18,6 +19,8 @@ namespace Weikio.EventFramework.Router
         
         public static IServiceCollection AddRoute(this IServiceCollection services, string incomingGatewayName, string outgoingGatewayName, Predicate<CloudEvent> filter = null, Func<CloudEvent, IServiceProvider, Task<CloudEvent>> onRouting = null)
         {
+            services.AddCloudEventPublisher();
+            
             services.AddHandler<CloudEventRoutingHandler>(handler =>
             {
                 handler.IncomingGatewayName = incomingGatewayName;

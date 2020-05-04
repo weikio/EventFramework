@@ -16,40 +16,33 @@ namespace Weikio.EventFramework.EventGateway.Http
 {
     public static class EventFrameworkHttpGatewayExtensions
     {
-        private static bool _apiFrameworkAdded = false;
-        
         public static IEventFrameworkBuilder AddHttpGateways(this IEventFrameworkBuilder builder)
         {
             AddHttpGateways(builder.Services);
 
             return builder;
         }
-        
+
         public static IServiceCollection AddHttpGateways(this IServiceCollection services)
         {
             services.AddCloudEventGateway();
-            
+            services.AddHealthChecks();
             services.AddHttpContextAccessor();
 
             services.TryAddTransient<HttpGatewayFactory>();
             services.TryAddTransient<HttpGatewayInitializer>();
+
             // TODO: Collection concurrent problem in Api Framework
             services.TryAddSingleton<IEndpointInitializer, SyncEndpointInitializer>();
 
-            // TODO: Fix AddApiFrameworkCore so that it can be called multiple times. Now breaks because of the health check
-            if (_apiFrameworkAdded == false)
+            services.AddApiFrameworkCore(options =>
             {
-                services.AddApiFrameworkCore(options =>
-                {
-                    options.ApiAddressBase = "";
-                    options.AutoResolveEndpoints = false;
-                    options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
-                    options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
-                });
+                options.ApiAddressBase = "";
+                options.AutoResolveEndpoints = false;
+                options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
+                options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
+            });
 
-                _apiFrameworkAdded = true;
-            }
-            
             services.TryAddSingleton<IEndpointConfigurationProvider>(provider =>
             {
                 var gatewayCollection = provider.GetRequiredService<ICloudEventGatewayManager>();
@@ -70,12 +63,13 @@ namespace Weikio.EventFramework.EventGateway.Http
 
             return services;
         }
-        
-        public static IEventFrameworkBuilder AddHttpGateway(this IEventFrameworkBuilder builder, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint, 
+
+        public static IEventFrameworkBuilder AddHttpGateway(this IEventFrameworkBuilder builder, string name = GatewayName.Default,
+            string endpoint = HttpGateway.DefaultEndpoint,
             string outgoingEndpoint = HttpGateway.DefaultEndpoint, Action<HttpClient> configureClient = null)
         {
             AddHttpGateways(builder.Services);
-            
+
             builder.Services.AddTransient(provider =>
             {
                 var factory = provider.GetRequiredService<HttpGatewayFactory>();
@@ -90,22 +84,27 @@ namespace Weikio.EventFramework.EventGateway.Http
 
             return builder;
         }
-        public static IServiceCollection AddHttpGateway(this IServiceCollection services, string name = GatewayName.Default, string endpoint = HttpGateway.DefaultEndpoint, 
-            string outgoingEndpoint = HttpGateway.DefaultEndpoint, Action<HttpClient> configureClient = null)
+
+        public static IServiceCollection AddHttpGateway(this IServiceCollection services, string name = GatewayName.Default,
+            string endpoint = HttpGateway.DefaultEndpoint,
+            string outgoingEndpoint = HttpGateway.DefaultEndpoint, Action<HttpClient> configureClient = null, Func<HttpClient> clientFactory = null)
         {
             AddHttpGateways(services);
-            
+
             services.AddTransient(provider =>
             {
                 var factory = provider.GetRequiredService<HttpGatewayFactory>();
 
-                return factory.Create(name, endpoint, outgoingEndpoint);
+                return factory.Create(name, endpoint, outgoingEndpoint, clientFactory);
             });
 
-            services.AddHttpClient(name, client =>
+            if (clientFactory == null)
             {
-                configureClient?.Invoke(client);
-            });
+                services.AddHttpClient(name, client =>
+                {
+                    configureClient?.Invoke(client);
+                });
+            }
 
             return services;
         }

@@ -34,7 +34,7 @@ namespace Weikio.EventFramework.EventAggregator.Core
             
             foreach (var typeToEventLinksFactoryType in options.TypeToEventLinksHandlerTypes)
             {
-                services.TryAddTransient(typeof(ITypeToHandlers), typeToEventLinksFactoryType);
+                services.TryAddEnumerable(ServiceDescriptor.Transient(typeof(ITypeToHandlers), typeToEventLinksFactoryType));
                 services.TryAddTransient(typeToEventLinksFactoryType);
             }
 

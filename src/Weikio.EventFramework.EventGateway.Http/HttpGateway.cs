@@ -14,8 +14,7 @@ namespace Weikio.EventFramework.EventGateway.Http
         private readonly string _outgoingEndpoint;
         private CancellationToken _cancellationToken;
 
-        public HttpGateway(string name, string endpoint, Func<HttpGateway, Task> initializer = null, string outgoingEndpoint = null,
-            IHttpClientFactory httpClientFactory = null)
+        public HttpGateway(string name, string endpoint, Func<HttpGateway, Task> initializer = null, string outgoingEndpoint = null, Func<HttpClient> clientFactory = null)
         {
             Status = CloudEventGatewayStatus.New;
 
@@ -27,7 +26,7 @@ namespace Weikio.EventFramework.EventGateway.Http
             var channel = Channel.CreateUnbounded<CloudEvent>();
 
             IncomingChannel = new IncomingHttpChannel(channel);
-            OutgoingChannel = new OutgoingHttpChannel(httpClientFactory, name, outgoingEndpoint);
+            OutgoingChannel = new OutgoingHttpChannel(clientFactory, name, outgoingEndpoint);
         }
 
         public const string DefaultName = "http";

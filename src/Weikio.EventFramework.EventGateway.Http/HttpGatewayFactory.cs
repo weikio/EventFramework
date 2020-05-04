@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.EventGateway.Http
@@ -14,9 +15,14 @@ namespace Weikio.EventFramework.EventGateway.Http
             _httpClientFactory = httpClientFactory;
         }
 
-        public ICloudEventGateway Create(string name, string endpoint, string outgoingEndpoint = null)
+        public ICloudEventGateway Create(string name, string endpoint, string outgoingEndpoint = null, Func<HttpClient> clientFactory = null)
         {
-            var result = new HttpGateway(name, endpoint, _initializer.Initialize, outgoingEndpoint, _httpClientFactory);
+            if (clientFactory == null)
+            {
+                clientFactory = () => _httpClientFactory.CreateClient(name);
+            }
+
+            var result = new HttpGateway(name, endpoint, _initializer.Initialize, outgoingEndpoint, clientFactory);
 
             return result;
         }
