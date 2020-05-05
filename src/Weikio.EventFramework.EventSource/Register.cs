@@ -8,22 +8,41 @@ using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
-using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource
 {
     public static class Register
     {
-        public static IEventFrameworkBuilder AddEventSources(this IEventFrameworkBuilder builder, Action<EventSourceOptions> setupAction = null)
+        public static IEventFrameworkBuilder AddCloudEventSources(this IEventFrameworkBuilder builder, Action<EventSourceOptions> setupAction = null)
         {
-            var services = builder.Services;
+            if (builder == null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
 
+            if (builder.Services == null)
+            {
+                throw new ArgumentNullException(nameof(builder.Services));
+            }
+            
+            builder.Services.AddCloudEventSources(setupAction);
+
+            return builder;
+        }
+        
+        public static IServiceCollection AddCloudEventSources(this IServiceCollection services, Action<EventSourceOptions> setupAction = null)
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+            
             services.TryAddSingleton<IJobFactory, JobFactory>();
             services.TryAddSingleton<ISchedulerFactory, StdSchedulerFactory>();
             services.TryAddSingleton<QuartzJobRunner>();
 
             services.TryAddSingleton<HelloWorldJob>();
-            services.TryAddTransient<Wrapper>();
+            services.TryAddTransient<EventSourceActionWrapper>();
 
             if (services.All(x => x.ImplementationType != typeof(QuartzHostedService)))
             {
@@ -35,13 +54,43 @@ namespace Weikio.EventFramework.EventSource
                 services.Configure(setupAction);
             }
 
-            return builder;
+            return services;
         }
 
         public static IEventFrameworkBuilder AddSource(this IEventFrameworkBuilder builder, Func<object, Task<(object, object)>> action, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null)
         {
-            builder.AddEventSources();
+            builder.Services.AddSource(action, pollingFrequency, cronExpression, configure);
+
+            return builder;
+        }
+        
+                
+        public static IEventFrameworkBuilder AddSource(this IEventFrameworkBuilder builder, Func<object> action, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            builder.Services.AddSource(action, pollingFrequency, cronExpression, configure);
+
+            return builder;
+        }
+        
+        public static IServiceCollection AddSource(this IServiceCollection services, Func<object> action, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            var taskAction = Task.FromResult(new List<object>(){action});
+
+            Task<List<object>> FuncTaskAction() => taskAction;
+
+            services.AddSource(FuncTaskAction, pollingFrequency, cronExpression, configure);
+
+            return services;
+        }
+
+        public static IServiceCollection AddSource(this IServiceCollection services, Func<object, Task<(object, object)>> action,
+            TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            services.AddCloudEventSources();
 
             if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
             {
@@ -51,35 +100,51 @@ namespace Weikio.EventFramework.EventSource
 
             var id = Guid.NewGuid();
 
-            builder.Services.AddSingleton(provider =>
+            services.AddSingleton(provider =>
             {
                 var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
             });
 
-            builder.Services.AddOptions<JobOptions>(id.ToString())
-                .Configure<Wrapper>((jobOptions, wrapper) =>
+            services.AddOptions<JobOptions>(id.ToString())
+                .Configure<EventSourceActionWrapper>((jobOptions, wrapper) =>
                 {
                     var act = wrapper.Create(action);
                     jobOptions.Action = act;
                 });
-            
-            return builder;
+
+            return services;
         }
         
         public static IEventFrameworkBuilder AddSource<TStateType>(this IEventFrameworkBuilder builder, Func<TStateType, (object, TStateType)> action, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null)
         {
+            builder.Services.AddSource<TStateType>(action, pollingFrequency, cronExpression, configure);
+
+            return builder;
+        }
+        
+        public static IServiceCollection AddSource<TStateType>(this IServiceCollection services, Func<TStateType, (object, TStateType)> action, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
             Func<TStateType, Task<(object, TStateType)>> taskAction = state => Task.FromResult(action(state));
 
-            return builder.AddSource(taskAction, pollingFrequency, cronExpression, configure);
+            return services.AddSource<TStateType>(taskAction, pollingFrequency, cronExpression, configure);
         }
         
         public static IEventFrameworkBuilder AddSource<TStateType>(this IEventFrameworkBuilder builder, Func<TStateType, Task<(object, TStateType)>> action, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null)
         {
-            builder.AddEventSources();
+            builder.Services.AddSource<TStateType>(action, pollingFrequency, cronExpression, configure);
+            
+            return builder;
+        }
+        
+        public static IServiceCollection AddSource<TStateType>(this IServiceCollection services, Func<TStateType, Task<(object, TStateType)>> action, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            services.AddCloudEventSources();
 
             if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
             {
@@ -89,15 +154,15 @@ namespace Weikio.EventFramework.EventSource
 
             var id = Guid.NewGuid();
 
-            builder.Services.AddSingleton(provider =>
+            services.AddSingleton(provider =>
             {
                 var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
             });
 
-            builder.Services.AddOptions<JobOptions>(id.ToString())
-                .Configure<Wrapper>((jobOptions, wrapper) =>
+            services.AddOptions<JobOptions>(id.ToString())
+                .Configure<EventSourceActionWrapper>((jobOptions, wrapper) =>
                 {
                     var act = wrapper.Create(action);
                     jobOptions.Action = act;
@@ -108,13 +173,22 @@ namespace Weikio.EventFramework.EventSource
             // });
             // var options = new JobOptions();
 
-            return builder;
+            return services;
         }
+
         
         public static IEventFrameworkBuilder AddSource(this IEventFrameworkBuilder builder, Func<Task<List<object>>> action, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null)
         {
-            builder.AddEventSources();
+            builder.Services.AddSource(action, pollingFrequency, cronExpression, configure);
+
+            return builder;
+        }
+        
+        public static IServiceCollection AddSource(this IServiceCollection services, Func<Task<List<object>>> action, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            services.AddCloudEventSources();
 
             if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
             {
@@ -124,133 +198,21 @@ namespace Weikio.EventFramework.EventSource
             
             var id = Guid.NewGuid();
 
-            builder.Services.AddSingleton(provider =>
+            services.AddSingleton(provider =>
             {
                 var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
             });
 
-            builder.Services.AddOptions<JobOptions>(id.ToString())
-                .Configure<Wrapper>((jobOptions, wrapper) =>
+            services.AddOptions<JobOptions>(id.ToString())
+                .Configure<EventSourceActionWrapper>((jobOptions, wrapper) =>
                 {
                     var act = wrapper.Create(action);
                     jobOptions.Action = act;
                 });
             
-            return builder;
-        }
-
-        public class Wrapper
-        {
-            private readonly IServiceProvider _serviceProvider;
-            private readonly ICloudEventPublisher _publisher;
-
-            public Wrapper(IServiceProvider serviceProvider, ICloudEventPublisher publisher)
-            {
-                _serviceProvider = serviceProvider;
-                _publisher = publisher;
-            }
-
-            public Func<object, Task<object>> Create(Func<object, Task<(object CloudEvent, object UpdatedState)>> action)
-            {
-                var result = new Func<object, Task<object>>(async state =>
-                {
-                    try
-                    {
-                        var cloudEvent = action(state);
-                        var res = await cloudEvent;
-
-                        if (res.CloudEvent != null)
-                        {
-                            await _publisher.Publish(res.CloudEvent);
-                        }
-
-                        return res.UpdatedState;
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-
-                        throw;
-                    }
-                });
-
-                return result;
-            }
-            
-            public Func<TStateType, Task<TStateType>> Create<TStateType>(Func<TStateType, Task<(object CloudEvent, TStateType UpdatedState)>> action)
-            {
-                var result = new Func<TStateType, Task<TStateType>>(async state =>
-                {
-                    try
-                    {
-                        var cloudEvent = action(state);
-                        var res = await cloudEvent;
-
-                        if (res.CloudEvent != null)
-                        {
-                            await _publisher.Publish(res.CloudEvent);
-                        }
-
-                        return res.UpdatedState;
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-
-                        throw;
-                    }
-                });
-
-                return result;
-            }
-
-            
-            public Func<object, Task> Create(Func<Task<List<object>>> action)
-            {
-                var result = new Func<object, Task>(async state =>
-                {
-                    var cloudEvent = action();
-                    var res = await cloudEvent;
-
-                    if (res == null)
-                    {
-                        return;
-                    }
-
-                    await _publisher.Publish(res);
-                });
-
-                return result;
-            }
-            
-            public Func<TStateType, Task<TStateType>> Create<TStateType>(Func<TStateType, IServiceProvider, Task<(object CloudEvent, TStateType UpdatedState)>> action)
-            {
-                var result = new Func<TStateType, Task<TStateType>>(async (state) =>
-                {
-                    try
-                    {
-                        var cloudEvent = action(state, _serviceProvider);
-                        var res = await cloudEvent;
-
-                        if (res.CloudEvent != null)
-                        {
-                            await _publisher.Publish(res.CloudEvent);
-                        }
-
-                        return res.UpdatedState;
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-
-                        throw;
-                    }
-                });
-
-                return result;
-            }
+            return services;
         }
 
         // public static IEventFrameworkBuilder AddSource(this IEventFrameworkBuilder builder, Type sourceType, TimeSpan? pollingFrequency = null,
@@ -349,9 +311,5 @@ namespace Weikio.EventFramework.EventSource
 
             return null;
         }
-    }
-
-    public class EventSourceOptions
-    {
     }
 }

@@ -35,7 +35,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.AddCloudEventCreator();
             builder.AddCloudEventAggregator();
             builder.AddCloudEventGateway();
-            builder.AddEventSources();
+            builder.AddCloudEventSources();
 
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
 

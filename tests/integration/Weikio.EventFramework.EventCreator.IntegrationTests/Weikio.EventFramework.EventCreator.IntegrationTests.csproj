@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Router\Weikio.EventFramework.Router.csproj" />
     <ProjectReference Include="..\WebSites\EventFrameworkTestBed\EventFrameworkTestBed.csproj" />
   </ItemGroup>
