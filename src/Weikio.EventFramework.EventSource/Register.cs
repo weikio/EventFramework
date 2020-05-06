@@ -36,7 +36,11 @@ namespace Weikio.EventFramework.EventSource
             {
                 throw new ArgumentNullException(nameof(services));
             }
-            
+
+            if (services.All(x => x.ImplementationType != typeof(QuartzHostedService)))
+            {
+                services.AddHostedService<EventSourceActionWrapperUnwrapperHost>();
+            }
             services.TryAddSingleton<IJobFactory, JobFactory>();
             services.TryAddSingleton<ISchedulerFactory, StdSchedulerFactory>();
             services.TryAddSingleton<QuartzJobRunner>();
@@ -94,7 +98,7 @@ namespace Weikio.EventFramework.EventSource
 
             if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
             {
-                // Todo: Default form options
+                // Todo: Default from options
                 pollingFrequency = TimeSpan.FromSeconds(30);
             }
 
@@ -148,7 +152,7 @@ namespace Weikio.EventFramework.EventSource
 
             if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
             {
-                // Todo: Default form options
+                // Todo: Default from options
                 pollingFrequency = TimeSpan.FromSeconds(30);
             }
 
@@ -167,11 +171,44 @@ namespace Weikio.EventFramework.EventSource
                     var act = wrapper.Create(action);
                     jobOptions.Action = act;
                 });
-            // builder.Services.Configure<JobOptions>(id.ToString(), (jobOptions, provider) =>
-            // {
-            //
-            // });
-            // var options = new JobOptions();
+
+            return services;
+        }
+        
+        public static IServiceCollection AddSource<TEventSource>(this IServiceCollection services, TimeSpan? pollingFrequency = null, string cronExpression = null, Action<TEventSource> configure = null)
+        {
+            services.AddCloudEventSources();
+
+            if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
+            {
+                // Todo: Default from options
+                pollingFrequency = TimeSpan.FromSeconds(30);
+            }
+
+            var id = Guid.Parse("652d9b12-0780-42a1-b3c2-2643bb4f52a8");
+
+            services.AddTransient(typeof(TEventSource));
+            
+            services.AddTransient(provider =>
+            {
+                var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
+
+                return schedule;
+            });
+
+            services.AddTransient(provider =>
+            {
+                var eventSourceActionWrapperFactory = new EventSourceActionWrapperFactory(typeof(TEventSource), id);
+
+                return eventSourceActionWrapperFactory;
+            });
+
+            // services.AddOptions<JobOptions>(id.ToString())
+            //     .Configure<EventSourceActionWrapper>((jobOptions, wrapper) =>
+            //     {
+            //         var act = wrapper.Create(typeof(TEventSource));
+            //         jobOptions.Action = act;
+            //     });
 
             return services;
         }
@@ -192,7 +229,7 @@ namespace Weikio.EventFramework.EventSource
 
             if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
             {
-                // Todo: Default form options
+                // Todo: Default from options
                 pollingFrequency = TimeSpan.FromSeconds(30);
             }
             
@@ -227,7 +264,7 @@ namespace Weikio.EventFramework.EventSource
         //
         //     if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
         //     {
-        //         // Todo: Default form options
+        //         // Todo: Default from options
         //         pollingFrequency = TimeSpan.FromSeconds(30);
         //     }
         //
