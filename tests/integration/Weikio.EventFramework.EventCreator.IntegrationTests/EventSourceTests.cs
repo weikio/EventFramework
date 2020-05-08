@@ -15,15 +15,16 @@ using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests
 {
-    public class EventSourceTests : EventFrameworkTestBase
+    public class EventSourceTests : EventFrameworkTestBase, IDisposable
     {
         private TestCloudEventPublisher _testCloudEventPublisher;
         private int _counter;
 
-        public EventSourceTests(WebApplicationFactory<Startup> factory) : base(factory)
+        public EventSourceTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)
         {
             _testCloudEventPublisher = new TestCloudEventPublisher();
             _counter = 0;
@@ -40,6 +41,36 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
         {
             throw new NotImplementedException();
         }
+        
+        [Fact]
+        public async Task CanAddLongPollingTypeAsEventSource()
+        {
+            // yield return 
+            var server = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddHostedService(provider =>
+                {
+                    var publisher = provider.GetRequiredService<ICloudEventPublisher>();
+                    var s = new ContinuousTestEventSource();
+                    
+                    var source = new ContinuousEventSourceHost(s.CheckForNewFiles, publisher);
+
+                    return source;
+                });
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            
+            Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
+        }
+
+        
+        
 
         [Fact]
         public async Task CanAddEventReturningTypeAsEventSource()
@@ -87,7 +118,10 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
                 services.AddCloudEventPublisher();
                 services.AddLocal();
 
-                services.AddSource(() => new CustomerCreatedEvent(), TimeSpan.FromSeconds(1));
+                services.AddSource(() =>
+                {
+                    return new CustomerCreatedEvent();
+                }, TimeSpan.FromSeconds(1));
             });
 
             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -108,7 +142,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
                 services.AddSource(() => new CustomerCreatedEvent(), TimeSpan.FromMinutes(3));
             });
 
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             Assert.Empty(_testCloudEventPublisher.PublishedEvents);
         }
@@ -164,6 +198,11 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
             // Events aren't published yet as this is just an initialization run
             Assert.Empty(_testCloudEventPublisher.PublishedEvents);
         }
+
+        public void Dispose()
+        {
+            
+        }
     }
 
     public class CounterUpdatedEvent
@@ -175,6 +214,8 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
             Count = count;
         }
     }
+    
+    
 
     public class ContinuousTestEventSource
     {
@@ -184,12 +225,12 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
 
             while (true)
             {
-                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-                var currentFiles = new List<string>() { "file1.txt", "file2.txt", "file3.txt" };
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                var currentFiles = new List<string>(originalFiles) { Guid.NewGuid().ToString() + ".txt" };
 
                 var result = currentFiles.Except(originalFiles).ToList();
 
-                if (result.Any() != false)
+                if (result.Any() == false)
                 {
                     continue;
                 }
@@ -201,6 +242,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
                     yield return newFileEvent;
                 }
 
+                originalFiles = currentFiles;
                 if (cancellationToken.IsCancellationRequested)
                 {
                     break;

@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,16 +14,17 @@ namespace Weikio.EventFramework.EventSource
     public class QuartzJobRunner : IJob
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly ICloudEventPublisher _publisher;
         private readonly IOptionsMonitor<JobOptions> _optionsMonitor;
         private readonly ILogger<QuartzJobRunner> _logger;
+        private readonly ICloudEventPublisher _cloudEventPublisher;
 
-        public QuartzJobRunner(IServiceProvider serviceProvider, ICloudEventPublisher publisher, IOptionsMonitor<JobOptions> optionsMonitor, ILogger<QuartzJobRunner> logger)
+        public QuartzJobRunner(IServiceProvider serviceProvider, ICloudEventPublisher publisher, IOptionsMonitor<JobOptions> optionsMonitor,
+            ILogger<QuartzJobRunner> logger, ICloudEventPublisher cloudEventPublisher)
         {
             _serviceProvider = serviceProvider;
-            _publisher = publisher;
             _optionsMonitor = optionsMonitor;
             _logger = logger;
+            _cloudEventPublisher = cloudEventPublisher;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -33,128 +33,74 @@ namespace Weikio.EventFramework.EventSource
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var id = Guid.Parse(context.JobDetail.Key.Name);
-                
+                    var id = context.JobDetail.Key.Name;
+
                     _logger.LogDebug("Running scheduled event source with {Id}", id);
-                    var job = _optionsMonitor.Get(id.ToString());
-                
+                    var job = _optionsMonitor.Get(id);
+
                     if (job.Action == null)
                     {
                         throw new Exception("Unknown event source to run. No action found for event source with id: " + id);
                     }
-                
+
                     var action = job.Action;
 
-                    Task task;
-                    if (job.IsStateless())
-                    {
-                        task = (Task) action.DynamicInvoke();
-                        _logger.LogDebug("Running the scheduled event source with {Id} as stateless", id);
-                    }
-                    else
-                    {
-                        var currentState = context.JobDetail.JobDataMap["state"];
-                        var isFirstRun = (bool) context.JobDetail.JobDataMap["isfirstrun"];
+                    var currentState = context.JobDetail.JobDataMap["state"];
+                    var isFirstRun = (bool) context.JobDetail.JobDataMap["isfirstrun"];
 
-                        _logger.LogDebug("Running the scheduled event source with {Id} as stateful. Is first run: {IsFirstRun}, current state: {CurrentState}", id, isFirstRun, currentState);
-                        
-                        task = (Task) action.DynamicInvoke(new[] { currentState, isFirstRun });
-                    }
+                    _logger.LogDebug("Running the scheduled event source with {Id}. Is first run: {IsFirstRun}, current state: {CurrentState}", id,
+                        isFirstRun, currentState);
+
+                    var task = (Task) action.DynamicInvoke(new[] { currentState, isFirstRun });
 
                     if (task == null)
                     {
                         throw new Exception("Couldn't execute action for the event source");
                     }
-                
+
                     await task;
 
                     context.JobDetail.JobDataMap["isfirstrun"] = false;
-                
+
                     _logger.LogDebug("The scheduled event source with {Id} was run successfully", id);
 
-                    if (job.IsStateless())
+                    EventPollingResult pollingResult = ((dynamic) task).Result;
+
+                    if (isFirstRun && pollingResult.NewState != null)
                     {
+                        _logger.LogDebug("First run done for event source with {Id}. Initialized state to {InitialState}.", id, pollingResult.NewState);
+
                         return;
                     }
-                
-                    var actionResult = ((dynamic) task).Result;
-                    var updatedState = (object) actionResult;
 
-                    _logger.LogDebug("Updating the scheduled event source's current state with {Id} to {NewState}", id, updatedState);
+                    if (pollingResult.NewState != null)
+                    {
+                        context.JobDetail.JobDataMap["state"] = pollingResult.NewState;
+                        _logger.LogDebug("Updating the scheduled event source's current state with {Id} to {NewState}", id, pollingResult.NewState);
+                    }
 
-                    context.JobDetail.JobDataMap["state"] = updatedState;
+                    if (pollingResult.NewEvents?.Any() == true && (!isFirstRun || pollingResult.NewState == null))
+                    {
+                        _logger.LogDebug("Publishing new events from event source with {Id}. Event count {EventCount}", id, pollingResult.NewEvents.Count);
+
+                        if (pollingResult.NewEvents.Count == 1)
+                        {
+                            await _cloudEventPublisher.Publish(pollingResult.NewEvents.First());
+                        }
+                        else
+                        {
+                            await _cloudEventPublisher.Publish(pollingResult.NewEvents);
+                        }
+                    }
                 }
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Failed to run scheduled event source");
+
                 throw;
             }
         }
-
-
-    }
-
-    public static class JobOptionsExtensions
-    {
-        public static bool IsStateless(this JobOptions jobOptions)
-        {
-            if (jobOptions == null)
-            {
-                throw new ArgumentNullException(nameof(jobOptions));
-            }
-
-            var action = jobOptions.Action;
-            
-            return !action.Method.ReturnType.IsGenericType;
-        }
-        
-        public static bool IsStateful(this JobOptions jobOptions)
-        {
-            return jobOptions.IsStateless() == false;
-        }
-    }
-
-    public class EventSource
-    {
-        public EventSource(Func<CloudEvent, Task<bool>> canHandle, Func<CloudEvent, Task> action)
-        {
-            CanHandle = canHandle;
-            Action = action;
-        }
-
-        public Func<CloudEvent, Task<bool>> CanHandle { get; set; }
-        public Func<CloudEvent, Task> Action { get; set; }
-    }
-
-    public class EventPublisherSource
-    {
-        public EventPublisherSource(Func<Task> action)
-        {
-            Action = action;
-        }
-
-        public Func<Task> Action { get; set; }
-    }
-
-    public class NewLinesAddedEvent
-    {
-        public NewLinesAddedEvent(List<string> newLines)
-        {
-            NewLines = newLines;
-        }
-
-        public List<string> NewLines { get; }
-    }
-
-    public class CounterEvent
-    {
-        public CounterEvent(int count)
-        {
-            Count = count;
-        }
-
-        public int Count { get; }
     }
 
     //

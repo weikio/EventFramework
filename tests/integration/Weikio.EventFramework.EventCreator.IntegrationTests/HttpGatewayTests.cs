@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using EventFrameworkTestBed;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -7,12 +8,13 @@ using Microsoft.Extensions.Hosting;
 using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
 using Weikio.EventFramework.EventGateway.Http;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests
 {
     public class HttpGatewayTests :  EventFrameworkTestBase
     {
-        public HttpGatewayTests(WebApplicationFactory<Startup> factory) : base(factory)
+        public HttpGatewayTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)
         {
         }
 
@@ -59,5 +61,6 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests
             await server.PostAsync("/api/first", new StringContent(json));
             await server.PostAsync("/api/second", new StringContent(json));
         }
+
     }
 }

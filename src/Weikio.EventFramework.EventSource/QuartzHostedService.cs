@@ -15,19 +15,18 @@ namespace Weikio.EventFramework.EventSource
     {
         private readonly ISchedulerFactory _schedulerFactory;
         private readonly IJobFactory _jobFactory;
-        private readonly IEnumerable<JobSchedule> _jobSchedules;
         private readonly ILogger<QuartzHostedService> _logger;
         private readonly IOptionsMonitor<JobOptions> _optionsMonitor;
+        private readonly JobScheduleService _jobScheduleService;
 
         public QuartzHostedService(
             ISchedulerFactory schedulerFactory,
-            IJobFactory jobFactory,
-            IEnumerable<JobSchedule> jobSchedules, ILogger<QuartzHostedService> logger, IOptionsMonitor<JobOptions> optionsMonitor)
+            IJobFactory jobFactory, ILogger<QuartzHostedService> logger, IOptionsMonitor<JobOptions> optionsMonitor, JobScheduleService jobScheduleService)
         {
             _schedulerFactory = schedulerFactory;
-            _jobSchedules = jobSchedules;
             _logger = logger;
             _optionsMonitor = optionsMonitor;
+            _jobScheduleService = jobScheduleService;
             _jobFactory = jobFactory;
         }
 
@@ -38,12 +37,14 @@ namespace Weikio.EventFramework.EventSource
             Scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             Scheduler.JobFactory = _jobFactory;
             
-            _logger.LogInformation("Starting polling event sources. Event source count: {Count}", _jobSchedules.Count());
+            _logger.LogInformation("Starting polling event sources. Event source count: {Count}", _jobScheduleService.Count);
 
-            foreach (var jobSchedule in _jobSchedules)
+            foreach (var jobSchedule in _jobScheduleService)
             {
                 try
                 {
+                    _logger.LogDebug("Starting polling event source with {Id}", jobSchedule.Id);
+
                     var job = CreateJob(jobSchedule);
 
                     await Scheduler.AddJob(job, true, cancellationToken);
@@ -61,7 +62,7 @@ namespace Weikio.EventFramework.EventSource
                 }
             }
 
-            _logger.LogInformation("Created {Count} polling event sources. Starting the polling service", _jobSchedules.Count());
+            _logger.LogInformation("Created {Count} polling event sources. Starting the polling service for the sources", _jobScheduleService.Count());
             await Scheduler.Start(cancellationToken);
         }
 
@@ -113,7 +114,7 @@ namespace Weikio.EventFramework.EventSource
 
             var job = _optionsMonitor.Get(schedule.Id.ToString());
 
-            if (job.IsStateless())
+            if (job.ContainsState == false)
             {
                 if (string.IsNullOrWhiteSpace(schedule.CronExpression))
                 {
@@ -126,7 +127,7 @@ namespace Weikio.EventFramework.EventSource
                 return result;
             }
 
-            var initializationTriggerRequired = job.IsStateful() && !string.IsNullOrWhiteSpace(schedule.CronExpression);
+            var initializationTriggerRequired = !string.IsNullOrWhiteSpace(schedule.CronExpression);
 
             var cronTrigger = triggerBuilder.Build();
             result.Add(cronTrigger);

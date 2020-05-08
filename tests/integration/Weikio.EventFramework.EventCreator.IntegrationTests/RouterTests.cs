@@ -8,12 +8,13 @@ using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.Router;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests
 {
     public class RouterTests : EventFrameworkTestBase
     {
-        public RouterTests(WebApplicationFactory<Startup> factory) : base(factory)
+        public RouterTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)
         {
         }
 

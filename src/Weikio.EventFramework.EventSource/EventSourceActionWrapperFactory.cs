@@ -1,74 +1,86 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Weikio.EventFramework.EventSource
 {
     public class EventSourceActionWrapperFactory
     {
         private readonly Type _type;
-        private readonly Guid _id;
+        public string Id { get; }
+        private readonly ILogger<EventSourceActionWrapperFactory> _logger;
 
-        public EventSourceActionWrapperFactory(Type type, Guid id)
+        public EventSourceActionWrapperFactory(Type type, Guid id, ILogger<EventSourceActionWrapperFactory> logger)
         {
             _type = type;
-            _id = id;
+            Id = id.ToString();
+            _logger = logger;
         }
 
-        public List<Func<object, bool, Task<object>>> Create(IServiceProvider serviceProvider)
+        public List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)> Create(IServiceProvider serviceProvider)
         {
-            Func<object, bool, Task<object>> Create(MethodInfo method)
+            (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) Create(MethodInfo method)
             {
-                var wrapper = serviceProvider.GetRequiredService<EventSourceActionWrapper>();
-
-                Task Func(object state)
+                var wrapper = new Wrapper();
+                var wrappedMethodCall = wrapper.Wrap(method);
+                
+                Task<EventPollingResult> WrapperRunner(object state, bool isFirstRun)
                 {
                     var instance = serviceProvider.GetRequiredService(_type);
+                    var del = CreateDelegate(method, instance);
 
-                    var resObject = method.Invoke(instance, new[] { state });
+                    var res = wrappedMethodCall.Action.DynamicInvoke(del, state, isFirstRun);
+                    var taskResult = (Task<EventPollingResult>) res;
                     
-                    dynamic taskResult = (Task) resObject;
-
                     return taskResult;
                 }
 
-                var myFunc = wrapper.Create(Func);
-
-                return myFunc;
+                return (WrapperRunner, wrappedMethodCall.ContainsState);
             }
-            
+
             var publicMethods = _type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).ToList();
-            var eventReturningStatefulMethods = new List<MethodInfo>();
 
-            foreach (var publicMethod in publicMethods)
+            var result = new List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)>();
+
+            foreach (var methodInfo in publicMethods)
             {
-                var methodReturnType = publicMethod.ReturnType;
-
-                var isTaskWithValue = methodReturnType.IsGenericType;
-
-                if (isTaskWithValue)
-                {
-                    var returnValType = methodReturnType.GenericTypeArguments.First();
-                    if (typeof(ITuple).IsAssignableFrom(returnValType))
-                    {
-                        // We have a method which returns events and the current state
-                        eventReturningStatefulMethods.Add(publicMethod);
-                    }
-                }
-            }
-
-            var result = new List<Func<object, bool, Task<object>>>();
-            foreach (var eventReturningStatefulMethod in eventReturningStatefulMethods)
-            {
-                var m = Create(eventReturningStatefulMethod);
-                result.Add(m);
+                var wrapper = Create(methodInfo);
+                var id = GetId(methodInfo);
+                
+                result.Add((id, wrapper));
             }
 
             return result;
-        } 
+        }
+
+        private static Delegate CreateDelegate(MethodInfo methodInfo, object target)
+        {
+            var key = GetId(methodInfo);
+
+            var funcTypeFromCache = _cache.GetOrAdd(key, s =>
+            {
+                var types = methodInfo.GetParameters().Select(p => p.ParameterType);
+                types = types.Concat(new[] { methodInfo.ReturnType });
+
+                var funcType = Expression.GetFuncType(types.ToArray());
+
+                return funcType;
+            });
+
+            return Delegate.CreateDelegate(funcTypeFromCache, target, methodInfo.Name);
+        }
+
+        private static string GetId(MethodInfo methodInfo)
+        {
+            return methodInfo.DeclaringType?.FullName + methodInfo.Name;
+        }
+
+        private static readonly ConcurrentDictionary<string, Type> _cache = new ConcurrentDictionary<string, Type>();
     }
 }
