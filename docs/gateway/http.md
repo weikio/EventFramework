@@ -1,0 +1,14 @@
+---
+title: HTTP Gateway
+description: Every documentation page can optionally have a description.
+order: 2
+tags: grazedocs
+---
+
+## Introduction
+
+This is the placeholder for your documentation.
+
+## More information
+
+Please see https://grazedocs.io for more information.
