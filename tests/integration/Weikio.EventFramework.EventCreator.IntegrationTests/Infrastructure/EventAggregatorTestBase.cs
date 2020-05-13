@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Http;
-using System.Threading.Tasks;
 using EventFrameworkTestBed;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,25 +34,6 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
             });
 
             return server.Services.GetService<EventAggregatorPublisherForTesting>();
-        }
-    }
-
-    public class EventAggregatorPublisherForTesting
-    {
-        private readonly ICloudEventCreator _eventCreator;
-        private readonly ICloudEventAggregator _cloudEventAggregator;
-
-        public EventAggregatorPublisherForTesting(ICloudEventCreator eventCreator, ICloudEventAggregator cloudEventAggregator)
-        {
-            _eventCreator = eventCreator;
-            _cloudEventAggregator = cloudEventAggregator;
-        }
-
-        public async Task Publish(object obj)
-        {
-            var cloudEvent = _eventCreator.CreateCloudEvent(obj);
-
-            await _cloudEventAggregator.Publish(cloudEvent);
         }
     }
 }

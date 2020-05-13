@@ -4,11 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
+using Weikio.EventFramework.EventSource.EventSourceWrapping;
+using Weikio.EventFramework.EventSource.LongPolling;
+using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource
 {
@@ -38,21 +42,29 @@ namespace Weikio.EventFramework.EventSource
                 throw new ArgumentNullException(nameof(services));
             }
 
-            if (services.All(x => x.ImplementationType != typeof(QuartzHostedService)))
+            if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
                 services.AddHostedService<EventSourceActionWrapperUnwrapperHost>();
             }
 
-            services.TryAddSingleton<IJobFactory, JobFactory>();
+            if (services.All(x => x.ImplementationType != typeof(LongPollingHostedServiceCreator)))
+            {
+                services.AddHostedService<LongPollingHostedServiceCreator>();
+            }
+
+            services.TryAddSingleton<IJobFactory, DefaultJobFactory>();
             services.TryAddSingleton<ISchedulerFactory, StdSchedulerFactory>();
-            services.TryAddSingleton<QuartzJobRunner>();
-            services.TryAddSingleton<JobScheduleService>();
+            services.TryAddSingleton<PollingJobRunner>();
+            services.TryAddSingleton<PollingScheduleService>();
+            services.TryAddTransient<IActionWrapper, DefaultActionWrapper>();
+            services.TryAddSingleton<LongPollingService>();
 
             services.TryAddTransient<EventSourceActionWrapper>();
+            services.TryAddTransient<ILongPollingEventSourceHost, DefaultLongPollingEventSourceHost>();
 
-            if (services.All(x => x.ImplementationType != typeof(QuartzHostedService)))
+            if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
-                services.AddHostedService<QuartzHostedService>();
+                services.AddHostedService<DefaultPollingEventSourceHostedService>();
             }
 
             if (setupAction != null)
@@ -84,6 +96,14 @@ namespace Weikio.EventFramework.EventSource
             string cronExpression = null, MulticastDelegate configure = null)
         {
             services.AddSourceInner(action, pollingFrequency, cronExpression, configure);
+
+            return services;
+        }
+        
+        public static IServiceCollection AddSource(this IServiceCollection services, object instance, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            services.AddSourceInner(null, pollingFrequency, cronExpression, configure, null, instance);
 
             return services;
         }
@@ -131,8 +151,22 @@ namespace Weikio.EventFramework.EventSource
             return builder;
         }
 
+        public static IEventFrameworkBuilder AddSource<TSourceType>(this IEventFrameworkBuilder builder)
+        {
+            builder.Services.AddSource<TSourceType>();
+
+            return builder;
+        }
+
+        public static IServiceCollection AddSource<TSourceType>(this IServiceCollection services)
+        {
+            services.AddSourceInner(null, null, null, null, typeof(TSourceType));
+
+            return services;
+        }
+
         public static IServiceCollection AddSourceInner(this IServiceCollection services, MulticastDelegate action, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, Type eventSourceType = null)
+            string cronExpression = null, MulticastDelegate configure = null, Type eventSourceType = null, object eventSourceInstance = null)
         {
             services.AddCloudEventSources();
 
@@ -146,21 +180,33 @@ namespace Weikio.EventFramework.EventSource
 
             services.AddSingleton(provider =>
             {
-                var schedule = new JobSchedule(id, pollingFrequency, cronExpression);
+                var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
             });
 
-            if (eventSourceType != null)
+            if (eventSourceType == null && eventSourceInstance != null)
+            {
+                eventSourceType = eventSourceInstance.GetType();
+            }
+            
+            var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
+
+            if (isHostedService)
+            {
+                services.AddTransient(typeof(IHostedService), eventSourceType);
+            }
+            else if (eventSourceType != null)
             {
                 services.TryAddTransient(eventSourceType);
+
                 services.AddTransient(provider =>
                 {
-                    var logger = provider.GetRequiredService<ILogger<EventSourceActionWrapperFactory>>();
-                    var eventSourceActionWrapperFactory = new EventSourceActionWrapperFactory(eventSourceType, id, logger);
-                
-                    return eventSourceActionWrapperFactory;
-                });             
+                    var logger = provider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
+                    var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, eventSourceInstance);
+
+                    return factory;
+                });
             }
             else
             {

@@ -59,15 +59,15 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
         public IConfiguration Configuration { get; }
 
-        public class CounterHandler
-        {
-            public Task Handle(CounterEvent counterEvent)
-            {
-                Console.WriteLine($"{DateTime.Now}: {counterEvent.Count}");
-
-                return Task.CompletedTask;
-            }
-        }
+        // public class CounterHandler
+        // {
+        //     public Task Handle(CounterEvent counterEvent)
+        //     {
+        //         Console.WriteLine($"{DateTime.Now}: {counterEvent.Count}");
+        //
+        //         return Task.CompletedTask;
+        //     }
+        // }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -105,13 +105,13 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             // builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(5), null, new Action<HelloWorld2>(x => x.Folder = @"c:\short"));
             // builder.AddSource(typeof(HelloWorld2), TimeSpan.FromSeconds(10), null, new Action<HelloWorld2>(x => x.Folder = @"c:\longer"));
 
-            builder.AddSource<int>(currentCount =>
-            {
-                currentCount += 1;
-                var result = new CounterEvent(currentCount);
-            
-                return (result, currentCount);
-            }, TimeSpan.FromSeconds(3));
+            // builder.AddSource<int>(currentCount =>
+            // {
+            //     currentCount += 1;
+            //     var result = new CounterEvent(currentCount);
+            //
+            //     return (result, currentCount);
+            // }, TimeSpan.FromSeconds(3));
             //
             // builder.AddSource<int>(async currentCount =>
             // {
@@ -122,21 +122,21 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             //     return (result, currentCount);
             // }, TimeSpan.FromSeconds(2));
 
-            builder.AddSource(currentCount =>
-            {
-                var count = 0;
-            
-                if (currentCount != null)
-                {
-                    count = (int) currentCount;
-                }
-            
-                var result = new CounterEvent(count);
-            
-                // updateState(count + 1);
-            
-                return Task.FromResult<(object, object)>((result, count + 1));
-            }, TimeSpan.FromSeconds(3));
+            // builder.AddSource(currentCount =>
+            // {
+            //     var count = 0;
+            //
+            //     if (currentCount != null)
+            //     {
+            //         count = (int) currentCount;
+            //     }
+            //
+            //     var result = new CounterEvent(count);
+            //
+            //     // updateState(count + 1);
+            //
+            //     return Task.FromResult<(object, object)>((result, count + 1));
+            // }, TimeSpan.FromSeconds(3));
 
             // builder.AddSource(() =>
             // {
