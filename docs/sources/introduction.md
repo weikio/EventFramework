@@ -1,7 +1,8 @@
 ---
-title: Cloud Event Sources
+title: Introduction
 description: Every documentation page can optionally have a description.
 tags: grazedocs
+order: 0
 ---
 
 ## Introduction

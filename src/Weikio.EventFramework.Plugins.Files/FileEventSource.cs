@@ -13,6 +13,9 @@ namespace Weikio.EventFramework.Plugins.Files
         private readonly ICloudEventPublisher _cloudEventPublisher;
         private  FileSystemWatcher _fileSystemWatcher; 
         
+        public string Folder { get; set; }
+        public string Filter { get; set; }
+        
         public FileEventSource(ILogger<FileEventSource> logger, ICloudEventPublisher cloudEventPublisher)
         {
             _logger = logger;

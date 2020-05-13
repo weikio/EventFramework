@@ -6,7 +6,7 @@
 	<Logo>/assets/logo.png</Logo>
 	<Footer>Copyright 2020 Weik.io</Footer>
 	<Navigations>
-		<Navigation Url="/" ExtraClass="active">Documentation</Navigation>
+		<Navigation Url="/" ExtraClass="active">Event Framework</Navigation>
 	</Navigations>
 	<SecondaryLinks>
 		<SecondaryLink Url="https://eventframework.weik.io">Project Home</SecondaryLink>

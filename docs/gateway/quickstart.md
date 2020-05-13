@@ -1,8 +1,8 @@
 ---
-title: Introduction
+title: Quick start
 description: Every documentation page can optionally have a description.
 tags: grazedocs
-order: 0
+order: 2
 ---
 
 ## Introduction
