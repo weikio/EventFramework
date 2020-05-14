@@ -51,7 +51,7 @@
                             </a>
 
                                 <ul class="nav bd-sidenav">
-                                        <li class="active">
+                                        <li class="">
                                             <a href="/index.html">
                                                 Introduction
                                             </a>
@@ -79,7 +79,7 @@
                                                 Quick start
                                             </a>
                                         </li>
-                                        <li class="">
+                                        <li class="active">
                                             <a href="/creation/configuration.html">
                                                 Configuration
                                             </a>
@@ -176,88 +176,24 @@
                 <div class="d-none d-xl-block col-xl-2 bd-toc">
                     <ul class="section-nav">
                             <li class="toc-entry toc-h2"><a href="#introduction">Introduction</a></li>
-                            <li class="toc-entry toc-h2"><a href="#core-features">Core Features</a></li>
-                            <li class="toc-entry toc-h5"><a href="#cloudevent-creation">CloudEvent Creation</a></li>
-                            <li class="toc-entry toc-h5"><a href="#cloudevent-gateway">CloudEvent Gateway</a></li>
-                            <li class="toc-entry toc-h5"><a href="#cloudevent-aggregator">CloudEvent Aggregator</a></li>
-                            <li class="toc-entry toc-h5"><a href="#cloudevent-sources">CloudEvent Sources</a></li>
-                            <li class="toc-entry toc-h2"><a href="#source-code">Source code</a></li>
-                            <li class="toc-entry toc-h2"><a href="#support">Support</a></li>
-                            <li class="toc-entry toc-h2"><a href="#license">License</a></li>
+                            <li class="toc-entry toc-h2"><a href="#more-information">More information</a></li>
                     </ul>
                 </div>
 
             <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 bd-content" role="main">
-                <h1 class="bd-title" id="content">Introduction</h1>
-                <p class="bd-lead">Event Framework is a framework for creating, receiving, sending and handling CloudEvents in .NET.</p>
+                <h1 class="bd-title" id="content">Configuration</h1>
+                <p class="bd-lead">Every documentation page can optionally have a description.</p>
                 <h2 id="introduction">Introduction</h2>
-<p><a href="2020-05-13-19-24-22.png" class="lightbox"><img src="2020-05-13-19-24-22.png" class="float-right img-fluid" alt="Logo"></a></p>
-<p><a href="https://cloudevents.io/" target="_blank">CloudEvents</a> are a specification which describe event data in a common way. <strong>Event Framework</strong> is a framework for creating, receiving, sending and handling <strong>CloudEvents in .NET</strong>.</p>
-<p>Event Framework is available for .NET Core 3.1. Some parts of it are available as .NET Standard 2.0 libraries. The sweet spot for using Event Framework is an ASP.NET Core 3.1 based application.</p>
-<p>Event Framework is part of the Weik.io platform. Weik.io provides open source integration, eventing and automation frameworks for .NET applications. Event Framework is the "eventing" part of the Weik.io platform.</p>
-<h2 id="core-features">Core Features</h2>
-<p>The core features of the Event Framework are:</p>
-<ul>
-<li>Create CloudEvents from .NET objects</li>
-<li>Send and receive CloudEvents</li>
-<li>Handle CloudEvents</li>
-<li>Monitor and automatically publish CloudEvents</li>
-</ul>
-<p>Each of these these core features are available as separate Nuget packages. The following sections describe these core features in more detail.</p>
-<h5 id="cloudevent-creation">CloudEvent Creation</h5>
-<p>Use Event Framework to create CloudEvents from .NET objects. Event Framework can convert a single object or a collection of objects:</p>
-<pre><code class="language-csharp">services.AddEventFramework()
-    .AddCloudEventCreator();
-...
-var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj);
-</code></pre>
-<p>Configuration can be used to define the event's subject, topic and other information.</p>
-<p>View the <a href="/creation/quickstart.html">quick start of using Event Framework to create CloudEvents</a> or browse through the <a href="/creation/introduction.html">full documentation</a>.</p>
-<h5 id="cloudevent-gateway">CloudEvent Gateway</h5>
-<p>Use Event Framework to host CloudEvents Gateway. Gateways allow Event Framework to receive and to send CloudEvents:</p>
-<pre><code class="language-csharp">services.AddEventFramework()
-    .AddHttpGateway();
-</code></pre>
-<p>Event Framework supports the following types of gateways:</p>
-<ul>
-<li>Local (in-memory)</li>
-<li>HTTP</li>
-<li>Azure Service Bus</li>
-</ul>
-<p>Single application can contain multiple gateways, so it is possible for example to receive messages through Azure Service Bus and through HTTP web requests.</p>
-<p>View the <a href="/gateway/quickstart.html">quick start of using Event Framework gateways to send and to receive CloudEvents</a> or browse through the <a href="/gateway/introduction.html">full documentation</a>.</p>
-<h5 id="cloudevent-aggregator">CloudEvent Aggregator</h5>
-<p>Use Event Framework to handle CloudEvents. CloudEvent Aggregator allows your application to handle CloudEvents. With the event aggregator your application can handle different types of events through handlers:</p>
-<pre><code class="language-csharp">services.AddEventFramework()
-    .AddHandler&lt;FileCreatedHandler&gt;();
-</code></pre>
-<p>Multiple handlers can work with a single CloudEvent and your application can handle messages coming from outside of your system or from inside.</p>
-<p>View the <a href="/aggregator/quickstart.html">quick start of creating CloudEvent handler</a> or browse through the <a href="/aggregator/introduction.html">full documentation</a>.</p>
-<h5 id="cloudevent-sources">CloudEvent Sources</h5>
-<p>Use Event Framework Sources to watch and to publish CloudEvents based on changes happening in other systems. Event source is an ideal solution for a scenario where you want to track changes in other systems, for example in an external database or in CosmosDB:</p>
-<pre><code class="language-csharp">services.AddEventFramework()
-    .AddSource&lt;FileEventSource&gt;(source =&gt;
-    {
-        source.Folder = @"c:\temp";
-        source.Filter = "*.exe";
-    })
-</code></pre>
-<p>Add and configure Event source into your application and then use handlers to react to the changes. Or just publish the CloudEvents into an another gateway.</p>
-<p>Use plugins to add different CloudEvent sources easily.</p>
-<p>View the <a href="/sources/quickstart.html">quick start of using a CloudEvent source</a> or browse through the <a href="/sources/introduction.html">full documentation</a>.</p>
-<h2 id="source-code">Source code</h2>
-<p>Source code for Event Framework is available from <a href="https://github.com/weikio/EventFramework" target="_blank">GitHub</a>.</p>
-<h2 id="support">Support</h2>
-<p>Commercial support for Event Framework is available.</p>
-<h2 id="license">License</h2>
-<p>Event Framework is available as an open source, MIT-licensed project.</p>
+<p>This is the placeholder for your documentation.</p>
+<h2 id="more-information">More information</h2>
+<p>Please see <a href="https://grazedocs.io">https://grazedocs.io</a> for more information.</p>
 
 
                 <div class="row">
                     <div class="col">
+                            <a class="text-muted" href="/creation/quickstart.html">Previous: Quick start</a>
                     </div>
                     <div class="col text-right">
-                            <a class="text-muted" href="/why.html">Next: What are Cloud Events?</a>
                     </div>
                 </div>
 
