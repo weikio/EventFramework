@@ -151,19 +151,19 @@ namespace Weikio.EventFramework.EventSource
             return builder;
         }
 
-        public static IEventFrameworkBuilder AddSource<TSourceType>(this IEventFrameworkBuilder builder, Action<TSourceType> configure = null)
-        {
-            builder.Services.AddSource<TSourceType>(null, null, configure);
-
-            return builder;
-        }
-
-        public static IServiceCollection AddSource<TSourceType>(this IServiceCollection services, MulticastDelegate configure = null)
-        {
-            services.AddSourceInner(null, null, null, configure, typeof(TSourceType));
-
-            return services;
-        }
+        // public static IEventFrameworkBuilder AddSource<TSourceType>(this IEventFrameworkBuilder builder, Action<TSourceType> configure = null)
+        // {
+        //     builder.Services.AddSource<TSourceType>(null, null, configure);
+        //
+        //     return builder;
+        // }
+        //
+        // public static IServiceCollection AddSource<TSourceType>(this IServiceCollection services, MulticastDelegate configure = null)
+        // {
+        //     services.AddSourceInner(null, null, null, configure, typeof(TSourceType));
+        //
+        //     return services;
+        // }
 
         public static IServiceCollection AddSourceInner(this IServiceCollection services, MulticastDelegate action, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Type eventSourceType = null, object eventSourceInstance = null)

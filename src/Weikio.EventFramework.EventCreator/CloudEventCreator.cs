@@ -21,35 +21,38 @@ namespace Weikio.EventFramework.EventCreator
             _serviceProvider = serviceProvider;
         }
 
-        public CloudEvent CreateCloudEvent(object obj, string eventTypeName = null, string id = null, Uri source = null,
+        public static CloudEvent Create(object obj, CloudEventCreationOptions options = null, string eventTypeName = null, string id = null, Uri source = null,
             ICloudEventExtension[] extensions = null,
-            string subject = null)
+            string subject = null, IServiceProvider serviceProvider = null)
         {
-            var options = _optionsMonitor.Get(obj.GetType().FullName);
-
+            if (options == null)
+            {
+                options = new CloudEventCreationOptions();
+            }
+            
             if (string.IsNullOrEmpty(eventTypeName))
             {
-                eventTypeName = options.GetEventTypeName(options, _serviceProvider, obj);
+                eventTypeName = options.GetEventTypeName(options, serviceProvider, obj);
             }
 
             if (string.IsNullOrWhiteSpace(id))
             {
-                id = options.GetId(options, _serviceProvider, obj);
+                id = options.GetId(options, serviceProvider, obj);
             }
 
-            if (extensions == null)
+            if (extensions == null )
             {
-                extensions = options.GetExtensions(options, _serviceProvider, obj);
+                extensions = options.GetExtensions(options, serviceProvider, obj);
             }
 
             if (subject == null)
             {
-                subject = options.GetSubject(options, _serviceProvider, obj);
+                subject = options.GetSubject(options, serviceProvider, obj);
             }
 
             if (source == null)
             {
-                source = options.GetSource(options, _serviceProvider, obj);
+                source = options.GetSource(options, serviceProvider, obj);
             }
 
             try
@@ -60,10 +63,53 @@ namespace Weikio.EventFramework.EventCreator
             }
             catch (Exception e)
             {
+                throw new FailedToCreateCloudEventException(e);
+            }
+        }
+
+        public CloudEvent CreateCloudEvent(object obj, string eventTypeName = null, string id = null, Uri source = null,
+            ICloudEventExtension[] extensions = null,
+            string subject = null)
+        {
+            var options = _optionsMonitor.Get(obj.GetType().FullName);
+
+            try
+            {
+                var result = Create(obj, options, eventTypeName, id, source, extensions, subject, _serviceProvider);
+
+                return result;
+            }
+            catch (Exception e)
+            {
                 _logger.LogError(e, "Failed to create cloud event from {Object}", obj);
 
                 throw;
             }
+        }
+        
+        public static IEnumerable<CloudEvent> Create(IEnumerable<object> objects, CloudEventCreationOptions options, string eventTypeName = null, string id = null, Uri source = null,
+            ICloudEventExtension[] extensions = null, string subject = null, IServiceProvider serviceProvider = null)
+        {
+            if (objects == null)
+            {
+                return new List<CloudEvent>();
+            }
+
+            var result = new List<CloudEvent>();
+            var index = 0;
+
+            foreach (var obj in objects)
+            {
+                var originalExtensions = GetSequenceExtension(ref extensions, index);
+
+                var cloudEvent = Create(obj, options, eventTypeName, id, source, extensions, subject, serviceProvider);
+                result.Add(cloudEvent);
+
+                extensions = originalExtensions;
+                index += 1;
+            }
+
+            return result;
         }
 
         public IEnumerable<CloudEvent> CreateCloudEvents(IEnumerable<object> objects, string eventTypeName = null, string id = null, Uri source = null,
@@ -79,20 +125,7 @@ namespace Weikio.EventFramework.EventCreator
 
             foreach (var obj in objects)
             {
-                var sequenceExtension = new IntegerSequenceExtension(index);
-
-                var originalExtensions = extensions;
-                
-                if (extensions?.Any() != true)
-                {
-                    extensions = new ICloudEventExtension[] { sequenceExtension };
-                }
-                else
-                {
-                    var updatedExtensions = new List<ICloudEventExtension>(extensions) { sequenceExtension };
-
-                    extensions = updatedExtensions.ToArray();
-                }
+                var originalExtensions = GetSequenceExtension(ref extensions, index);
 
                 var cloudEvent = CreateCloudEvent(obj, eventTypeName, id, source, extensions, subject);
                 result.Add(cloudEvent);
@@ -102,6 +135,26 @@ namespace Weikio.EventFramework.EventCreator
             }
 
             return result;
+        }
+
+        private static ICloudEventExtension[] GetSequenceExtension(ref ICloudEventExtension[] extensions, int index)
+        {
+            var sequenceExtension = new IntegerSequenceExtension(index);
+
+            var originalExtensions = extensions;
+
+            if (extensions?.Any() != true)
+            {
+                extensions = new ICloudEventExtension[] { sequenceExtension };
+            }
+            else
+            {
+                var updatedExtensions = new List<ICloudEventExtension>(extensions) { sequenceExtension };
+
+                extensions = updatedExtensions.ToArray();
+            }
+
+            return originalExtensions;
         }
     }
 }
