@@ -4,7 +4,7 @@ using System.Linq;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Weikio.EventFramework.Abstractions;
@@ -14,13 +14,21 @@ namespace Weikio.EventFramework.EventCreator
     public class CloudEventCreator : ICloudEventCreator
     {
         private readonly ILogger<CloudEventCreator> _logger;
-        private readonly IOptionsMonitor<CloudEventCreationOptions> _optionsMonitor;
+        private readonly ICloudEventCreatorOptionsProvider _cloudEventCreatorOptionsProvider;
         private readonly IServiceProvider _serviceProvider;
 
-        public CloudEventCreator(ILogger<CloudEventCreator> logger, IOptionsMonitor<CloudEventCreationOptions> optionsMonitor, IServiceProvider serviceProvider)
+        public CloudEventCreator(CloudEventCreationOptions options = null)
+        {
+            _logger = new NullLogger<CloudEventCreator>();
+            _cloudEventCreatorOptionsProvider = new CloudEventCreatorOptions(options);
+            _serviceProvider = null;
+        }
+
+        public CloudEventCreator(ILogger<CloudEventCreator> logger, DefaultCloudEventCreatorOptionsProvider cloudEventCreatorOptionsProvider,
+            IServiceProvider serviceProvider)
         {
             _logger = logger;
-            _optionsMonitor = optionsMonitor;
+            _cloudEventCreatorOptionsProvider = cloudEventCreatorOptionsProvider;
             _serviceProvider = serviceProvider;
         }
 
@@ -28,7 +36,7 @@ namespace Weikio.EventFramework.EventCreator
             ICloudEventExtension[] extensions = null,
             string subject = null)
         {
-            var options = _optionsMonitor.Get(obj.GetType().FullName);
+            var options = _cloudEventCreatorOptionsProvider.Get(obj.GetType().FullName);
 
             try
             {
@@ -114,7 +122,7 @@ namespace Weikio.EventFramework.EventCreator
                 throw new FailedToCreateCloudEventException(e);
             }
         }
-        
+
         public static string CreateJson(object obj, CloudEventCreationOptions options = null, string eventTypeName = null, string id = null, Uri source = null,
             ICloudEventExtension[] extensions = null,
             string subject = null, IServiceProvider serviceProvider = null)

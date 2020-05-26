@@ -17,6 +17,7 @@ namespace Weikio.EventFramework.EventCreator
         public static IServiceCollection AddCloudEventCreator(this IServiceCollection services, Action<CloudEventCreationOptions> setupAction = null)
         {
             services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
+            services.TryAddSingleton<ICloudEventCreatorOptionsProvider, DefaultCloudEventCreatorOptionsProvider>();
 
             if (setupAction != null)
             {
