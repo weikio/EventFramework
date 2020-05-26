@@ -2,7 +2,6 @@
 
 namespace Weikio.EventFramework.Abstractions
 {
-    
     public static class CloudEventExtensions 
     {
         public static string Gateway(this CloudEvent cloudEvent)
@@ -24,5 +23,7 @@ namespace Weikio.EventFramework.Abstractions
 
             return null;
         }
+        
+
     }
 }

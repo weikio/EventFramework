@@ -9,6 +9,7 @@ using Weikio.ApiFramework.Core.Apis;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.ApiFramework.Core.Extensions;
 using Weikio.ApiFramework.Core.HealthChecks;
+using Weikio.ApiFramework.SDK;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration;
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Weikio.EventFramework.EventCreator.Tests
@@ -13,6 +14,26 @@ namespace Weikio.EventFramework.EventCreator.Tests
             var result = CloudEventCreator.Create(obj, new CloudEventCreationOptions { EventTypeName = "hello-world" });
 
             Assert.Equal("hello-world", result.Type);
+        }
+
+        [Fact]
+        public void CanCreateMultipleEventsWithSequence()
+        {
+            var objs = new List<CustomerCreated>();
+
+            for (var i = 0; i < 10; i++)
+            {
+                var obj = new CustomerCreated(Guid.NewGuid(), "Test", "User " + i);
+                objs.Add(obj);
+            }
+
+            var cloudEvents = CloudEventCreator.Create(objs);
+
+            foreach (var cloudEvent in cloudEvents)
+            {
+                var attributes = cloudEvent.GetAttributes();
+                Assert.Contains("sequence", attributes);
+            }
         }
 
         [Fact]
@@ -35,18 +56,21 @@ namespace Weikio.EventFramework.EventCreator.Tests
 
             Assert.Equal(id.ToString(), result.Id);
         }
-        
+
         [Fact]
         public void CanConfigureSubjectUsingObject()
         {
             var obj = new CustomerCreated(Guid.NewGuid(), "Test", "User");
 
-            var result = CloudEventCreator.Create(obj, new CloudEventCreationOptions { GetSubject = (options, provider, ob) =>
+            var result = CloudEventCreator.Create(obj, new CloudEventCreationOptions
             {
-                var ev = (CustomerCreated) ob;
+                GetSubject = (options, provider, ob) =>
+                {
+                    var ev = (CustomerCreated) ob;
 
-                return $"{ev.FirstName} {ev.LastName}";
-            } });
+                    return $"{ev.FirstName} {ev.LastName}";
+                }
+            });
 
             Assert.Equal("Test User", result.Subject);
         }

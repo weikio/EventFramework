@@ -1,13 +1,16 @@
 using System;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
@@ -85,13 +88,26 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             //     options.DefaultGatewayName = "local";
             // });
             //
-            var builder = services.AddEventFramework()
-                .AddLocal("local")
-                .AddHttpGateway("web", "myevents/incoming", "16247d99-b297-4711-899a-e4e8f78c13d5", client =>
-                {
-                    client.BaseAddress = new Uri("https://webhook.site");
-                })
-                .AddRoute("local", "web");
+            // var builder = services.AddEventFramework()
+            //     .AddLocal("local")
+            //     .AddHttpGateway("web", "myevents/incoming", "16247d99-b297-4711-899a-e4e8f78c13d5", client =>
+            //     {
+            //         client.BaseAddress = new Uri("https://webhook.site");
+            //     })
+            //     .AddRoute("local", "web")
+            //
+            // services.ConfigureCloudEvent<CustomerCreated>(options =>
+            // {
+            //     options.GetSubject = (creationOptions, provider, arg3) =>
+            //     {
+            //         var el = (CustomerCreated) arg3;
+            //
+            //         return el.FirstName;
+            //     };
+            // });
+
+
+
 
             // .AddHandler<CounterHandler>();
 
