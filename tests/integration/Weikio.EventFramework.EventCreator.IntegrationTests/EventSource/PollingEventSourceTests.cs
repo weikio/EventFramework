@@ -44,6 +44,28 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
         }
+        
+        [Fact]
+        public async Task CanConfigurePollingFrequencyUsingOptions()
+        {
+            var server = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.Configure<PollingOptions>(options =>
+                {
+                    options.PollingFrequency = TimeSpan.FromSeconds(100);
+                });
+                services.AddSource<TestEventSource>();
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            Assert.Empty(_testCloudEventPublisher.PublishedEvents);
+        }
 
         [Fact]
         public async Task CanAddEventReturningTypeWithMultipleMethodsAsEventSource()

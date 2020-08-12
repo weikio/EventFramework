@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
@@ -99,7 +100,7 @@ namespace Weikio.EventFramework.EventSource
 
             return services;
         }
-        
+
         public static IServiceCollection AddSource(this IServiceCollection services, object instance, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null)
         {
@@ -151,35 +152,23 @@ namespace Weikio.EventFramework.EventSource
             return builder;
         }
 
-        // public static IEventFrameworkBuilder AddSource<TSourceType>(this IEventFrameworkBuilder builder, Action<TSourceType> configure = null)
-        // {
-        //     builder.Services.AddSource<TSourceType>(null, null, configure);
-        //
-        //     return builder;
-        // }
-        //
-        // public static IServiceCollection AddSource<TSourceType>(this IServiceCollection services, MulticastDelegate configure = null)
-        // {
-        //     services.AddSourceInner(null, null, null, configure, typeof(TSourceType));
-        //
-        //     return services;
-        // }
-
         public static IServiceCollection AddSourceInner(this IServiceCollection services, MulticastDelegate action, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Type eventSourceType = null, object eventSourceInstance = null)
         {
             services.AddCloudEventSources();
 
-            if (pollingFrequency == null && string.IsNullOrWhiteSpace(cronExpression))
-            {
-                // Todo: Default from options
-                pollingFrequency = TimeSpan.FromSeconds(30);
-            }
-
             var id = Guid.NewGuid();
 
             services.AddSingleton(provider =>
             {
+                if (pollingFrequency == null)
+                {
+                    var optionsManager = provider.GetService<IOptionsMonitor<PollingOptions>>();
+                    var options = optionsManager.CurrentValue;
+
+                    pollingFrequency = options.PollingFrequency;
+                }
+                
                 var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
 
                 return schedule;
@@ -189,7 +178,7 @@ namespace Weikio.EventFramework.EventSource
             {
                 eventSourceType = eventSourceInstance.GetType();
             }
-            
+
             var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
 
             if (isHostedService)
@@ -223,3 +212,4 @@ namespace Weikio.EventFramework.EventSource
         }
     }
 }
+
