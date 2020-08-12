@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
@@ -24,7 +25,7 @@ namespace Weikio.EventFramework.EventCreator
             _serviceProvider = null;
         }
 
-        public CloudEventCreator(ILogger<CloudEventCreator> logger, DefaultCloudEventCreatorOptionsProvider cloudEventCreatorOptionsProvider,
+        public CloudEventCreator(ILogger<CloudEventCreator> logger, ICloudEventCreatorOptionsProvider cloudEventCreatorOptionsProvider,
             IServiceProvider serviceProvider)
         {
             _logger = logger;

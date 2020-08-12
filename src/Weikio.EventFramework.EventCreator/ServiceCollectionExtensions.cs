@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 
 namespace Weikio.EventFramework.EventCreator
@@ -16,7 +17,14 @@ namespace Weikio.EventFramework.EventCreator
 
         public static IServiceCollection AddCloudEventCreator(this IServiceCollection services, Action<CloudEventCreationOptions> setupAction = null)
         {
-            services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
+            services.TryAddSingleton<ICloudEventCreator>(provider =>
+            {
+                var logger = provider.GetService<ILogger<CloudEventCreator>>();
+                var optionsProvider = provider.GetService<ICloudEventCreatorOptionsProvider>();
+                
+                return new CloudEventCreator(logger, optionsProvider, provider);
+            });
+            
             services.TryAddSingleton<ICloudEventCreatorOptionsProvider, DefaultCloudEventCreatorOptionsProvider>();
 
             if (setupAction != null)
@@ -29,7 +37,7 @@ namespace Weikio.EventFramework.EventCreator
 
         public static IServiceCollection ConfigureCloudEvent<TEventType>(this IServiceCollection services, Action<CloudEventCreationOptions> setupAction)
         {
-            services.TryAddSingleton<ICloudEventCreator, CloudEventCreator>();
+            services = services.AddCloudEventCreator(setupAction);
 
             services.Configure(typeof(TEventType).FullName, setupAction);
 

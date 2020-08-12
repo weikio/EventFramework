@@ -1,0 +1,18 @@
+<Project>
+  
+  <PropertyGroup>
+    <Authors>Weik.io</Authors>
+    <Company>Weik.io</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/weikio/PluginFramework</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/weikio/PluginFramework</PackageProjectUrl>
+    <Copyright>©2020 Weik.io</Copyright>
+    <LangVersion>8.0</LangVersion>
+    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="2.0.0" />
+  </ItemGroup>
+  
+</Project>

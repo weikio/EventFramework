@@ -29,7 +29,6 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
             });
 
             return server.Services.GetService<ICloudEventCreator>();
-            // return result;
         }
     }
 }
