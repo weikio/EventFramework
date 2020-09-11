@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Mime;
+using System.Text;
 using CloudNative.CloudEvents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,6 +20,46 @@ namespace Weikio.EventFramework.Abstractions
             return jobject.ToString(Formatting.Indented);
         }
 
+        public static string ToJson(this IEnumerable<CloudEvent> cloudEvents)
+        {
+            var objects = new List<JObject>();
+
+            foreach (var cloudEvent in cloudEvents)
+            {
+                var jobject = ToJObject(cloudEvent);
+                objects.Add(jobject);
+            }
+            
+            var arr = new JArray();
+
+            foreach (var obj in objects)
+            {
+                arr.Add(obj);
+            }
+
+            var result = arr.ToString(Formatting.Indented);
+
+            return result;
+        }
+
+        public static HttpContent ToHttpContent(this CloudEvent cloudEvent)
+        {
+            var json = cloudEvent.ToJson();
+
+            var result = new StringContent(json, Encoding.UTF8, "application/cloudevents+json");
+
+            return result;
+        }
+
+        public static HttpContent ToHttpContent(this IEnumerable<CloudEvent> cloudEvents)
+        {
+            var json = cloudEvents.ToJson();
+
+            var result = new StringContent(json, Encoding.UTF8, "application/cloudevents+json");
+
+            return result;
+        }
+        
         public static JObject ToJObject(this CloudEvent cloudEvent)
         {
             var jobject = new JObject();
@@ -65,6 +107,6 @@ namespace Weikio.EventFramework.Abstractions
             }
 
             return jobject;
-        }  
+        }
     }
 }

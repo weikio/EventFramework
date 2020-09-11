@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -7,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.EventGateway.Http
 {
@@ -31,10 +32,33 @@ namespace Weikio.EventFramework.EventGateway.Http
             var httpContext = _contextAccessor.HttpContext;
             
             var jsonReader = new JsonTextReader(new StreamReader(httpContext.Request.Body, Encoding.UTF8, true, 8192, true));
-            var jObject = await JObject.LoadAsync(jsonReader);
+            var jToken = await JToken.LoadAsync(jsonReader);
 
             var cloudEventFormatter = new JsonEventFormatter();
-            var cloudEvent = cloudEventFormatter.DecodeJObject(jObject);
+
+            CloudEvent[] receivedEvents;
+            if (jToken is JArray jArray)
+            {
+                var events = new List<CloudEvent>();
+                foreach (var token in jArray)
+                {
+                    var jObject = (JObject) token;
+                    var cloudEvent = cloudEventFormatter.DecodeJObject(jObject);
+                    
+                    events.Add(cloudEvent);
+                }
+
+                receivedEvents = events.ToArray();
+            }
+            else if (jToken is JObject jObject)
+            {
+                var cloudEvent = cloudEventFormatter.DecodeJObject(jObject);
+                receivedEvents = new[] { cloudEvent };
+            }
+            else
+            {
+                throw new Exception("Unknown content type");
+            }
             
             if (Configuration == null)
             {
@@ -57,7 +81,10 @@ namespace Weikio.EventFramework.EventGateway.Http
             var gateway = _cloudEventGatewayManager.Get(Configuration.GatewayName);
             var channel = gateway.IncomingChannel;
 
-            await channel.Writer.WriteAsync(cloudEvent);
+            foreach (var receivedEvent in receivedEvents)
+            {
+                await channel.Writer.WriteAsync(receivedEvent);
+            }
             
             return new OkResult();
         }

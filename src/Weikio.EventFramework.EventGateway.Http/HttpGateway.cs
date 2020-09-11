@@ -31,6 +31,7 @@ namespace Weikio.EventFramework.EventGateway.Http
 
         public const string DefaultName = "http";
         public const string DefaultEndpoint = "/api/events";
+        public const string DefaultOutgoingEndpoint = "";
         
         public string Name { get; }
         public string Endpoint { get; }

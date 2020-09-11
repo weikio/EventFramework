@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventAggregator.Core;
 using Weikio.EventFramework.Router;
@@ -13,14 +14,19 @@ namespace Weikio.EventFramework.EventGateway
     {
         private IIncomingChannel _incomingChannel;
         private readonly ICloudEventAggregator _cloudEventAggregator;
+        private readonly IOptionsMonitor<CloudEventGatewayOptions> _optionsProvider;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
         private ICloudEventGateway _gateway;
 
         private bool IsInitialized { get; set; }
 
-        public CloudEventRouterService(ILogger<CloudEventRouterService> logger, ICloudEventAggregator cloudEventAggregator)
+        public CloudEventRouterService(ILogger<CloudEventRouterService> logger, ICloudEventAggregator cloudEventAggregator,
+            IOptionsMonitor<CloudEventGatewayOptions> optionsProvider, IServiceProvider serviceProvider)
         {
             _cloudEventAggregator = cloudEventAggregator;
+            _optionsProvider = optionsProvider;
+            _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
@@ -30,11 +36,11 @@ namespace Weikio.EventFramework.EventGateway
             {
                 throw new EventRouterServiceAlreadyInitializedException();
             }
-            
+
             _logger.LogDebug("Initializing event route service with {Channel}", incomingChannel);
             _incomingChannel = incomingChannel;
             _gateway = gateway;
-            
+
             IsInitialized = true;
         }
 
@@ -50,11 +56,11 @@ namespace Weikio.EventFramework.EventGateway
             {
                 throw new EventRouterServiceNotInitializedException();
             }
-            
+
             _logger.LogInformation("Event router service for {Channel} is starting.", _incomingChannel);
 
             var reader = _incomingChannel.Reader;
-            
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 while (await reader.WaitToReadAsync(cancellationToken))
@@ -62,6 +68,13 @@ namespace Weikio.EventFramework.EventGateway
                     if (!reader.TryRead(out var cloudEvent))
                     {
                         continue;
+                    }
+
+                    var gatewayOptions = _optionsProvider.Get(_gateway.Name);
+
+                    if (gatewayOptions.OnMessageRead != null)
+                    {
+                        gatewayOptions.OnMessageRead(_gateway.Name, _incomingChannel.Name, DateTimeOffset.UtcNow, cloudEvent, _serviceProvider);
                     }
 
                     var extension = new EventFrameworkCloudEventExtension(_gateway.Name, _incomingChannel.Name);

@@ -1,0 +1,28 @@
+﻿@page
+@using Weikio.EventFramework.Abstractions
+@using Weikio.EventFramework.Samples.Gateway
+@model Weikio.EventFramework.Samples.Gateway.Pages.Index
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title></title>
+    <meta http-equiv="refresh" content="3" >
+</head>
+<body>
+<div>
+    <h1>Hello</h1>
+    <p>This page is autoreloaded every 3 seconds</p>
+    <h1>Events</h1>
+    @foreach (var cloudEvent in DataStore.Events)
+    {
+        <p>@cloudEvent.ToJson()</p>
+    }
+</div>
+</body>
+</html>

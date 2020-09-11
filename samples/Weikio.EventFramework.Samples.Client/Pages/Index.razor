@@ -1,0 +1,122 @@
+﻿@page "/"
+@using Weikio.EventFramework.EventCreator
+@using Weikio.EventFramework.Samples.Events
+@using Weikio.EventFramework.Abstractions
+@using System.Text
+
+<h1>Http Gateway</h1>
+<p class="alert alert-success">
+    The following functionality can be used to send messages into a Http Gateway using HttpClient
+</p>
+
+@if (!string.IsNullOrWhiteSpace(_status))
+{
+    <p class="alert alert-info">@_status</p>
+}
+
+<div class="form-group">
+    <label>Gateway address:</label>
+    <input type="url" class="form-control" @bind="_gatewayAddress">
+</div>
+
+<div class="mb-4"></div>
+
+<h4>Send JSON</h4>
+<p class="alert alert-primary">
+    Sends the following JSON into the gateway using HttpClient
+</p>
+<div class="form-group">
+    <textarea class="form-control" rows="10" style="width: 50%" @bind-value="_json" @bind-value:event="oninput"></textarea>
+</div>
+<button class="btn btn-primary btn-sm" @onclick="SendJson">Send</button>
+
+<div class="mb-4"></div>
+
+<h4>Send object</h4>
+<p class="alert alert-primary">
+    Creates a new instance of CustomerCreated event and sends it into gateway using HttpClient
+</p>
+<button class="btn btn-primary btn-sm" @onclick="SendObject">Send</button>
+
+<div class="mb-4"></div>
+
+<h4>Send batch of object</h4>
+<p class="alert alert-primary">
+    Creates a batch of 10 new CustomerCreated events and sends them into gateway using HttpClient
+</p>
+<button class="btn btn-primary btn-sm" @onclick="SendBatch">Send</button>
+
+@code {
+
+    [Inject]
+    private ICloudEventCreator _cloudEventCreator { get; set; }
+
+    private string _gatewayAddress { get; set; } = "https://localhost:55001/api/events";
+    private string _status { get; set; }
+    private string _json { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        var cloudEvent = _cloudEventCreator.CreateCloudEvent(new CustomerCreated() { Id = Guid.NewGuid(), Name = "Test Customer" });
+        _json = cloudEvent.ToJson();
+    }
+
+    private async Task SendJson()
+    {
+        var content = new StringContent(_json, Encoding.UTF8, "application/cloudevents+json");
+        await Send(content);
+    }
+
+    private async Task SendObject()
+    {
+        var cloudEvent = _cloudEventCreator.CreateCloudEvent(new CustomerCreated() { Id = Guid.NewGuid(), Name = "Test Customer" });
+        var content = cloudEvent.ToHttpContent();
+
+        await Send(content);
+    }
+
+    private async Task SendBatch()
+    {
+        var events = CreateEvents();
+
+        var cloudEvents = _cloudEventCreator.CreateCloudEvents(events);
+        var content = cloudEvents.ToHttpContent();
+        
+        await Send(content);
+    }
+
+    private static List<CustomerCreated> CreateEvents()
+    {
+        var events = new List<CustomerCreated>();
+
+        for (var i = 0; i < 10; i++)
+        {
+            events.Add(new CustomerCreated() { Id = Guid.NewGuid(), Name = $"Customer {i}" });
+        }
+
+        return events;
+    }
+
+    private async Task Send(HttpContent content)
+    {
+        try
+        {
+            var client = new HttpClient();
+            var status = await client.PostAsync(_gatewayAddress, content);
+
+            if (status.IsSuccessStatusCode)
+            {
+                _status = "Message sent OK";
+            }
+            else
+            {
+                _status = "Failed to send message: " + status.ReasonPhrase;
+            }
+        }
+        catch (Exception e)
+        {
+            _status = "Failed to send: " + e;
+        }
+    }
+
+}
