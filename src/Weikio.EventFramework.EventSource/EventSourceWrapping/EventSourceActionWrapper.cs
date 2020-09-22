@@ -11,9 +11,9 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly IServiceProvider _serviceProvider;
         private readonly ICloudEventPublisher _publisher;
         private readonly ILogger<EventSourceActionWrapper> _logger;
-        private readonly DefaultActionWrapper _defaultActionWrapper;
+        private readonly IActionWrapper _defaultActionWrapper;
 
-        public EventSourceActionWrapper(IServiceProvider serviceProvider, ICloudEventPublisher publisher, ILogger<EventSourceActionWrapper> logger, DefaultActionWrapper defaultActionWrapper)
+        public EventSourceActionWrapper(IServiceProvider serviceProvider, ICloudEventPublisher publisher, ILogger<EventSourceActionWrapper> logger, IActionWrapper defaultActionWrapper)
         {
             _serviceProvider = serviceProvider;
             _publisher = publisher;

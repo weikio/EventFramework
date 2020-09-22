@@ -69,6 +69,7 @@ namespace Weikio.EventFramework.EventSource.Polling
                     if (isFirstRun && pollingResult.NewState != null)
                     {
                         _logger.LogDebug("First run done for event source with {Id}. Initialized state to {InitialState}.", id, pollingResult.NewState);
+                        context.JobDetail.JobDataMap["state"] = pollingResult.NewState;
 
                         return;
                     }
