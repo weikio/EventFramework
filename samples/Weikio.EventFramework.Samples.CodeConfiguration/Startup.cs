@@ -72,6 +72,23 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
         //     }
         // }
 
+        
+        public class UserUsedLicense
+        {
+            public Guid LicenseId { get; set; }
+            public string User { get; set; }
+        }
+
+        public class UserUsedLicenseHandler
+        {
+            public Task Handle()
+            {
+                
+                return Task.CompletedTask;
+            }
+        }
+
+        
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -82,6 +99,9 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
 
             services.AddOpenApiDocument();
+
+            services.AddEventFramework();
+            services.AddHandler(typeof(UserUsedLicenseHandler));
 
             // services.Configure<CloudEventPublisherOptions>(options =>
             // {

@@ -33,6 +33,10 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 
         public void OnGet()
         {
+            _cloudEventPublisher.Publish(new Startup.UserUsedLicense()
+            {
+                
+            });
             if (TempData.ContainsKey("el"))
             {
                 CloudEvent = JsonSerializer.Deserialize<CloudEvent>(TempData["el"].ToString());

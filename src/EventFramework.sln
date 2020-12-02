@@ -53,6 +53,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Sampl
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{E25953CA-0390-4DE4-B8AD-BB90076FC71F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Samples.HttpGateway", "..\samples\Weikio.EventFramework.Samples.HttpGateway\Weikio.EventFramework.Samples.HttpGateway.csproj", "{5D19D205-9A50-4A8A-AC24-6D355FA2F673}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Samples.Client", "..\samples\Weikio.EventFramework.Samples.Client\Weikio.EventFramework.Samples.Client.csproj", "{A8FDF121-8457-4F8D-A592-1FA5A19BC11B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +143,14 @@ Global
 		{71A4F69C-D1E5-4F0B-8E55-3CF5ADFE1D45}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71A4F69C-D1E5-4F0B-8E55-3CF5ADFE1D45}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71A4F69C-D1E5-4F0B-8E55-3CF5ADFE1D45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D19D205-9A50-4A8A-AC24-6D355FA2F673}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D19D205-9A50-4A8A-AC24-6D355FA2F673}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D19D205-9A50-4A8A-AC24-6D355FA2F673}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D19D205-9A50-4A8A-AC24-6D355FA2F673}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8FDF121-8457-4F8D-A592-1FA5A19BC11B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8FDF121-8457-4F8D-A592-1FA5A19BC11B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8FDF121-8457-4F8D-A592-1FA5A19BC11B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8FDF121-8457-4F8D-A592-1FA5A19BC11B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
@@ -149,5 +161,7 @@ Global
 		{1BE633F9-9D06-44D0-AD25-F45C6464103A} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
 		{E25953CA-0390-4DE4-B8AD-BB90076FC71F} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
 		{71A4F69C-D1E5-4F0B-8E55-3CF5ADFE1D45} = {E25953CA-0390-4DE4-B8AD-BB90076FC71F}
+		{5D19D205-9A50-4A8A-AC24-6D355FA2F673} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
+		{A8FDF121-8457-4F8D-A592-1FA5A19BC11B} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
 	EndGlobalSection
 EndGlobal

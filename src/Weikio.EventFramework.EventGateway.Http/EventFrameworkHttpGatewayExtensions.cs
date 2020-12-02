@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.Core.Apis;
 using Weikio.ApiFramework.Core.Endpoints;
@@ -29,6 +30,7 @@ namespace Weikio.EventFramework.EventGateway.Http
             services.AddCloudEventGateway();
             services.AddHealthChecks();
             services.AddHttpContextAccessor();
+            services.AddHttpClient();
 
             services.TryAddTransient<HttpGatewayFactory>();
             services.TryAddTransient<HttpGatewayInitializer>();
@@ -91,7 +93,7 @@ namespace Weikio.EventFramework.EventGateway.Http
             string outgoingEndpoint = HttpGateway.DefaultOutgoingEndpoint, Action<HttpClient> configureClient = null, Func<HttpClient> clientFactory = null)
         {
             AddHttpGateways(services);
-            
+
             services.AddTransient(provider =>
             {
                 var factory = provider.GetRequiredService<HttpGatewayFactory>();
@@ -106,6 +108,37 @@ namespace Weikio.EventFramework.EventGateway.Http
                     configureClient?.Invoke(client);
                 });
             }
+
+            return services;
+        }
+
+        public static IServiceCollection AddRemoteHttpGateway(this IServiceCollection services, string url,
+            Action<RemoteHttpGatewayOptions> configure = null)
+        {
+            services.AddHttpClient();
+
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                throw new ArgumentNullException(nameof(url));
+            }
+
+            services.AddSingleton<RemoteHttpGatewayFactory>();
+
+            var opt = new RemoteHttpGatewayOptions { Endpoint = url };
+            configure?.Invoke(opt);
+
+            services.Configure<RemoteHttpGatewayOptions>(opt.Name, c =>
+            {
+                c.Endpoint = url;
+                configure?.Invoke(c);
+            });
+            
+            services.AddTransient(provider =>
+            {
+                var factory = provider.GetRequiredService<RemoteHttpGatewayFactory>();
+
+                return factory.Create(opt.Name);
+            });
 
             return services;
         }

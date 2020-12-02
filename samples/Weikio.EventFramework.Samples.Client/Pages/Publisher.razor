@@ -1,0 +1,90 @@
+﻿@page "/publisher"
+@using Weikio.EventFramework.EventCreator
+@using Weikio.EventFramework.Samples.Events
+@using Weikio.EventFramework.Abstractions
+@using System.Text
+@using Weikio.EventFramework.EventPublisher
+
+<h1>Http Gateway</h1>
+<p class="alert alert-success">
+    The following functionality can be used to send messages into a Http Gateway using Event Publisher
+</p>
+
+@if (!string.IsNullOrWhiteSpace(_status))
+{
+    <p class="alert alert-info">@_status</p>
+}
+
+<div class="mb-4"></div>
+
+<h4>Send object</h4>
+<p class="alert alert-primary">
+    Creates a new instance of CustomerCreated event and sends it into gateway using Event Publisher
+</p>
+<button class="btn btn-primary btn-sm" @onclick="SendObject">Send</button>
+
+<div class="mb-4"></div>
+
+<h4>Send batch of object</h4>
+<p class="alert alert-primary">
+    Creates a batch of 10 new CustomerCreated events and sends them into gateway using Event Publisher
+</p>
+<button class="btn btn-primary btn-sm" @onclick="SendBatch">Send</button>
+
+@code {
+
+    [Inject]
+    private ICloudEventCreator _cloudEventCreator { get; set; }
+
+    [Inject]
+    private ICloudEventPublisher _cloudEventPublisher { get; set; }
+
+    private string _status { get; set; }
+    private string _json { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        var cloudEvent = _cloudEventCreator.CreateCloudEvent(new CustomerCreated() { Id = Guid.NewGuid(), Name = "Test Customer" });
+        _json = cloudEvent.ToJson();
+    }
+
+    private async Task SendObject()
+    {
+        try
+        {
+            await _cloudEventPublisher.Publish(new CustomerCreated() { Id = Guid.NewGuid(), Name = "Test Customer" });
+            _status = "Message sent OK";
+        }
+        catch (Exception e)
+        {
+            _status = "Failed to send: " + e;
+        }
+    }
+
+    private async Task SendBatch()
+    {
+        var events = CreateEvents();
+
+        try
+        {
+            await _cloudEventPublisher.Publish(events);
+            _status = "Message sent OK";
+        }
+        catch (Exception e)
+        {
+            _status = "Failed to send: " + e;
+        }
+    }
+
+    private static List<CustomerCreated> CreateEvents()
+    {
+        var events = new List<CustomerCreated>();
+
+        for (var i = 0; i < 10; i++)
+        {
+            events.Add(new CustomerCreated() { Id = Guid.NewGuid(), Name = $"Customer {i}" });
+        }
+
+        return events;
+    }
+}

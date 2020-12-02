@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
-      <ProjectReference Include="..\shared\Weikio.EventFramework.Samples.Events\Weikio.EventFramework.Samples.Events.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
+    <ProjectReference Include="..\..\src\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />
+    <ProjectReference Include="..\..\src\Weikio.EventFramework.EventPublisher\Weikio.EventFramework.EventPublisher.csproj" />
+    <ProjectReference Include="..\shared\Weikio.EventFramework.Samples.Events\Weikio.EventFramework.Samples.Events.csproj" />
+  </ItemGroup>
 
 </Project>
