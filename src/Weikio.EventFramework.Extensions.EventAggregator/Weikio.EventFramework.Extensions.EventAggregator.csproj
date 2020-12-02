@@ -1,13 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Extensions for Event Framework for ASP.NET Core</Description>
+    <PackageDescription>Extensions for Event Framework for ASP.NET Core</PackageDescription>
+    <PackageId>Weikio.EventFramework.Extensions.EventAggregator</PackageId>
+    <Product>Weikio.EventFramework.Extensions.EventAggregator</Product>
+    <PackageTags>cloudevents;event gateway;</PackageTags>
+    <Title>Extensions for Event Framework for ASP.NET Core</Title>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
-      <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
-      <ProjectReference Include="..\Weikio.EventFramework.EventAggregator.Core\Weikio.EventFramework.EventAggregator.Core.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj"/>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj"/>
+    <ProjectReference Include="..\Weikio.EventFramework.EventAggregator.Core\Weikio.EventFramework.EventAggregator.Core.csproj"/>
+  </ItemGroup>
 
 </Project>

@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventAggregator.Core\Weikio.EventFramework.EventAggregator.Core.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Extensions.EventAggregator\Weikio.EventFramework.Extensions.EventAggregator.csproj" />
   </ItemGroup>
 
   <ItemGroup>
