@@ -159,21 +159,6 @@ namespace Weikio.EventFramework.EventSource
 
             var id = Guid.NewGuid();
 
-            services.AddSingleton(provider =>
-            {
-                if (pollingFrequency == null)
-                {
-                    var optionsManager = provider.GetService<IOptionsMonitor<PollingOptions>>();
-                    var options = optionsManager.CurrentValue;
-
-                    pollingFrequency = options.PollingFrequency;
-                }
-                
-                var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
-
-                return schedule;
-            });
-
             if (eventSourceType == null && eventSourceInstance != null)
             {
                 eventSourceType = eventSourceInstance.GetType();
@@ -181,9 +166,39 @@ namespace Weikio.EventFramework.EventSource
 
             var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
 
+            var requiredPollingJob = isHostedService == false;
+
+            if (requiredPollingJob)
+            {
+                services.AddSingleton(provider =>
+                {
+                    if (pollingFrequency == null)
+                    {
+                        var optionsManager = provider.GetService<IOptionsMonitor<PollingOptions>>();
+                        var options = optionsManager.CurrentValue;
+
+                        pollingFrequency = options.PollingFrequency;
+                    }
+                
+                    var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
+
+                    return schedule;
+                });
+            }
+            
             if (isHostedService)
             {
-                services.AddTransient(typeof(IHostedService), eventSourceType);
+                services.AddTransient(typeof(IHostedService), provider =>
+                {
+                    var inst = ActivatorUtilities.CreateInstance(provider, eventSourceType);
+
+                    if (configure != null)
+                    {
+                        configure.DynamicInvoke(inst);
+                    }
+                    
+                    return inst;
+                });
             }
             else if (eventSourceType != null)
             {

@@ -1,13 +1,14 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.Files;
 
 namespace Weikio.EventFramework.Plugins.Files
 {
-    public class FileEventSource 
+    public class FileEventSource : IHostedService
     {
         private readonly ILogger<FileEventSource> _logger;
         private readonly ICloudEventPublisher _cloudEventPublisher;
@@ -24,7 +25,7 @@ namespace Weikio.EventFramework.Plugins.Files
 
         public Task StartAsync(CancellationToken stoppingToken)
         {
-            _fileSystemWatcher = new FileSystemWatcher(@"c:\temp\eventf") { IncludeSubdirectories = true };
+            _fileSystemWatcher = new FileSystemWatcher(Folder, Filter) { IncludeSubdirectories = true };
 
             _fileSystemWatcher.Created += (sender, args) =>
             {
