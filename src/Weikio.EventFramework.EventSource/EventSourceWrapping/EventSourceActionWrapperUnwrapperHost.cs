@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -12,7 +14,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
     /// <summary>
     /// Types can contain multiple event sources. Because of this a event source action factory is created for each event source.
-    /// This service is runs at startup and it "unwraps" the registered event source factories.
+    /// This service is run at startup and it "unwraps" the registered event source factories.
     /// This must be run before QuartzHostedService. 
     /// </summary>
     public class EventSourceActionWrapperUnwrapperHost : BackgroundService
@@ -42,8 +44,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 _logger.LogDebug("No event source factories to unwrap. Continue starting event sources.");
 
                 return Task.CompletedTask;
-            }                    
-            
+            }
+
             _logger.LogDebug("Unwrapping {FactoryCount} event source action factories.", factoryList.Count);
 
             try
@@ -52,7 +54,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 {
                     var originalId = wrapperFactory.Id;
                     _logger.LogDebug("Unwrapping factory with {Id}", wrapperFactory.Id);
-                    
+
                     var originalSchedule = _scheduleService.Single(x => x.Id == originalId);
                     var eventSourceActions = wrapperFactory.Create(_serviceProvider);
 
@@ -65,16 +67,16 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         _logger.LogDebug("Creating event source with {EventSourceID}", id);
 
                         var eventSource = eventSourceActionWrapper.EventSource;
-                        var opts = new JobOptions { Action = eventSource.Action, ContainsState = eventSource.ContainsState};
+                        var opts = new JobOptions { Action = eventSource.Action, ContainsState = eventSource.ContainsState };
                         _optionsCache.TryAdd(id, opts);
-                    
+
                         var schedule = new PollingSchedule(id, originalSchedule.Interval, originalSchedule.CronExpression);
                         _scheduleService.Add(schedule);
                     }
 
                     _scheduleService.Remove(originalSchedule);
                 }
-                
+
                 return Task.CompletedTask;
             }
             catch (Exception e)

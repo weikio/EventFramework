@@ -72,7 +72,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             Task<EventPollingResult> WrapperRunner(object state, bool isFirstRun)
             {
-                var instance = _instance ?? serviceProvider.GetRequiredService(_type);
+                var instance = _instance ?? ActivatorUtilities.CreateInstance(serviceProvider, _type);
                 var del = CreateDelegate(method, instance);
 
                 var res = wrappedMethodCall.Action.DynamicInvoke(del, state, isFirstRun);
@@ -88,7 +88,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         {
             Func<CancellationToken, IAsyncEnumerable<object>> Result()
             {
-                var instance = _instance ?? serviceProvider.GetRequiredService(_type);
+                var instance = _instance ?? ActivatorUtilities.CreateInstance(serviceProvider, _type);
                 var del = CreateDelegate(method, instance);
 
                 var res = (Func<CancellationToken, IAsyncEnumerable<object>>) del;

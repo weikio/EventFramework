@@ -21,11 +21,10 @@ namespace Weikio.EventFramework.EventSource.Polling
 
         public DefaultPollingEventSourceHostedService(
             ISchedulerFactory schedulerFactory,
-            IJobFactory jobFactory, ILogger<DefaultPollingEventSourceHostedService> logger, IOptionsMonitor<JobOptions> optionsMonitor, PollingScheduleService pollingScheduleService)
+            IJobFactory jobFactory, ILogger<DefaultPollingEventSourceHostedService> logger, PollingScheduleService pollingScheduleService)
         {
             _schedulerFactory = schedulerFactory;
             _logger = logger;
-            _optionsMonitor = optionsMonitor;
             _pollingScheduleService = pollingScheduleService;
             _jobFactory = jobFactory;
         }

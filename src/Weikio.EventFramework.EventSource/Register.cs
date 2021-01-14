@@ -59,6 +59,9 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<PollingScheduleService>();
             services.TryAddTransient<IActionWrapper, DefaultActionWrapper>();
             services.TryAddSingleton<LongPollingService>();
+            services.TryAddSingleton<EventSourceManager>();
+            services.TryAddSingleton<EventSourceInitializer>();
+            services.TryAddSingleton<EventSourceFactory>();
 
             services.TryAddTransient<EventSourceActionWrapper>();
             services.TryAddTransient<ILongPollingEventSourceHost, DefaultLongPollingEventSourceHost>();
@@ -152,7 +155,7 @@ namespace Weikio.EventFramework.EventSource
             return builder;
         }
 
-        public static IServiceCollection AddSourceInner(this IServiceCollection services, MulticastDelegate action, TimeSpan? pollingFrequency = null,
+        public static IServiceCollection AddSourceInner(this IServiceCollection services, MulticastDelegate action = null, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Type eventSourceType = null, object eventSourceInstance = null)
         {
             services.AddCloudEventSources();
@@ -166,9 +169,9 @@ namespace Weikio.EventFramework.EventSource
 
             var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
 
-            var requiredPollingJob = isHostedService == false;
+            var requiresPollingJob = isHostedService == false;
 
-            if (requiredPollingJob)
+            if (requiresPollingJob)
             {
                 services.AddSingleton(provider =>
                 {
@@ -179,13 +182,13 @@ namespace Weikio.EventFramework.EventSource
 
                         pollingFrequency = options.PollingFrequency;
                     }
-                
+
                     var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
 
                     return schedule;
                 });
             }
-            
+
             if (isHostedService)
             {
                 services.AddTransient(typeof(IHostedService), provider =>
@@ -196,7 +199,7 @@ namespace Weikio.EventFramework.EventSource
                     {
                         configure.DynamicInvoke(inst);
                     }
-                    
+
                     return inst;
                 });
             }
@@ -227,4 +230,3 @@ namespace Weikio.EventFramework.EventSource
         }
     }
 }
-
