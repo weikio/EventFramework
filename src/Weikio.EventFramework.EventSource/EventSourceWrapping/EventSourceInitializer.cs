@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
@@ -13,12 +14,14 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly IServiceProvider _serviceProvider;
         private readonly IOptionsMonitorCache<JobOptions> _optionsCache;
         private readonly PollingScheduleService _scheduleService;
+        private readonly EventSourceChangeNotifier _changeNotifier;
 
-        public EventSourceInitializer(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache, PollingScheduleService scheduleService)
+        public EventSourceInitializer(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache, PollingScheduleService scheduleService, EventSourceChangeNotifier changeNotifier)
         {
             _serviceProvider = serviceProvider;
             _optionsCache = optionsCache;
             _scheduleService = scheduleService;
+            _changeNotifier = changeNotifier;
         }
 
         public void Initialize(EventSource eventSource)
@@ -54,9 +57,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                     pollingFrequency = options.PollingFrequency;
                 }
-
-                var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
-                _scheduleService.Add(schedule);
             }
 
             if (isHostedService)
@@ -78,16 +78,28 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 // Event source can contain multiple event sources...
 
                 var sources = factory.Create(_serviceProvider);
-                foreach (var eventSourceActionWrapper in sources)
+                
+                foreach (var eventSourceActionWrapper in sources.PollingEventSources)
                 {
                     var childId = eventSourceActionWrapper.Id;
 
                     var childEventSource = eventSourceActionWrapper.EventSource;
-                    var opts = new JobOptions { Action = eventSource.Action, ContainsState = childEventSource.ContainsState };
+                    var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState };
                     _optionsCache.TryAdd(childId, opts);
 
-                    var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
+                    var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression);
                     _scheduleService.Add(schedule);
+                }
+                
+                foreach (var eventSourceActionWrapper in sources.LongPollingEventSources)
+                {
+                    var method = eventSourceActionWrapper.Source;
+                    var poller = method.Invoke();
+
+                    var host = _serviceProvider.GetRequiredService<ILongPollingEventSourceHost>();
+                    host.Initialize(poller);
+
+                    host.StartPolling(new CancellationToken());
                 }
             }
             else
@@ -98,11 +110,14 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState };
 
                 _optionsCache.TryAdd(id.ToString(), jobOptions);
+                
+                var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
+                _scheduleService.Add(schedule);
             }
 
             eventSource.IsInitialized = true;
 
-            return;
+            _changeNotifier.Notify();
         }
     }
 }

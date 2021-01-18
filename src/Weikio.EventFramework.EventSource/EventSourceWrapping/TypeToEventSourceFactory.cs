@@ -13,6 +13,14 @@ using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
+    public class TypeToEventSourceFactoryResult
+    {
+        public List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)> PollingEventSources { get; set; } =
+            new List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)>();
+
+        public List<LongPollingEventSourceFactory> LongPollingEventSources { get; set; } = new List<LongPollingEventSourceFactory>();
+    }
+
     /// <summary>
     /// Implementation which handles the conversion from a .NET Type to one or many event sources.
     /// </summary>
@@ -31,7 +39,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             _instance = instance;
         }
 
-        public List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)> Create(IServiceProvider serviceProvider)
+        public TypeToEventSourceFactoryResult Create(IServiceProvider serviceProvider)
         {
             // TODO: Currently this class handles all the supported conversions:
             // 1. Methods to polling event sources and
@@ -44,28 +52,35 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 x.ReturnType.IsGenericType && typeof(IAsyncEnumerable<>).IsAssignableFrom(x.ReturnType.GetGenericTypeDefinition())).ToList();
 
             var taskMethods = publicMethods.Except(longPollingMethods);
-            
+
+            var result2 = new TypeToEventSourceFactoryResult();
             var result = new List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)>();
 
             foreach (var methodInfo in taskMethods)
             {
                 var wrapper = ConvertMethodToPollingEventSource(methodInfo, serviceProvider);
                 var id = GetId(methodInfo);
-                
+
                 result.Add((id, wrapper));
+                result2.PollingEventSources.Add((id, wrapper));
             }
 
+            result2.PollingEventSources = result;
+
             var longPollingFactoryService = serviceProvider.GetRequiredService<LongPollingService>();
+
             foreach (var methodInfo in longPollingMethods)
             {
                 var wrapper = ConvertMethodToLongPollingServiceFactory(methodInfo, serviceProvider);
-                longPollingFactoryService.Add(wrapper);
+                // longPollingFactoryService.Add(wrapper);
+                result2.LongPollingEventSources.Add(wrapper);
             }
 
-            return result;
+            return result2;
         }
 
-        private (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method, IServiceProvider serviceProvider)
+        private (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method,
+            IServiceProvider serviceProvider)
         {
             var wrapper = serviceProvider.GetRequiredService<IActionWrapper>();
             var wrappedMethodCall = wrapper.Wrap(method);
@@ -83,7 +98,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             return (WrapperRunner, wrappedMethodCall.ContainsState);
         }
-        
+
         private LongPollingEventSourceFactory ConvertMethodToLongPollingServiceFactory(MethodInfo method, IServiceProvider serviceProvider)
         {
             Func<CancellationToken, IAsyncEnumerable<object>> Result()

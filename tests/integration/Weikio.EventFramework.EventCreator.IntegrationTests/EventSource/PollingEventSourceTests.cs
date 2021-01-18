@@ -44,6 +44,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
         }
+
         
         [Fact]
         public async Task CanConfigurePollingFrequencyUsingOptions()

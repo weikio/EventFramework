@@ -43,10 +43,12 @@ namespace Weikio.EventFramework.EventSource
                 throw new ArgumentNullException(nameof(services));
             }
 
-            if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
-            {
-                services.AddHostedService<EventSourceActionWrapperUnwrapperHost>();
-            }
+            // if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
+            // {
+            //     services.AddHostedService<EventSourceActionWrapperUnwrapperHost>();
+            // }
+
+            services.AddHostedService<EventSourceStartupHandler>();
 
             if (services.All(x => x.ImplementationType != typeof(LongPollingHostedServiceCreator)))
             {
@@ -59,12 +61,16 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<PollingScheduleService>();
             services.TryAddTransient<IActionWrapper, DefaultActionWrapper>();
             services.TryAddSingleton<LongPollingService>();
-            services.TryAddSingleton<EventSourceManager>();
+            services.TryAddSingleton<IEventSourceManager, EventSourceManager>();
             services.TryAddSingleton<EventSourceInitializer>();
             services.TryAddSingleton<EventSourceFactory>();
 
             services.TryAddTransient<EventSourceActionWrapper>();
             services.TryAddTransient<ILongPollingEventSourceHost, DefaultLongPollingEventSourceHost>();
+
+            services.TryAddSingleton<EventSourceChangeToken>();
+            services.TryAddSingleton<EventSourceChangeNotifier>();
+            services.TryAddSingleton<EventSourceChangeProvider>();
 
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
@@ -160,73 +166,83 @@ namespace Weikio.EventFramework.EventSource
         {
             services.AddCloudEventSources();
 
-            var id = Guid.NewGuid();
+            // var id = Guid.NewGuid();
 
-            if (eventSourceType == null && eventSourceInstance != null)
+            services.AddSingleton(provider =>
             {
-                eventSourceType = eventSourceInstance.GetType();
-            }
+                var factory = provider.GetRequiredService<EventSourceFactory>();
+                var eventSource = factory.CreateSourceInner(action, pollingFrequency, cronExpression, configure, eventSourceType, eventSourceInstance);
 
-            var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
-
-            var requiresPollingJob = isHostedService == false;
-
-            if (requiresPollingJob)
-            {
-                services.AddSingleton(provider =>
-                {
-                    if (pollingFrequency == null)
-                    {
-                        var optionsManager = provider.GetService<IOptionsMonitor<PollingOptions>>();
-                        var options = optionsManager.CurrentValue;
-
-                        pollingFrequency = options.PollingFrequency;
-                    }
-
-                    var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
-
-                    return schedule;
-                });
-            }
-
-            if (isHostedService)
-            {
-                services.AddTransient(typeof(IHostedService), provider =>
-                {
-                    var inst = ActivatorUtilities.CreateInstance(provider, eventSourceType);
-
-                    if (configure != null)
-                    {
-                        configure.DynamicInvoke(inst);
-                    }
-
-                    return inst;
-                });
-            }
-            else if (eventSourceType != null)
-            {
-                services.TryAddTransient(eventSourceType);
-
-                services.AddTransient(provider =>
-                {
-                    var logger = provider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                    var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, eventSourceInstance);
-
-                    return factory;
-                });
-            }
-            else
-            {
-                services.AddOptions<JobOptions>(id.ToString())
-                    .Configure<EventSourceActionWrapper>((jobOptions, wrapper) =>
-                    {
-                        var wrapped = wrapper.Wrap(action);
-                        jobOptions.Action = wrapped.Action;
-                        jobOptions.ContainsState = wrapped.ContainsState;
-                    });
-            }
+                return eventSource;
+            });
 
             return services;
+
+            // if (eventSourceType == null && eventSourceInstance != null)
+            // {
+            //     eventSourceType = eventSourceInstance.GetType();
+            // }
+            //
+            // var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
+            //
+            // var requiresPollingJob = isHostedService == false;
+            //
+            // if (requiresPollingJob)
+            // {
+            //     services.AddSingleton(provider =>
+            //     {
+            //         if (pollingFrequency == null)
+            //         {
+            //             var optionsManager = provider.GetService<IOptionsMonitor<PollingOptions>>();
+            //             var options = optionsManager.CurrentValue;
+            //
+            //             pollingFrequency = options.PollingFrequency;
+            //         }
+            //
+            //         var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
+            //
+            //         return schedule;
+            //     });
+            // }
+            //
+            // if (isHostedService)
+            // {
+            //     services.AddTransient(typeof(IHostedService), provider =>
+            //     {
+            //         var inst = ActivatorUtilities.CreateInstance(provider, eventSourceType);
+            //
+            //         if (configure != null)
+            //         {
+            //             configure.DynamicInvoke(inst);
+            //         }
+            //
+            //         return inst;
+            //     });
+            // }
+            // else if (eventSourceType != null)
+            // {
+            //     services.TryAddTransient(eventSourceType);
+            //
+            //     services.AddTransient(provider =>
+            //     {
+            //         var logger = provider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
+            //         var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, eventSourceInstance);
+            //
+            //         return factory;
+            //     });
+            // }
+            // else
+            // {
+            //     services.AddOptions<JobOptions>(id.ToString())
+            //         .Configure<EventSourceActionWrapper>((jobOptions, wrapper) =>
+            //         {
+            //             var wrapped = wrapper.Wrap(action);
+            //             jobOptions.Action = wrapped.Action;
+            //             jobOptions.ContainsState = wrapped.ContainsState;
+            //         });
+            // }
+            //
+            // return services;
         }
     }
 }
