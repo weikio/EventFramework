@@ -1,43 +1,65 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
-    public interface IEventSourceManager
+    public class DefaultEventSourceManager : List<EventSource>, IEventSourceManager
     {
-        /// <summary>
-        /// Updates the event sources. Not initialized are initialized.
-        /// </summary>
-        void Update();
-        void Add(EventSource item);
-        List<EventSource> GetAll();
-    }
+        private readonly IEventSourceInitializer _initializer;
+        private readonly EventSourceChangeNotifier _changeNotifier;
 
-    public class EventSourceManager : List<EventSource>, IEventSourceManager
-    {
-        private readonly EventSourceInitializer _initializer;
-
-        public EventSourceManager(IEnumerable<EventSource> eventSources, EventSourceInitializer initializer)
+        public DefaultEventSourceManager(IEnumerable<EventSource> eventSources, IEventSourceInitializer initializer, EventSourceChangeNotifier changeNotifier )
         {
             AddRange(eventSources);
             _initializer = initializer;
+            _changeNotifier = changeNotifier;
         }
 
         public void Update()
         {
+            var sourceInitialized = false;
+            
             foreach (var eventSource in this)
             {
-                if (eventSource.IsInitialized)
+                if (eventSource.Status.Status == EventSourceStatusEnum.Initialized || eventSource.Status.Status == EventSourceStatusEnum.Running)
                 {
                     continue;
                 }
-                
-                _initializer.Initialize(eventSource);
+
+                var initializationResult = _initializer.Initialize(eventSource);
+
+                if (initializationResult == EventSourceStatusEnum.Initialized)
+                {
+                    sourceInitialized = true;
+                }
+            }
+
+            if (sourceInitialized)
+            {
+                _changeNotifier.Notify();
             }
         }
 
         public List<EventSource> GetAll()
         {
             return this;
+        }
+
+        public void Stop(Guid eventSourceId)
+        {
+            var eventSource = this.FirstOrDefault(x => x.Id == eventSourceId);
+
+            if (eventSource == null)
+            {
+                throw new ArgumentException("Unknown event source " + eventSourceId);
+            }
+
+            eventSource.Status.UpdateStatus(EventSourceStatusEnum.Stopping, "Stopping");
+
+            var cancellationTokenSource = eventSource.CancellationToken;
+            cancellationTokenSource.Cancel();
         }
     }
 }

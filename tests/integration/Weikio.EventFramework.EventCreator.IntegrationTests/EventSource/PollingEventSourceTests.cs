@@ -126,6 +126,26 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             var instanceFile = _testCloudEventPublisher.PublishedEvents.OfType<NewFileEvent>().FirstOrDefault(x => x.FileName == "instance.test");
             Assert.NotNull(instanceFile);
         }
+        
+        [Fact]
+        public async Task StatelessEventSourceInstanceDoesNotThrowIfNoNewEventsAreAvailable()
+        {
+            var server = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                var testEventSource = new TestEventSource("instance.test");
+                services.AddSource(testEventSource, TimeSpan.FromSeconds(1));
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            var instanceFile = _testCloudEventPublisher.PublishedEvents.OfType<NewFileEvent>().FirstOrDefault(x => x.FileName == "instance.test");
+            Assert.NotNull(instanceFile);
+        }
 
         [Fact]
         public async Task StatelessEventSourceIsNotRunInStart()

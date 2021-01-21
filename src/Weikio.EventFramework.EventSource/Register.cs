@@ -43,27 +43,16 @@ namespace Weikio.EventFramework.EventSource
                 throw new ArgumentNullException(nameof(services));
             }
 
-            // if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
-            // {
-            //     services.AddHostedService<EventSourceActionWrapperUnwrapperHost>();
-            // }
-
             services.AddHostedService<EventSourceStartupHandler>();
-
-            if (services.All(x => x.ImplementationType != typeof(LongPollingHostedServiceCreator)))
-            {
-                services.AddHostedService<LongPollingHostedServiceCreator>();
-            }
 
             services.TryAddSingleton<IJobFactory, DefaultJobFactory>();
             services.TryAddSingleton<ISchedulerFactory, StdSchedulerFactory>();
             services.TryAddSingleton<PollingJobRunner>();
             services.TryAddSingleton<PollingScheduleService>();
             services.TryAddTransient<IActionWrapper, DefaultActionWrapper>();
-            services.TryAddSingleton<LongPollingService>();
-            services.TryAddSingleton<IEventSourceManager, EventSourceManager>();
-            services.TryAddSingleton<EventSourceInitializer>();
-            services.TryAddSingleton<EventSourceFactory>();
+            services.TryAddSingleton<IEventSourceManager, DefaultEventSourceManager>();
+            services.TryAddSingleton<IEventSourceInitializer, DefaultEventSourceInitializer>();
+            services.TryAddSingleton<IEventSourceFactory, DefaultEventSourceFactory>();
 
             services.TryAddTransient<EventSourceActionWrapper>();
             services.TryAddTransient<ILongPollingEventSourceHost, DefaultLongPollingEventSourceHost>();
@@ -170,8 +159,8 @@ namespace Weikio.EventFramework.EventSource
 
             services.AddSingleton(provider =>
             {
-                var factory = provider.GetRequiredService<EventSourceFactory>();
-                var eventSource = factory.CreateSourceInner(action, pollingFrequency, cronExpression, configure, eventSourceType, eventSourceInstance);
+                var factory = provider.GetRequiredService<IEventSourceFactory>();
+                var eventSource = factory.Create(action, pollingFrequency, cronExpression, configure, eventSourceType, eventSourceInstance);
 
                 return eventSource;
             });

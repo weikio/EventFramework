@@ -51,46 +51,59 @@ namespace Weikio.EventFramework.EventSource.Polling
             await Scheduler.Start(cancellationToken);
         }
 
+        private static readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
+        
         private async Task StartJobs(CancellationToken cancellationToken)
         {
-            foreach (var jobSchedule in _pollingScheduleService)
+            try
             {
-                try
-                {
-                    var job = CreateJob(jobSchedule);
-                    _logger.LogDebug("Created job with {Id}", jobSchedule.Id);
-
-                    var existingJob = _startedJobs.FirstOrDefault(x => string.Equals(x.Key.Name, jobSchedule.Id, StringComparison.InvariantCultureIgnoreCase));
-
-                    if (existingJob != null)
-                    {
-                        _logger.LogDebug("Job has already started, no need create it again.", jobSchedule.Id);
-                        continue;
-                    }
-                    
-                    _logger.LogDebug("Starting polling event source with {Id}", jobSchedule.Id);
-                    await Scheduler.AddJob(job, true, cancellationToken);
-
-                    var triggers = CreateTriggers(jobSchedule, job);
-
-                    foreach (var trigger in triggers)
-                    {
-                        await Scheduler.ScheduleJob(trigger, cancellationToken);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to schedule job");
-                }
-            }
+                await _semaphoreSlim.WaitAsync(cancellationToken);
             
-            // Listen for changes
-            var changeToken = _eventSourceChangeProvider.GetChangeToken();
+                foreach (var jobSchedule in _pollingScheduleService)
+                {
+                    try
+                    {
+                        var job = CreateJob(jobSchedule);
+                        _logger.LogDebug("Created job with {Id}", jobSchedule.Id);
 
-            changeToken.RegisterChangeCallback(async o =>
+                        var existingJob = _startedJobs.FirstOrDefault(x => string.Equals(x.Key.Name, jobSchedule.Id, StringComparison.InvariantCultureIgnoreCase));
+
+                        if (existingJob != null)
+                        {
+                            _logger.LogDebug("Job has already started, no need create it again.", jobSchedule.Id);
+                            continue;
+                        }
+                    
+                        _logger.LogDebug("Starting polling event source with {Id}", jobSchedule.Id);
+                        await Scheduler.AddJob(job, true, cancellationToken);
+
+                        var triggers = CreateTriggers(jobSchedule, job);
+
+                        foreach (var trigger in triggers)
+                        {
+                            await Scheduler.ScheduleJob(trigger, cancellationToken);
+                        }
+                    
+                        _startedJobs.Add(job);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to schedule job");
+                    }
+                }
+            
+                // Listen for changes
+                var changeToken = _eventSourceChangeProvider.GetChangeToken();
+
+                changeToken.RegisterChangeCallback(async o =>
+                {
+                    await StartJobs(cancellationToken);
+                }, null);
+            }
+            finally
             {
-                await StartJobs(cancellationToken);
-            }, null);
+                _semaphoreSlim.Release();
+            }
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)

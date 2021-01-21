@@ -53,30 +53,23 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             var taskMethods = publicMethods.Except(longPollingMethods);
 
-            var result2 = new TypeToEventSourceFactoryResult();
-            var result = new List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)>();
+            var result = new TypeToEventSourceFactoryResult();
 
             foreach (var methodInfo in taskMethods)
             {
                 var wrapper = ConvertMethodToPollingEventSource(methodInfo, serviceProvider);
                 var id = GetId(methodInfo);
 
-                result.Add((id, wrapper));
-                result2.PollingEventSources.Add((id, wrapper));
+                result.PollingEventSources.Add((id, wrapper));
             }
-
-            result2.PollingEventSources = result;
-
-            var longPollingFactoryService = serviceProvider.GetRequiredService<LongPollingService>();
 
             foreach (var methodInfo in longPollingMethods)
             {
                 var wrapper = ConvertMethodToLongPollingServiceFactory(methodInfo, serviceProvider);
-                // longPollingFactoryService.Add(wrapper);
-                result2.LongPollingEventSources.Add(wrapper);
+                result.LongPollingEventSources.Add(wrapper);
             }
 
-            return result2;
+            return result;
         }
 
         private (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method,
@@ -135,7 +128,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         private static string GetId(MethodInfo methodInfo)
         {
-            return methodInfo.DeclaringType?.FullName + methodInfo.Name;
+            return methodInfo.DeclaringType?.FullName + methodInfo.Name + "_" + Guid.NewGuid();
         }
 
         private static readonly ConcurrentDictionary<string, Type> _cache = new ConcurrentDictionary<string, Type>();

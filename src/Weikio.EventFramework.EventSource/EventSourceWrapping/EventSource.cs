@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Threading;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
     public class EventSource
     {
-        public bool IsInitialized { get; set; }
         public Guid Id { get; private set; }
+        public EventSourceStatus Status { get; }
 
         public MulticastDelegate Action { get; } = null;
 
@@ -29,6 +30,14 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             EventSourceType = eventSourceType;
             EventSourceInstance = eventSourceInstance;
             Id = id;
+            Status = new EventSourceStatus();
         }
+
+        public void SetCancellationTokenSource(CancellationTokenSource cancellationToken)
+        {
+            CancellationToken = cancellationToken;
+        }
+
+        public CancellationTokenSource CancellationToken { get; private set; }
     }
 }

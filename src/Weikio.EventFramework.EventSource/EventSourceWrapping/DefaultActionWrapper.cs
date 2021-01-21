@@ -132,7 +132,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 }
                 catch (Exception e)
                 {
-                    // _logger.LogError(e, "Failed to run event source's action");
+                    _logger.LogError(e, "Failed to run event source's action");
 
                     throw;
                 }
@@ -151,10 +151,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             ITuple actionResult = ((dynamic) pollingResult).Result;
 
             var eventsType = actionResult[0]?.GetType();
+            var upatedState = actionResult[1];
 
             if (eventsType == null)
             {
-                throw new ArgumentNullException();
+                // This means that event source completed but no new events were products
+                return new EventPollingResult() { NewEvents = null, NewState = upatedState };
             }
 
             var newCloudEvents = new List<object>();
@@ -169,7 +171,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 newCloudEvents.Add(actionResult[0]);
             }
 
-            var upatedState = actionResult[1];
 
             return new EventPollingResult() { NewEvents = newCloudEvents, NewState = upatedState };
         }
