@@ -60,5 +60,15 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             return new EventSourceInstance(id, action, pollingFrequency, cronExpression, configure, eventSourceType, eventSourceInstance);
         }
+        
+        public EventSource Create(string name, Version version, MulticastDelegate action = null, Type eventSourceType = null, object eventSourceInstance = null)
+        {
+            var definition = new EventSourceDefinition(name, version);
+
+            var result = new EventSource(definition, action, eventSourceType, eventSourceInstance);
+
+            return result;
+        }
+
     }
 }

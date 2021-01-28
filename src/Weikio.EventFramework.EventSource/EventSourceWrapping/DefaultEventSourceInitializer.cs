@@ -80,7 +80,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     var cancellationToken = new CancellationTokenSource();
                     inst.StartAsync(cancellationToken.Token);
 
-                    eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Running, "Running");
+                    eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Running");
 
                     eventSourceInstance.SetCancellationTokenSource(cancellationToken);
                 }

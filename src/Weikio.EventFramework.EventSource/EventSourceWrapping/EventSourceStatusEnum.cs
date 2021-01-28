@@ -6,14 +6,10 @@
         Initializing,
         Initialized,
         InitializingFailed,
-        Running,
+        Starting,
+        Started,
         Stopping,
         Stopped,
         Failed
-    }
-
-    public class EventSourceStatus : StatusBase<EventSourceStatusEnum>
-    {
-        
     }
 }

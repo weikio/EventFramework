@@ -32,5 +32,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         EventSourceInstance Create(MulticastDelegate action = null, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Type eventSourceType = null, object eventSourceInstance = null);
+
+        EventSource Create(string name, Version version, MulticastDelegate action = null, Type eventSourceType = null, object eventSourceInstance = null);
     }
 }

@@ -10,11 +10,6 @@ using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
-    public interface IActionWrapper
-    {
-        (Func<Delegate, object, bool, Task<EventPollingResult>> Action, bool ContainsState) Wrap(MethodInfo method);
-    }
-
     public class DefaultActionWrapper : IActionWrapper
     {
         private readonly ILogger<DefaultActionWrapper> _logger;

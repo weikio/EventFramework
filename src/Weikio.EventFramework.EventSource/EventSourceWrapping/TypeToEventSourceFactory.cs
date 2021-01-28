@@ -13,14 +13,6 @@ using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
-    public class TypeToEventSourceFactoryResult
-    {
-        public List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)> PollingEventSources { get; set; } =
-            new List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)>();
-
-        public List<LongPollingEventSourceFactory> LongPollingEventSources { get; set; } = new List<LongPollingEventSourceFactory>();
-    }
-
     /// <summary>
     /// Implementation which handles the conversion from a .NET Type to one or many event sources.
     /// </summary>

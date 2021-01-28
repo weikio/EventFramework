@@ -12,7 +12,7 @@
             Messages.Add(log);
         }
 
-        public virtual void UpdateStatus(T status, string message)
+        public virtual void UpdateStatus(T status, string message = null)
         {
             var updateTime = DateTime.UtcNow;
 
@@ -20,7 +20,7 @@
             Status = status;
             LastStatusUpdate = updateTime;
 
-            var log = new StatusLog<T>(PreviousStatus, Status, updateTime, message);
+            var log = new StatusLog<T>(PreviousStatus, Status, updateTime, message ?? Status.ToString());
 
             Messages.Add(log);
         }

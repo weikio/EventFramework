@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using Quartz;
 using Quartz.Spi;
 
@@ -188,53 +187,6 @@ namespace Weikio.EventFramework.EventSource.Polling
             result.Add(initilizationTrigger);
 
             return result;
-        }
-    }
-
-    public class EventSourceChangeNotifier
-    {
-        private readonly EventSourceChangeToken _changeToken;
-
-        public EventSourceChangeNotifier(EventSourceChangeToken changeToken)
-        {
-            _changeToken = changeToken;
-        }
-
-        public void Notify()
-        {
-            _changeToken.TokenSource.Cancel();
-        }
-    }
-
-    public class EventSourceChangeToken
-    {
-        public void Initialize()
-        {
-            TokenSource = new CancellationTokenSource();
-        }
-
-        public CancellationTokenSource TokenSource { get; private set; } = new CancellationTokenSource();
-    }
-
-    public class EventSourceChangeProvider
-    {
-        public EventSourceChangeProvider(EventSourceChangeToken changeToken)
-        {
-            _changeToken = changeToken;
-        }
-
-        private readonly EventSourceChangeToken _changeToken;
-
-        public IChangeToken GetChangeToken()
-        {
-            if (_changeToken.TokenSource.IsCancellationRequested)
-            {
-                _changeToken.Initialize();
-
-                return new CancellationChangeToken(_changeToken.TokenSource.Token);
-            }
-
-            return new CancellationChangeToken(_changeToken.TokenSource.Token);
         }
     }
 }

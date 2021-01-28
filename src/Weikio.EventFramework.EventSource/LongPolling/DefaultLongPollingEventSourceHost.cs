@@ -35,7 +35,7 @@ namespace Weikio.EventFramework.EventSource.LongPolling
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Running, "Running");
+            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Running");
             
             if (_pollers == null)
             {

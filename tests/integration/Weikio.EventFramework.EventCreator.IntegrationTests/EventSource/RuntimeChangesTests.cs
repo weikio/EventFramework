@@ -96,7 +96,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            Assert.Equal(EventSourceStatusEnum.Running, eventSource.Status.Status);
+            Assert.Equal(EventSourceStatusEnum.Started, eventSource.Status.Status);
             Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
 
             manager.Stop(eventSource.Id);

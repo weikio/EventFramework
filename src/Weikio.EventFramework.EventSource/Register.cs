@@ -233,5 +233,20 @@ namespace Weikio.EventFramework.EventSource
             //
             // return services;
         }
+        
+        public static IEventFrameworkBuilder AddEventSource(this IEventFrameworkBuilder builder, string name, Version version, MulticastDelegate action = null, Type eventSourceType = null, object eventSourceInstance = null)
+        {
+            builder.Services.AddSingleton(provider =>
+            {
+                var factory = provider.GetRequiredService<IEventSourceFactory>();
+                var eventSource = factory.Create(name, version, action, eventSourceType, eventSourceInstance);
+
+                var catalog = new EventSourceCatalog { eventSource };
+
+                return catalog;
+            });
+            
+            return builder;
+        }
     }
 }
