@@ -4,6 +4,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
     public interface IEventSourceInitializer
     {
-        EventSourceStatusEnum Initialize(EventSource eventSource);
+        EventSourceStatusEnum Initialize(EventSourceInstance eventSourceInstance);
     }
 }

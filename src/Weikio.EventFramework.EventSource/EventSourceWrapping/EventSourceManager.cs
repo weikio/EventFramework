@@ -5,12 +5,12 @@ using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
-    public class DefaultEventSourceManager : List<EventSource>, IEventSourceManager
+    public class DefaultEventSourceManager : List<EventSourceInstance>, IEventSourceManager
     {
         private readonly IEventSourceInitializer _initializer;
         private readonly EventSourceChangeNotifier _changeNotifier;
 
-        public DefaultEventSourceManager(IEnumerable<EventSource> eventSources, IEventSourceInitializer initializer, EventSourceChangeNotifier changeNotifier )
+        public DefaultEventSourceManager(IEnumerable<EventSourceInstance> eventSources, IEventSourceInitializer initializer, EventSourceChangeNotifier changeNotifier )
         {
             AddRange(eventSources);
             _initializer = initializer;
@@ -42,7 +42,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             }
         }
 
-        public List<EventSource> GetAll()
+        public List<EventSourceInstance> GetAll()
         {
             return this;
         }

@@ -14,13 +14,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         /// Adds a new event source
         /// </summary>
         /// <param name="item"></param>
-        void Add(EventSource item);
+        void Add(EventSourceInstance item);
 
         /// <summary>
         /// Returns all the event sources
         /// </summary>
         /// <returns></returns>
-        List<EventSource> GetAll();
+        List<EventSourceInstance> GetAll();
 
         /// <summary>
         /// Stops the event source

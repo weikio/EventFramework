@@ -12,7 +12,7 @@ namespace Weikio.EventFramework.EventSource.LongPolling
     public class DefaultLongPollingEventSourceHost : BackgroundService, ILongPollingEventSourceHost
     {
         private Func<CancellationToken, IAsyncEnumerable<object>> _pollers;
-        private EventSourceWrapping.EventSource _eventSource;
+        private EventSourceWrapping.EventSourceInstance _eventSourceInstance;
         private readonly ICloudEventPublisher _cloudEventPublisher;
 
         public DefaultLongPollingEventSourceHost(ICloudEventPublisher cloudEventPublisher)
@@ -20,9 +20,9 @@ namespace Weikio.EventFramework.EventSource.LongPolling
             _cloudEventPublisher = cloudEventPublisher;
         }
 
-        public void Initialize(EventSourceWrapping.EventSource eventSource, Func<CancellationToken, IAsyncEnumerable<object>> pollers)
+        public void Initialize(EventSourceWrapping.EventSourceInstance eventSourceInstance, Func<CancellationToken, IAsyncEnumerable<object>> pollers)
         {
-            _eventSource = eventSource;
+            _eventSourceInstance = eventSourceInstance;
             _pollers = pollers;
         }
 
@@ -35,19 +35,19 @@ namespace Weikio.EventFramework.EventSource.LongPolling
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _eventSource.Status.UpdateStatus(EventSourceStatusEnum.Running, "Running");
+            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Running, "Running");
             
             if (_pollers == null)
             {
                 throw new ArgumentNullException(nameof(_pollers));
             }
             
-            await foreach (var newEvent in _pollers(_eventSource.CancellationToken.Token))
+            await foreach (var newEvent in _pollers(_eventSourceInstance.CancellationToken.Token))
             {
                 await _cloudEventPublisher.Publish(newEvent);
             }
             
-            _eventSource.Status.UpdateStatus(EventSourceStatusEnum.Stopped, "Stopped");
+            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped, "Stopped");
         }
     }
 }

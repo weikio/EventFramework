@@ -25,30 +25,30 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             _logger = logger;
         }
 
-        public EventSourceStatusEnum Initialize(EventSource eventSource)
+        public EventSourceStatusEnum Initialize(EventSourceInstance eventSourceInstance)
         {
-            if (eventSource == null)
+            if (eventSourceInstance == null)
             {
-                throw new ArgumentNullException(nameof(eventSource));
+                throw new ArgumentNullException(nameof(eventSourceInstance));
             }
 
             try
             {
-                _logger.LogInformation("Initializing event source with id {Id}", eventSource.Id);
+                _logger.LogInformation("Initializing event source with id {Id}", eventSourceInstance.Id);
 
-                eventSource.Status.UpdateStatus(EventSourceStatusEnum.Initializing, "Initializing");
+                eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initializing, "Initializing");
 
-                var eventSourceType = eventSource.EventSourceType;
-                var eventSourceInstance = eventSource.EventSourceInstance;
-                var pollingFrequency = eventSource.PollingFrequency;
-                var cronExpression = eventSource.CronExpression;
-                var configure = eventSource.Configure;
-                var id = eventSource.Id;
-                var action = eventSource.Action;
+                var eventSourceType = eventSourceInstance.EventSourceType;
+                var instance = eventSourceInstance.Instance;
+                var pollingFrequency = eventSourceInstance.PollingFrequency;
+                var cronExpression = eventSourceInstance.CronExpression;
+                var configure = eventSourceInstance.Configure;
+                var id = eventSourceInstance.Id;
+                var action = eventSourceInstance.Action;
 
-                if (eventSourceType == null && eventSourceInstance != null)
+                if (eventSourceType == null && instance != null)
                 {
-                    eventSourceType = eventSourceInstance.GetType();
+                    eventSourceType = instance.GetType();
                 }
 
                 var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
@@ -75,24 +75,24 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         configure.DynamicInvoke(inst);
                     }
 
-                    eventSource.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
+                    eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
 
                     var cancellationToken = new CancellationTokenSource();
                     inst.StartAsync(cancellationToken.Token);
 
-                    eventSource.Status.UpdateStatus(EventSourceStatusEnum.Running, "Running");
+                    eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Running, "Running");
 
-                    eventSource.SetCancellationTokenSource(cancellationToken);
+                    eventSourceInstance.SetCancellationTokenSource(cancellationToken);
                 }
                 else if (eventSourceType != null)
                 {
                     var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                    var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, eventSourceInstance);
+                    var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, instance);
 
                     // Event source can contain multiple event sources...
 
                     var sources = factory.Create(_serviceProvider);
-                    eventSource.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
+                    eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
 
                     foreach (var eventSourceActionWrapper in sources.PollingEventSources)
                     {
@@ -112,10 +112,10 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         var poller = method.Invoke();
 
                         var host = _serviceProvider.GetRequiredService<ILongPollingEventSourceHost>();
-                        host.Initialize(eventSource, poller);
+                        host.Initialize(eventSourceInstance, poller);
                         
                         var cancellationToken = new CancellationTokenSource();
-                        eventSource.SetCancellationTokenSource(cancellationToken);
+                        eventSourceInstance.SetCancellationTokenSource(cancellationToken);
 
                         host.StartPolling(cancellationToken.Token);
                     }
@@ -132,18 +132,18 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
                     _scheduleService.Add(schedule);
                     
-                    eventSource.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
+                    eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
                 }
 
 
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to initialize event source with id {Id}", eventSource.Id);
-                eventSource.Status.UpdateStatus(EventSourceStatusEnum.InitializingFailed, "Failed: " + e);
+                _logger.LogError(e, "Failed to initialize event source with id {Id}", eventSourceInstance.Id);
+                eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.InitializingFailed, "Failed: " + e);
             }
 
-            return eventSource.Status.Status;
+            return eventSourceInstance.Status.Status;
         }
     }
 }

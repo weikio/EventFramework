@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
-    public class EventSource
+    public class EventSourceInstance
     {
         public Guid Id { get; private set; }
         public EventSourceStatus Status { get; }
@@ -18,17 +18,17 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         public Type EventSourceType { get; }
 
-        public object EventSourceInstance { get; } = null;
+        public object Instance { get; } = null;
 
-        public EventSource(Guid id, MulticastDelegate action = null, TimeSpan? pollingFrequency = null, string cronExpression = null,
-            MulticastDelegate configure = null, Type eventSourceType = null, object eventSourceInstance = null)
+        public EventSourceInstance(Guid id, MulticastDelegate action = null, TimeSpan? pollingFrequency = null, string cronExpression = null,
+            MulticastDelegate configure = null, Type eventSourceType = null, object instance = null)
         {
             Action = action;
             PollingFrequency = pollingFrequency;
             CronExpression = cronExpression;
             Configure = configure;
             EventSourceType = eventSourceType;
-            EventSourceInstance = eventSourceInstance;
+            Instance = instance;
             Id = id;
             Status = new EventSourceStatus();
         }
