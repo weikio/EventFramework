@@ -90,6 +90,19 @@ namespace Weikio.EventFramework.EventSource.Polling
                         _logger.LogError(e, "Failed to schedule job");
                     }
                 }
+
+                foreach (var startedJob in _startedJobs)
+                {
+                    var existingJob = _pollingScheduleService.FirstOrDefault(x => string.Equals(x.Id, startedJob.Key.Name));
+
+                    if (existingJob != null)
+                    {
+                        continue;
+                    }
+                    
+                    _logger.LogDebug("Removing polling event source with {Id}", startedJob.Key.Name);
+                    await Scheduler.DeleteJob(startedJob.Key, cancellationToken);
+                }
             
                 // Listen for changes
                 var changeToken = _eventSourceChangeProvider.GetChangeToken();

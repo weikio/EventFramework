@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Weikio.EventFramework.EventAggregator.Core
 {
-    public class EventLinkStartupTask : IHostedService //IStartupTask
+    public class EventLinkStartupTask : IHostedService 
     {
         private readonly IEnumerable<EventLink> _eventLinks;
         private readonly IEnumerable<EventLinkSource> _eventLinkSources;
@@ -53,7 +53,6 @@ namespace Weikio.EventFramework.EventAggregator.Core
         public Task StopAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
-            // throw new System.NotImplementedException();
         }
     }
 }

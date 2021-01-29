@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
+using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
+using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource
 {
@@ -41,6 +44,19 @@ namespace Weikio.EventFramework.EventSource
         public async Task Stop(IServiceProvider serviceProvider)
         {
             await _stop(serviceProvider, this);
+        }
+    }
+    
+    public static class CloudEventExtensions 
+    {
+        public static Guid? EventSourceId(this CloudEvent cloudEvent)
+        {
+            if (cloudEvent?.GetAttributes()?.ContainsKey(EventFrameworkEventSourceExtension.EventFrameworkEventSourceAttributeName) == true)
+            {
+                return (Guid) cloudEvent.GetAttributes()[EventFrameworkEventSourceExtension.EventFrameworkEventSourceAttributeName];
+            }
+
+            return null;
         }
     }
 }

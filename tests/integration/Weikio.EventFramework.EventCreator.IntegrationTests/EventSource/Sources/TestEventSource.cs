@@ -1,19 +1,33 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource.Sources
 {
+    [DisplayName("TestEventSource")]
     public class TestEventSource
     {
-        private readonly string _extraFile;
+        private string _extraFile;
+
+        public string ExtraFile
+        {
+            get
+            {
+                return _extraFile;
+            }
+            set
+            {
+                _extraFile = value;
+            }
+        }
 
         public TestEventSource(string extraFile = null)
         {
-            _extraFile = extraFile;
+            ExtraFile = extraFile;
         }
-
+        
         public Task<(List<NewFileEvent> NewEvents, List<string> NewState)> CheckForNewFiles(List<string> currentState)
         {
             List<string> files;
@@ -26,9 +40,9 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource.Source
             {
                 files = new List<string>() { "file1.txt", "file2.txt", "file3.txt"  };
 
-                if (!string.IsNullOrWhiteSpace(_extraFile))
+                if (!string.IsNullOrWhiteSpace(ExtraFile))
                 {
-                    files.Add(_extraFile);
+                    files.Add(ExtraFile);
                 }
             }
 

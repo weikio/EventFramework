@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="Quartz" Version="3.0.7" />
+    <PackageReference Include="Weikio.PluginFramework" Version="1.2.1" />
   </ItemGroup>
   
   <ItemGroup>
@@ -26,5 +27,6 @@
     <ProjectReference Include="..\Weikio.EventFramework.Router\Weikio.EventFramework.Router.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
   </ItemGroup>
- 
+  
+  
 </Project>

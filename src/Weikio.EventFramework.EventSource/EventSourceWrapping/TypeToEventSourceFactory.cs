@@ -22,13 +22,15 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         public string Id { get; }
         private readonly ILogger<TypeToEventSourceFactory> _logger;
         private readonly object _instance;
+        private readonly MulticastDelegate _configure;
 
-        public TypeToEventSourceFactory(Type type, Guid id, ILogger<TypeToEventSourceFactory> logger, object instance)
+        public TypeToEventSourceFactory(Type type, Guid id, ILogger<TypeToEventSourceFactory> logger, object instance, MulticastDelegate configure)
         {
             _type = type;
             Id = id.ToString();
             _logger = logger;
             _instance = instance;
+            _configure = configure;
         }
 
         public TypeToEventSourceFactoryResult Create(IServiceProvider serviceProvider)
@@ -73,6 +75,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             Task<EventPollingResult> WrapperRunner(object state, bool isFirstRun)
             {
                 var instance = _instance ?? ActivatorUtilities.CreateInstance(serviceProvider, _type);
+
+                if (_configure != null)
+                {
+                    _configure.DynamicInvoke(instance);
+                }
+                
                 var del = CreateDelegate(method, instance);
 
                 var res = wrappedMethodCall.Action.DynamicInvoke(del, state, isFirstRun);

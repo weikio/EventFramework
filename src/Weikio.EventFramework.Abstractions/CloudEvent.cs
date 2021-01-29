@@ -1,5 +1,7 @@
 ﻿using System;
 using CloudNative.CloudEvents;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Weikio.EventFramework.Abstractions
 {
@@ -35,6 +37,31 @@ namespace Weikio.EventFramework.Abstractions
 
         public static CloudEvent<T> Create(T obj, CloudEvent cloudEvent)
         {
+            var result = new CloudEvent<T>(obj, cloudEvent);
+            var attributes = result.GetAttributes();
+            attributes.Clear();
+
+            foreach (var attribute in cloudEvent.GetAttributes())
+            {
+                attributes.Add(attribute);
+            }
+
+            return result;
+        }
+        
+        public static CloudEvent<T> Create(CloudEvent cloudEvent)
+        {
+            T obj;
+            
+            if (cloudEvent.Data is JToken token)
+            {
+                obj = token.ToObject<T>();
+            }
+            else
+            {
+                obj = (T) cloudEvent.Data;
+            }
+            
             var result = new CloudEvent<T>(obj, cloudEvent);
             var attributes = result.GetAttributes();
             attributes.Clear();

@@ -36,19 +36,161 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 services.AddCloudEventSources();
                 services.AddCloudEventPublisher();
                 services.AddLocal();
+                services.AddEventSource<TestEventSource>();
             });
 
-            var factory = serviceProvider.GetRequiredService<IEventSourceFactory>();
-            var eventSource = factory.Create<TestEventSource>(TimeSpan.FromSeconds(1));
+            var eventSourceProvider = serviceProvider.GetRequiredService<EventSourceProvider>();
+            var eventSource = eventSourceProvider.Get("TestEventSource");
 
-            var manager = serviceProvider.GetRequiredService<IEventSourceManager>();
-            manager.Add(eventSource);
-            
-            manager.Update();
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            var esInstanceGuid = eventSourceInstanceManager.Create(eventSource, TimeSpan.FromSeconds(1));
+
+            await eventSourceInstanceManager.Start(esInstanceGuid);
             
             await Task.Delay(TimeSpan.FromSeconds(2));
 
             Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
+        }
+        
+        [Fact]
+        public async Task CanAddMultiplePollingEventSourcesRuntime()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            
+            // Add first
+            eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configure: new Action<TestEventSource>(source =>
+            {
+                source.ExtraFile = "first.test";
+            }));;
+
+            // Add second with configuration
+            eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configure: new Action<TestEventSource>(source =>
+            {
+                source.ExtraFile = "second.test";
+            }));
+
+            await eventSourceInstanceManager.StartAll();
+            
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            var instanceFile = _testCloudEventPublisher.PublishedEvents.OfType<NewFileEvent>().FirstOrDefault(x => x.FileName == "first.test");
+            Assert.NotNull(instanceFile);
+            
+            var anotherFile = _testCloudEventPublisher.PublishedEvents.OfType<NewFileEvent>().FirstOrDefault(x => x.FileName == "second.test");
+            Assert.NotNull(anotherFile);
+        }
+        
+        [Fact]
+        public async Task CanStop()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceProvider = serviceProvider.GetRequiredService<EventSourceProvider>();
+            var eventSource = eventSourceProvider.Get("TestEventSource");
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            eventSourceInstanceManager.Create(eventSource, TimeSpan.FromSeconds(1));
+            await eventSourceInstanceManager.StartAll();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            await eventSourceInstanceManager.StartAll();
+            await eventSourceInstanceManager.StopAll();
+            Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
+            
+            _testCloudEventPublisher.PublishedEvents.Clear();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            
+            Assert.Empty(_testCloudEventPublisher.PublishedEvents);
+        }
+        
+        [Fact]
+        public async Task CanStopAndStart()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceProvider = serviceProvider.GetRequiredService<EventSourceProvider>();
+            var eventSource = eventSourceProvider.Get("TestEventSource");
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            eventSourceInstanceManager.Create(eventSource, TimeSpan.FromSeconds(1));
+            await eventSourceInstanceManager.StartAll();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            await eventSourceInstanceManager.StartAll();
+            await eventSourceInstanceManager.StopAll();
+            Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
+            
+            _testCloudEventPublisher.PublishedEvents.Clear();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            
+            Assert.Empty(_testCloudEventPublisher.PublishedEvents);
+            await eventSourceInstanceManager.StartAll();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            Assert.NotEmpty(_testCloudEventPublisher.PublishedEvents);
+        }
+        
+        [Fact]
+        public async Task CanConfigurePublishedEvent()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
+            
+            
+        }
+        
+        [Fact]
+        public async Task CanStopPollingEventSource()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddSingleton(typeof(ICloudEventPublisher), _testCloudEventPublisher);
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceProvider = serviceProvider.GetRequiredService<EventSourceProvider>();
+            var eventSource = eventSourceProvider.Get("TestEventSource");
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            eventSourceInstanceManager.Create(eventSource, TimeSpan.FromSeconds(1));
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            Assert.Empty(_testCloudEventPublisher.PublishedEvents);
         }
         
         [Fact]
@@ -227,6 +369,40 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
         public ITestOutputHelper Output { get; set; }
 
         protected RuntimeChangesTestBase(WebApplicationFactory<Startup> factory, ITestOutputHelper output)
+        {
+            Output = output;
+            _factory = factory;
+        }
+        
+        protected IServiceProvider Init(Action<IServiceCollection> action = null)
+        {
+            var server = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    action?.Invoke(services);
+                    
+                    services.AddCloudEventCreator();
+                });
+                
+                builder.ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders(); // Remove other loggers
+                    logging.AddXUnit(Output); // Use the ITestOutputHelper instance
+                });
+                
+            });
+
+            return server.Services;
+        }
+    }
+    
+    public abstract class PollingEventSourceTestBase : IClassFixture<WebApplicationFactory<Startup>>
+    {
+        private readonly WebApplicationFactory<Startup> _factory;
+        public ITestOutputHelper Output { get; set; }
+
+        protected PollingEventSourceTestBase(WebApplicationFactory<Startup> factory, ITestOutputHelper output)
         {
             Output = output;
             _factory = factory;

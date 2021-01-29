@@ -7,19 +7,22 @@ using Microsoft.Extensions.Logging;
 
 namespace Weikio.EventFramework.EventSource
 {
-    public class EventSourceProvider : List<EventSourceCatalog>
+    public class EventSourceProvider : List<IEventSourceCatalog>
     {
         private readonly ILogger<EventSourceProvider> _logger;
 
-        public EventSourceProvider(IEnumerable<EventSourceCatalog> catalogs, ILogger<EventSourceProvider> logger)
+        public EventSourceProvider(IEnumerable<IEventSourceCatalog> catalogs, ILogger<EventSourceProvider> logger)
         {
             _logger = logger;
             AddRange(catalogs);
         }
         
-        public Task Initialize(CancellationToken cancellationToken)
+        public async Task Initialize(CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
+            foreach (var catalog in this)
+            {
+                await catalog.Initialize(cancellationToken);
+            }
         }
 
         public List<EventSourceDefinition> List()

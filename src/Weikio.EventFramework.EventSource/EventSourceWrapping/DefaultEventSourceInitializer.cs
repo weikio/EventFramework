@@ -87,7 +87,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 else if (eventSourceType != null)
                 {
                     var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                    var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, instance);
+                    var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, instance, configure);
 
                     // Event source can contain multiple event sources...
 
@@ -99,10 +99,10 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         var childId = eventSourceActionWrapper.Id;
 
                         var childEventSource = eventSourceActionWrapper.EventSource;
-                        var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState };
+                        var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSourceId = id};
                         _optionsCache.TryAdd(childId, opts);
 
-                        var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression);
+                        var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, id);
                         _scheduleService.Add(schedule);
                     }
 
@@ -125,11 +125,11 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     var wrapper = _serviceProvider.GetRequiredService<EventSourceActionWrapper>();
                     var wrapped = wrapper.Wrap(action);
 
-                    var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState };
+                    var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState, EventSourceId = id};
 
                     _optionsCache.TryAdd(id.ToString(), jobOptions);
 
-                    var schedule = new PollingSchedule(id, pollingFrequency, cronExpression);
+                    var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, id);
                     _scheduleService.Add(schedule);
                     
                     eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");

@@ -14,12 +14,14 @@ namespace Weikio.EventFramework.EventPublisher
     {
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
+        private readonly IServiceProvider _serviceProvider;
         private readonly CloudEventPublisherOptions _options;
 
-        public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator)
+        public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
+            _serviceProvider = serviceProvider;
             _options = options.Value;
         }
 
@@ -84,7 +86,7 @@ namespace Weikio.EventFramework.EventPublisher
             return await Publish(cloudEvent, gatewayName);
         }
 
-        public async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName)
+        public virtual async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName)
         {
             if (cloudEvent == null)
             {
@@ -115,6 +117,13 @@ namespace Weikio.EventFramework.EventPublisher
                 cloudEvent.Id = Guid.NewGuid().ToString();
             }
 
+            var beforePublish = _options.OnBeforePublish;
+
+            if (beforePublish != null)
+            {
+                cloudEvent = await beforePublish(_serviceProvider, cloudEvent);
+            }
+            
             await outgoingChannel.Send(cloudEvent);
 
             return cloudEvent;

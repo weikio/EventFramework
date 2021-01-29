@@ -14,6 +14,7 @@ using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
+using Weikio.PluginFramework.Catalogs;
 
 namespace Weikio.EventFramework.EventSource
 {
@@ -44,7 +45,8 @@ namespace Weikio.EventFramework.EventSource
             }
 
             services.AddHostedService<EventSourceStartupHandler>();
-
+            services.AddHostedService<EventSourceProviderStartupHandler>();
+            
             services.TryAddSingleton<IJobFactory, DefaultJobFactory>();
             services.TryAddSingleton<ISchedulerFactory, StdSchedulerFactory>();
             services.TryAddSingleton<PollingJobRunner>();
@@ -60,6 +62,10 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<EventSourceChangeToken>();
             services.TryAddSingleton<EventSourceChangeNotifier>();
             services.TryAddSingleton<EventSourceChangeProvider>();
+            services.TryAddSingleton<EventSourceProvider>();
+            services.TryAddSingleton<IEventSourceInstanceManager, DefaultEventSourceInstanceManager>();
+            services.TryAddSingleton<IEventSourceInstanceFactory, DefaultEventSourceInstanceFactory>();
+            services.TryAddSingleton<ICloudEventPublisherFactory, DefaultCloudEventPublisherFactory>();
 
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
@@ -233,10 +239,31 @@ namespace Weikio.EventFramework.EventSource
             //
             // return services;
         }
-        
-        public static IEventFrameworkBuilder AddEventSource(this IEventFrameworkBuilder builder, string name, Version version, MulticastDelegate action = null, Type eventSourceType = null, object eventSourceInstance = null)
+
+        public static IServiceCollection AddEventSource<TEventSourceType>(this IServiceCollection services)
         {
-            builder.Services.AddSingleton(provider =>
+            services.AddSingleton<IEventSourceCatalog>(provider =>
+            {
+                var catalog = new PluginFrameworkEventSourceCatalog(new TypePluginCatalog(typeof(TEventSourceType)));
+
+                return catalog;
+            });
+
+            return services;
+        }
+
+        public static IEventFrameworkBuilder AddEventSource(this IEventFrameworkBuilder builder, string name, Version version, MulticastDelegate action = null,
+            Type eventSourceType = null, object eventSourceInstance = null)
+        {
+            builder.Services.AddEventSource(name, version, action, eventSourceType, eventSourceInstance);
+
+            return builder;
+        }
+
+        public static IServiceCollection AddEventSource(this IServiceCollection services, string name, Version version, MulticastDelegate action = null,
+            Type eventSourceType = null, object eventSourceInstance = null)
+        {
+            services.AddSingleton<IEventSourceCatalog>(provider =>
             {
                 var factory = provider.GetRequiredService<IEventSourceFactory>();
                 var eventSource = factory.Create(name, version, action, eventSourceType, eventSourceInstance);
@@ -245,8 +272,8 @@ namespace Weikio.EventFramework.EventSource
 
                 return catalog;
             });
-            
-            return builder;
+
+            return services;
         }
     }
 }

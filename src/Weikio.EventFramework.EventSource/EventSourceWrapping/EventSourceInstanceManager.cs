@@ -16,24 +16,51 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         public bool RunOnce { get; set; }
     }
 
-    public class EventSourceInstanceManager : List<EsInstance>
+    public interface IEventSourceInstanceManager
+    {
+        List<EsInstance> GetAll();
+        Guid Create(EventSourceInstanceOptions options);
+
+        Guid Create(string name, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null);
+
+        Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null);
+
+        Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null);
+
+        Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null);
+
+        Task Start(Guid eventSourceInstanceId);
+        Task StartAll();
+        Task Stop(Guid eventSourceId);
+        Task StopAll();
+        Task Remove(Guid eventSourceId);
+        Task RemoveAll();
+    }
+
+    public class DefaultEventSourceInstanceManager : List<EsInstance>, IEventSourceInstanceManager
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly EventSourceProvider _eventSourceProvider;
+        private readonly IEventSourceInstanceFactory _instanceFactory;
 
-        public EventSourceInstanceManager(IServiceProvider serviceProvider, EventSourceProvider eventSourceProvider,
-            IEnumerable<IOptions<EventSourceInstanceOptions>> initialInstances)
+        public DefaultEventSourceInstanceManager(IServiceProvider serviceProvider, EventSourceProvider eventSourceProvider,
+            IEnumerable<IOptions<EventSourceInstanceOptions>> initialInstances, IEventSourceInstanceFactory instanceFactory)
         {
             _serviceProvider = serviceProvider;
             _eventSourceProvider = eventSourceProvider;
+            _instanceFactory = instanceFactory;
 
-            foreach (var initialInstance in initialInstances)
-            {
-                var initialInstanceOptions = initialInstance.Value;
-
-                Create(initialInstanceOptions.EventSourceDefinition, initialInstanceOptions.PollingFrequency, initialInstanceOptions.CronExpression,
-                    initialInstanceOptions.Configure);
-            }
+            // foreach (var initialInstance in initialInstances)
+            // {
+            //     var initialInstanceOptions = initialInstance.Value;
+            //
+            //     Create(initialInstanceOptions.EventSourceDefinition, initialInstanceOptions.PollingFrequency, initialInstanceOptions.CronExpression,
+            //         initialInstanceOptions.Configure);
+            // }
         }
 
         public List<EsInstance> GetAll()
@@ -46,15 +73,48 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return Create(options.EventSourceDefinition, options.PollingFrequency, options.CronExpression, options.Configure);
         }
         
+        public Guid Create(string name, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            return Create(name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure);
+        }
+        
+        public Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            var eventSource = _eventSourceProvider.Get(new EventSourceDefinition(name, version));
+            return Create(eventSource, pollingFrequency, cronExpression, configure);
+        }
+
+        
+        public Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null)
+        {
+            return Create(eventSource.EventSourceDefinition, pollingFrequency, cronExpression, configure);
+        }
+        
         public Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null)
         {
             var eventSource = _eventSourceProvider.Get(eventSourceDefinition);
 
-            var instance = new EsInstance(eventSource, pollingFrequency, cronExpression, configure, null, null);
+            var instance = _instanceFactory.Create(eventSource, pollingFrequency, cronExpression, configure);
+            
+            Add(instance);
+            
             var result = instance.Id;
-
             return result;
+        }
+
+        public async Task StartAll()
+        {
+            foreach (var eventSourceInstance in this)
+            {
+                if (eventSourceInstance.Status.Status != EventSourceStatusEnum.Started && eventSourceInstance.Status.Status != EventSourceStatusEnum.Starting)
+                {
+                    await Start(eventSourceInstance.Id);
+                }
+            }
         }
 
         public async Task Start(Guid eventSourceInstanceId)
@@ -69,6 +129,14 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             inst.Status.UpdateStatus(EventSourceStatusEnum.Starting);
 
             await inst.Start(_serviceProvider);
+        }
+
+        public async Task StopAll()
+        {
+            foreach (var eventSourceInstance in this)
+            {
+                await Stop(eventSourceInstance.Id);
+            }
         }
 
         public async Task Stop(Guid eventSourceId)
@@ -99,6 +167,14 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             await inst.Stop(_serviceProvider);
 
             Remove(inst);
+        }
+
+        public async Task RemoveAll()
+        {
+            foreach (var eventSourceInstance in this)
+            {
+                await Remove(eventSourceInstance.Id);
+            }
         }
     }
 }

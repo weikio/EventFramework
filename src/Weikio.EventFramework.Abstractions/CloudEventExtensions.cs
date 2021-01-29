@@ -23,7 +23,5 @@ namespace Weikio.EventFramework.Abstractions
 
             return null;
         }
-        
-
     }
 }
