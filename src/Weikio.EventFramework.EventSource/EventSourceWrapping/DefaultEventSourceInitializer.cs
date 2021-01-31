@@ -99,10 +99,10 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         var childId = eventSourceActionWrapper.Id;
 
                         var childEventSource = eventSourceActionWrapper.EventSource;
-                        var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSourceId = id};
+                        var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSource = null};
                         _optionsCache.TryAdd(childId, opts);
 
-                        var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, id);
+                        var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, null);
                         _scheduleService.Add(schedule);
                     }
 
@@ -125,11 +125,11 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     var wrapper = _serviceProvider.GetRequiredService<EventSourceActionWrapper>();
                     var wrapped = wrapper.Wrap(action);
 
-                    var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState, EventSourceId = id};
+                    var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState};
 
                     _optionsCache.TryAdd(id.ToString(), jobOptions);
 
-                    var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, id);
+                    var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, null);
                     _scheduleService.Add(schedule);
                     
                     eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");

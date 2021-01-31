@@ -32,7 +32,7 @@ namespace Weikio.EventFramework.EventSource.Polling
         {
             var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
             var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
-
+            
             var result = new CloudEventPublisher(gatewayManager, new OptionsWrapper<CloudEventPublisherOptions>(new CloudEventPublisherOptions()
                 {
                     OnBeforePublish = (provider, cloudEvent) =>
@@ -151,7 +151,7 @@ namespace Weikio.EventFramework.EventSource.Polling
                     }
 
                     var action = job.Action;
-                    var eventSourceId = job.EventSourceId;
+                    var eventSourceId = job.EventSource.Id;
 
                     var currentState = context.JobDetail.JobDataMap["state"];
                     var isFirstRun = (bool) context.JobDetail.JobDataMap["isfirstrun"];

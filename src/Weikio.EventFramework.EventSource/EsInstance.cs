@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.Polling;
 
@@ -20,9 +21,11 @@ namespace Weikio.EventFramework.EventSource
         public string CronExpression { get; }
 
         public MulticastDelegate Configure { get; }
+        
+        public CloudEventCreationOptions CloudEventCreationOptions { get; }
 
         public EsInstance(EventSource eventSource, TimeSpan? pollingFrequency, string cronExpression, MulticastDelegate configure, Func<IServiceProvider, EsInstance, Task<bool>> start, 
-            Func<IServiceProvider, EsInstance, Task<bool>> stop)
+            Func<IServiceProvider, EsInstance, Task<bool>> stop, CloudEventCreationOptions cloudEventCreationOptions)
         {
             _start = start;
             _stop = stop;
@@ -30,6 +33,7 @@ namespace Weikio.EventFramework.EventSource
             PollingFrequency = pollingFrequency;
             CronExpression = cronExpression;
             Configure = configure;
+            CloudEventCreationOptions = cloudEventCreationOptions;
             Status = new EventSourceStatus();
             Id = Guid.NewGuid();
         }

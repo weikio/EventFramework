@@ -1,16 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using CloudNative.CloudEvents;
 using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
+using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.EventSource.Polling;
 using Xunit;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventCreation
 {
     public class MultiCreationTests : EventCreationTestBase
     {
-        private List<object> _objects;
+        private readonly List<object> _objects;
 
         public MultiCreationTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
@@ -51,6 +55,36 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventCreation
                 var sequence = int.Parse(attributes["sequence"]);
                 
                 Assert.Equal(sequence, index);
+            }
+        }
+        
+        [Fact]
+        public void ContainsAdditionalExtensionsWithSequence()
+        {
+            var server = Init();
+        
+            // Act 
+            var eventSourceId = Guid.NewGuid();
+
+            var result = server.CreateCloudEvents(_objects, creationOptions: new CloudEventCreationOptions()
+            {
+                GetExtensions = (options, provider, arg3) =>
+                {
+                    return new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(eventSourceId) };
+                }
+            }).ToList();
+        
+            // Assert
+            for (var index = 0; index < result.Count; index++)
+            {
+                var cloudEvent = result[index];
+
+                var attributes = cloudEvent.GetAttributes();
+                var sequence = int.Parse(attributes["sequence"].ToString());
+                Assert.Equal(sequence, index);
+
+                var eventSource = cloudEvent.EventSourceId();
+                Assert.Equal(eventSourceId, eventSource);
             }
         }
     }

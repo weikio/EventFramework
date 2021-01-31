@@ -21,7 +21,7 @@ namespace Weikio.EventFramework.EventCreator
         public CloudEventCreator(CloudEventCreationOptions options = null)
         {
             _logger = new NullLogger<CloudEventCreator>();
-            _cloudEventCreatorOptionsProvider = new CloudEventCreatorOptions(options);
+            _cloudEventCreatorOptionsProvider = new DictionaryCloudEventCreatorOptionsProvider(options);
             _serviceProvider = null;
         }
 
@@ -35,9 +35,9 @@ namespace Weikio.EventFramework.EventCreator
 
         public CloudEvent CreateCloudEvent(object obj, string eventTypeName = null, string id = null, Uri source = null,
             ICloudEventExtension[] extensions = null,
-            string subject = null)
+            string subject = null, CloudEventCreationOptions creationOptions = null)
         {
-            var options = _cloudEventCreatorOptionsProvider.Get(obj.GetType().FullName);
+            var options = creationOptions ?? _cloudEventCreatorOptionsProvider.Get(obj.GetType().FullName);
 
             try
             {
@@ -54,7 +54,7 @@ namespace Weikio.EventFramework.EventCreator
         }
 
         public IEnumerable<CloudEvent> CreateCloudEvents(IEnumerable<object> objects, string eventTypeName = null, string id = null, Uri source = null,
-            ICloudEventExtension[] extensions = null, string subject = null)
+            ICloudEventExtension[] extensions = null, string subject = null, CloudEventCreationOptions creationOptions = null)
         {
             if (objects == null)
             {
@@ -68,7 +68,7 @@ namespace Weikio.EventFramework.EventCreator
             {
                 var originalExtensions = GetSequenceExtension(ref extensions, index);
 
-                var cloudEvent = CreateCloudEvent(obj, eventTypeName, id, source, extensions, subject);
+                var cloudEvent = CreateCloudEvent(obj, eventTypeName, id, source, extensions, subject, creationOptions);
                 result.Add(cloudEvent);
 
                 extensions = originalExtensions;
@@ -97,9 +97,19 @@ namespace Weikio.EventFramework.EventCreator
                 id = options.GetId(options, serviceProvider, obj);
             }
 
+            // Merge extensions
             if (extensions == null)
             {
                 extensions = options.GetExtensions(options, serviceProvider, obj);
+            }
+            else
+            {
+                var extensionFromOptions = options.GetExtensions(options, serviceProvider, obj);
+
+                if (extensionFromOptions != null)
+                {
+                    extensions = extensions.Concat(extensionFromOptions).ToArray();
+                }
             }
 
             if (subject == null)

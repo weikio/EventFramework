@@ -15,13 +15,16 @@ namespace Weikio.EventFramework.EventPublisher
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
         private readonly IServiceProvider _serviceProvider;
+        private readonly CloudEventCreationOptions _cloudEventCreationOptions;
         private readonly CloudEventPublisherOptions _options;
 
-        public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider)
+        public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
             _serviceProvider = serviceProvider;
+            _cloudEventCreationOptions = cloudEventCreationOptions;
             _options = options.Value;
         }
 
@@ -44,7 +47,7 @@ namespace Weikio.EventFramework.EventPublisher
             {
                 var obj = objects[index];
 
-                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) });
+                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: _cloudEventCreationOptions);
                 cloudEvents.Add(cloudEvent);
             }
 

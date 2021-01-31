@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.EventCreator;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
@@ -14,6 +15,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         public MulticastDelegate Configure { get; set; }
         public bool Autostart { get; set; }
         public bool RunOnce { get; set; }
+        public CloudEventCreationOptions CloudEventCreationOptions { get; set; }
     }
 
     public interface IEventSourceInstanceManager
@@ -22,16 +24,16 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         Guid Create(EventSourceInstanceOptions options);
 
         Guid Create(string name, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null);
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
 
         Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null);
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
 
         Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null);
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
 
         Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null);
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
 
         Task Start(Guid eventSourceInstanceId);
         Task StartAll();
@@ -74,13 +76,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         }
         
         public Guid Create(string name, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null)
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
             return Create(name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure);
         }
         
         public Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null)
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
             var eventSource = _eventSourceProvider.Get(new EventSourceDefinition(name, version));
             return Create(eventSource, pollingFrequency, cronExpression, configure);
@@ -88,17 +90,17 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         
         public Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null)
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
             return Create(eventSource.EventSourceDefinition, pollingFrequency, cronExpression, configure);
         }
         
         public Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null)
+            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
             var eventSource = _eventSourceProvider.Get(eventSourceDefinition);
 
-            var instance = _instanceFactory.Create(eventSource, pollingFrequency, cronExpression, configure);
+            var instance = _instanceFactory.Create(eventSource, pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
             
             Add(instance);
             

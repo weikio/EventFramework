@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
 
@@ -29,7 +30,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             _changeNotifier = changeNotifier;
         }
 
-        public EsInstance Create(EventSource eventSource, TimeSpan? pollingFrequency = null, string cronExpression = null, MulticastDelegate configure = null)
+        public EsInstance Create(EventSource eventSource, TimeSpan? pollingFrequency = null, string cronExpression = null, MulticastDelegate configure = null,
+            CloudEventCreationOptions cloudEventCreationOptions = null)
         {
             if (eventSource == null)
             {
@@ -119,10 +121,10 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                             var childId = eventSourceActionWrapper.Id;
 
                             var childEventSource = eventSourceActionWrapper.EventSource;
-                            var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSourceId = esInstance.Id};
+                            var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSource = esInstance};
                             _optionsCache.TryAdd(childId, opts);
 
-                            var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, esInstance.Id);
+                            var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, esInstance);
                             _scheduleService.Add(schedule);
                         }
 
@@ -147,7 +149,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                     stop = (provider, esInstance) =>
                     {
-                        var currentPollingSchedule = _scheduleService.FirstOrDefault(x => x.ParentId == esInstance.Id);
+                        var currentPollingSchedule = _scheduleService.FirstOrDefault(x => x.EventSourceInstance.Id == esInstance.Id);
 
                         if (currentPollingSchedule != null)
                         {
@@ -168,11 +170,11 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         var wrapper = _serviceProvider.GetRequiredService<EventSourceActionWrapper>();
                         var wrapped = wrapper.Wrap(action);
 
-                        var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState, EventSourceId = esInstance.Id };
+                        var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState, EventSource = esInstance };
 
                         _optionsCache.TryAdd(id.ToString(), jobOptions);
 
-                        var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, id);
+                        var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, esInstance);
                         _scheduleService.Add(schedule);
 
                         // eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
@@ -194,7 +196,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             // return eventSourceInstance.Status.Status;
 
-            var result = new EsInstance(eventSource, pollingFrequency, cronExpression, configure, start, stop);
+            var result = new EsInstance(eventSource, pollingFrequency, cronExpression, configure, start, stop, cloudEventCreationOptions);
 
             return result;
         }
