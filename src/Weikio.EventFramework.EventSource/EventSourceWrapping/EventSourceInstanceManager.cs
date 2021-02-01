@@ -78,21 +78,21 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         public Guid Create(string name, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
-            return Create(name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure);
+            return Create(name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
         }
         
         public Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
             var eventSource = _eventSourceProvider.Get(new EventSourceDefinition(name, version));
-            return Create(eventSource, pollingFrequency, cronExpression, configure);
+            return Create(eventSource, pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
         }
 
         
         public Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
         {
-            return Create(eventSource.EventSourceDefinition, pollingFrequency, cronExpression, configure);
+            return Create(eventSource.EventSourceDefinition, pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
         }
         
         public Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,

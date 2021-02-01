@@ -70,7 +70,7 @@ namespace Weikio.EventFramework.EventPublisher
                 throw new ArgumentNullException(nameof(obj));
             }
 
-            var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source);
+            var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source, creationOptions: _cloudEventCreationOptions);
 
             if (string.Equals(gatewayName, GatewayName.Default) && !string.IsNullOrWhiteSpace(_options.DefaultGatewayName))
             {

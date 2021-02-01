@@ -132,6 +132,35 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             var instanceFile = _testCloudEventPublisher.PublishedEvents.OfType<NewFileEvent>().FirstOrDefault(x => x.FileName == "first.test");
             Assert.NotNull(instanceFile);
         }
+        
+        [Fact]
+        public async Task CanConfigureEventCreationOptions()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddSingleton<ICloudEventPublisherFactory, MyTestCloudEventPublisherFactory>();
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+
+            var id  = eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), cloudEventCreationOptions: new CloudEventCreationOptions()
+            {
+                Subject = "mytest"
+            });
+            
+            await eventSourceInstanceManager.StartAll();
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)     
+            {
+                Assert.Equal("mytest", ev.Subject);
+            }
+        }
 
         [Fact]
         public async Task EventContainsEventSourceId()

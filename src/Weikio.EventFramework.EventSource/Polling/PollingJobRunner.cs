@@ -16,7 +16,7 @@ namespace Weikio.EventFramework.EventSource.Polling
 {
     public interface ICloudEventPublisherFactory
     {
-        CloudEventPublisher Create(Guid eventSourceInstanceId);
+        CloudEventPublisher Create(Guid eventSourceInstanceId, CloudEventCreationOptions creationOptions);
     }
 
     public class DefaultCloudEventPublisherFactory : ICloudEventPublisherFactory
@@ -28,7 +28,7 @@ namespace Weikio.EventFramework.EventSource.Polling
             _serviceProvider = serviceProvider;
         }
 
-        public CloudEventPublisher Create(Guid eventSourceInstanceId)
+        public CloudEventPublisher Create(Guid eventSourceInstanceId, CloudEventCreationOptions creationOptions)
         {
             var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
             var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
@@ -43,8 +43,7 @@ namespace Weikio.EventFramework.EventSource.Polling
                         return Task.FromResult(cloudEvent);
                     }
                 }),
-                
-                cloudEventCreator, _serviceProvider);
+                cloudEventCreator, _serviceProvider, creationOptions);
 
             return result;
         }
@@ -192,7 +191,9 @@ namespace Weikio.EventFramework.EventSource.Polling
                     {
                         _logger.LogDebug("Publishing new events from event source with {Id}. Event count {EventCount}", id, pollingResult.NewEvents.Count);
 
-                        var eventPublisher = _publisherFactory.Create(eventSourceId);
+                        var eventCreationOptions = job.EventSource.CloudEventCreationOptions;
+
+                        var eventPublisher = _publisherFactory.Create(eventSourceId, eventCreationOptions);
 
                         if (pollingResult.NewEvents.Count == 1)
                         {
