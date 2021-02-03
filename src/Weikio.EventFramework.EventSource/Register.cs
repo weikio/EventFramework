@@ -66,7 +66,7 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<IEventSourceInstanceManager, DefaultEventSourceInstanceManager>();
             services.TryAddSingleton<IEventSourceInstanceFactory, DefaultEventSourceInstanceFactory>();
             services.TryAddSingleton<ICloudEventPublisherFactory, DefaultCloudEventPublisherFactory>();
-            services.TryAddSingleton<ICloudCloudEventPublisherBuilder, DefaultCloudEventPublisherBuilder>();
+            services.TryAddTransient<ICloudCloudEventPublisherBuilder, DefaultCloudEventPublisherBuilder>();
 
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {

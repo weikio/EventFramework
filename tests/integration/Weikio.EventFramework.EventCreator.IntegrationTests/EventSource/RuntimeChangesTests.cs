@@ -418,7 +418,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                     action?.Invoke(services);
                     
                     services.AddCloudEventCreator();
-                    services.AddSingleton<ICloudCloudEventPublisherBuilder, TestCloudEventPublisherBuilder>();
+                    services.AddTransient<ICloudCloudEventPublisherBuilder, TestCloudEventPublisherBuilder>();
                 });
                 
                 builder.ConfigureLogging(logging =>

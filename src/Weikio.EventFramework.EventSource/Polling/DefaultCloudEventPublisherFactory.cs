@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventCreator;
@@ -9,15 +11,13 @@ namespace Weikio.EventFramework.EventSource.Polling
 {
     public class DefaultCloudEventPublisherFactory : ICloudEventPublisherFactory
     {
-        private readonly IOptionsMonitor<CloudEventPublisherFactoryOptions> _optionsMonitor;
-        private readonly ICloudCloudEventPublisherBuilder _builder;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<DefaultCloudEventPublisherFactory> _logger;
 
-        public DefaultCloudEventPublisherFactory(IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudCloudEventPublisherBuilder builder,
+        public DefaultCloudEventPublisherFactory(IServiceProvider serviceProvider,
             ILogger<DefaultCloudEventPublisherFactory> logger)
         {
-            _optionsMonitor = optionsMonitor;
-            _builder = builder;
+            _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
@@ -25,12 +25,34 @@ namespace Weikio.EventFramework.EventSource.Polling
         {
             try
             {
-                var options = new CloudEventPublisherOptions();
-                var factoryOptions = _optionsMonitor.Get(name);
+                using var scope = _serviceProvider.CreateScope();
 
-                factoryOptions.ConfigureOptions(options);
+                // Get the default settings
+                var options = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<CloudEventPublisherOptions>>();
 
-                var result = _builder.Build(new OptionsWrapper<CloudEventPublisherOptions>(options));
+                // Get the named settings
+                var optionsSnapshopt = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<CloudEventPublisherFactoryOptions>>();
+                var factoryOptions = optionsSnapshopt.Get(name);
+
+                // Run the named settings over the default settings
+                Action<CloudEventPublisherOptions> configurator = null;
+
+                if (factoryOptions.ConfigureOptions?.Any() == true)
+                {
+                    foreach (var configureOption in factoryOptions.ConfigureOptions)
+                    {
+                        configurator += configureOption;
+                    }
+                }
+
+                if (configurator != null)
+                {
+                    configurator(options.Value);
+                }
+                
+                var builder = scope.ServiceProvider.GetRequiredService<ICloudCloudEventPublisherBuilder>();
+
+                var result = builder.Build(new OptionsWrapper<CloudEventPublisherOptions>(options.Value));
 
                 return result;
             }
@@ -53,11 +75,11 @@ namespace Weikio.EventFramework.EventSource.Polling
         private readonly IServiceProvider _serviceProvider;
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
-        private readonly IOptionsMonitor<CloudEventCreationOptions> _cloudEventCreationOptionsMonitor;
+        private readonly IOptionsSnapshot<CloudEventCreationOptions> _cloudEventCreationOptionsMonitor;
 
         public DefaultCloudEventPublisherBuilder(IServiceProvider serviceProvider, ICloudEventGatewayManager gatewayManager,
             ICloudEventCreator cloudEventCreator,
-            IOptionsMonitor<CloudEventCreationOptions> cloudEventCreationOptionsMonitor)
+            IOptionsSnapshot<CloudEventCreationOptions> cloudEventCreationOptionsMonitor)
         {
             _serviceProvider = serviceProvider;
             _gatewayManager = gatewayManager;

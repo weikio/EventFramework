@@ -13,7 +13,7 @@ namespace Weikio.EventFramework.EventSource.Polling
                 throw new ArgumentNullException(nameof(services));
             }
 
-            services.Configure<CloudEventPublisherFactoryOptions>(name, options => options.ConfigureOptions = configurePublisher);
+            services.Configure<CloudEventPublisherFactoryOptions>(name, options => options.ConfigureOptions.Add(configurePublisher));
 
             return services;
         }

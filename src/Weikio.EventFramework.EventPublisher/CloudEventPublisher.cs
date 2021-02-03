@@ -15,16 +15,16 @@ namespace Weikio.EventFramework.EventPublisher
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IOptionsMonitor<CloudEventCreationOptions> _optionsMonitor;
+        private readonly CloudEventCreationOptions _optionsSnapshot;
         private readonly CloudEventPublisherOptions _options;
 
         public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
-            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, IOptionsMonitor<CloudEventCreationOptions> optionsMonitor)
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, IOptionsSnapshot<CloudEventCreationOptions> optionsSnapshot)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
             _serviceProvider = serviceProvider;
-            _optionsMonitor = optionsMonitor;
+            _optionsSnapshot = optionsSnapshot.Value;
             _options = options.Value;
         }
 
@@ -47,7 +47,7 @@ namespace Weikio.EventFramework.EventPublisher
             {
                 var obj = objects[index];
 
-                var creationOptions = _optionsMonitor.CurrentValue;
+                var creationOptions = _optionsSnapshot;
                 _options.ConfigureCloudEventCreationOptions(eventTypeName ?? obj.GetType().FullName, creationOptions);
                 
                 var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: creationOptions);
@@ -73,7 +73,7 @@ namespace Weikio.EventFramework.EventPublisher
                 throw new ArgumentNullException(nameof(obj));
             }
 
-            var creationOptions = _optionsMonitor.CurrentValue;
+            var creationOptions = _optionsSnapshot;
             _options.ConfigureCloudEventCreationOptions(eventTypeName ?? obj.GetType().FullName, creationOptions);
             
             var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source, creationOptions: creationOptions);

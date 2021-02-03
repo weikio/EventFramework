@@ -54,7 +54,8 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
             return cloudEvent;
         }
 
-        public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, IOptionsMonitor<CloudEventCreationOptions> optionsMonitor) : base(gatewayManager, options, cloudEventCreator, serviceProvider, optionsMonitor)
+        public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, 
+            IServiceProvider serviceProvider, IOptionsSnapshot<CloudEventCreationOptions> optionsSnapshot) : base(gatewayManager, options, cloudEventCreator, serviceProvider, optionsSnapshot)
         {
         }
     }
@@ -72,7 +73,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
         {
             var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
             var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
-            var optionsMonitor = _serviceProvider.GetRequiredService<IOptionsMonitor<CloudEventCreationOptions>>();
+            var optionsMonitor = _serviceProvider.GetRequiredService<IOptionsSnapshot<CloudEventCreationOptions>>();
 
             var result = new MyTestCloudEventPublisher(gatewayManager, options, cloudEventCreator, _serviceProvider, optionsMonitor);
 

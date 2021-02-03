@@ -19,7 +19,7 @@ namespace Weikio.EventFramework.EventPublisher
         {
 
         };
-
+        
         public Func<IServiceProvider, CloudEvent, Task<CloudEvent>> OnBeforePublish = (provider, cloudEvent) => Task.FromResult(cloudEvent);
     }
 

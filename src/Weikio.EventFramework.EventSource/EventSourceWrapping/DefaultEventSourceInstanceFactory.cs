@@ -25,7 +25,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly IOptionsMonitor<CloudEventPublisherFactoryOptions> _optionsMonitor;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
-            PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier, IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, 
+            PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier, 
+            IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, 
             IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor)
         {
             _serviceProvider = serviceProvider;
@@ -205,23 +206,32 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             var eventSourceInstanceId = Guid.NewGuid();
 
-            if (configurePublisherOptions == null)
+            // if (configurePublisherOptions == null)
+            // {
+            //     configurePublisherOptions = _optionsMonitor.CurrentValue.ConfigureOptions;
+            // }
+
+            var publisherFactoryOptions = new CloudEventPublisherFactoryOptions();
+
+            if (configurePublisherOptions != null)
             {
-                configurePublisherOptions = _optionsMonitor.CurrentValue.ConfigureOptions;
+                publisherFactoryOptions.ConfigureOptions.Add(configurePublisherOptions);
             }
             
-            _optionsMonitorCache.TryAdd(eventSourceInstanceId.ToString(), new CloudEventPublisherFactoryOptions()
+            publisherFactoryOptions.ConfigureOptions.Add(options =>
             {
-                ConfigureOptions = options =>
+                options.ConfigureDefaultCloudEventCreationOptions = creationOptions =>
                 {
-                    options.ConfigureDefaultCloudEventCreationOptions = creationOptions =>
-                    {
-                        creationOptions.AdditionalExtensions = new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(eventSourceInstanceId) };
-                    };
-
-                    configurePublisherOptions(options);
-                }
+                    creationOptions.AdditionalExtensions = creationOptions.AdditionalExtensions != null
+                        ? creationOptions.AdditionalExtensions.Concat(new ICloudEventExtension[]
+                        {
+                            new EventFrameworkEventSourceExtension(eventSourceInstanceId)
+                        }).ToArray()
+                        : new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(eventSourceInstanceId) };
+                };
             });
+            
+            _optionsMonitorCache.TryAdd(eventSourceInstanceId.ToString(), publisherFactoryOptions);
             
             var result = new EsInstance(eventSourceInstanceId, eventSource, pollingFrequency, cronExpression, configure, start, stop);
 

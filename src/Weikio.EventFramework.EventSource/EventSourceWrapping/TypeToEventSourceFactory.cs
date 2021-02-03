@@ -40,7 +40,9 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             // 2. Methods to long polling event sources
             // It would be better if we could inject different handlers into this class and each of those could handle the different need.
             // This way developers could add their own conversion implementations
-            var publicMethods = _type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).ToList();
+            var publicMethods = _type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(x => x.ReturnType.IsGenericType && typeof(Task<>).IsAssignableFrom(x.ReturnType.GetGenericTypeDefinition()))
+                .ToList();
 
             var longPollingMethods = publicMethods.Where(x =>
                 x.ReturnType.IsGenericType && typeof(IAsyncEnumerable<>).IsAssignableFrom(x.ReturnType.GetGenericTypeDefinition())).ToList();
