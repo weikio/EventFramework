@@ -44,66 +44,37 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
     public class MyTestCloudEventPublisher : CloudEventPublisher
     {
         public static List<CloudEvent> PublishedEvents = new List<CloudEvent>();
-        private CloudEventPublisherOptions _myOptions;
-        private IServiceProvider _myServiceProvider;
 
-        public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, CloudEventCreationOptions cloudEventCreationOptions) : base(gatewayManager, options, cloudEventCreator, serviceProvider, cloudEventCreationOptions)
-        {
-            _myOptions = options.Value;
-            _myServiceProvider = serviceProvider;
-        }
         
         public override async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName)
         {
-            if (cloudEvent == null)
-            {
-                throw new ArgumentNullException(nameof(cloudEvent));
-            }
-
-            if (string.IsNullOrEmpty(cloudEvent.Id))
-            {
-                cloudEvent.Id = Guid.NewGuid().ToString();
-            }
-
-            var beforePublish = _myOptions.OnBeforePublish;
-
-            if (beforePublish != null)
-            {
-                cloudEvent = await beforePublish(_myServiceProvider, cloudEvent);
-            }
-
+            await base.Publish(cloudEvent, gatewayName);
             PublishedEvents.Add(cloudEvent);
 
             return cloudEvent;
         }
+
+        public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, IOptionsMonitor<CloudEventCreationOptions> optionsMonitor) : base(gatewayManager, options, cloudEventCreator, serviceProvider, optionsMonitor)
+        {
+        }
     }
     
-    public class MyTestCloudEventPublisherFactory : ICloudEventPublisherFactory
+    public class TestCloudEventPublisherBuilder : ICloudCloudEventPublisherBuilder
     {
         private readonly IServiceProvider _serviceProvider;
 
-        public MyTestCloudEventPublisherFactory(IServiceProvider serviceProvider)
+        public TestCloudEventPublisherBuilder(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
         }
 
-        public CloudEventPublisher Create(Guid eventSourceInstanceId, CloudEventCreationOptions cloudEventCreationOptions)
+        public CloudEventPublisher Build(IOptions<CloudEventPublisherOptions> options)
         {
             var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
             var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
+            var optionsMonitor = _serviceProvider.GetRequiredService<IOptionsMonitor<CloudEventCreationOptions>>();
 
-            var result = new MyTestCloudEventPublisher(gatewayManager, new OptionsWrapper<CloudEventPublisherOptions>(new CloudEventPublisherOptions()
-                {
-                    OnBeforePublish = (provider, cloudEvent) =>
-                    {
-                        var extension = new EventFrameworkEventSourceExtension(eventSourceInstanceId);
-                        extension.Attach(cloudEvent);
-
-                        return Task.FromResult(cloudEvent);
-                    }
-                }),
-                
-                cloudEventCreator, _serviceProvider, cloudEventCreationOptions);
+            var result = new MyTestCloudEventPublisher(gatewayManager, options, cloudEventCreator, _serviceProvider, optionsMonitor);
 
             return result;
         }

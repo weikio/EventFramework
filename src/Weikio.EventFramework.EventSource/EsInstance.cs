@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
-using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource
 {
@@ -22,10 +20,8 @@ namespace Weikio.EventFramework.EventSource
 
         public MulticastDelegate Configure { get; }
         
-        public CloudEventCreationOptions CloudEventCreationOptions { get; }
-
-        public EsInstance(EventSource eventSource, TimeSpan? pollingFrequency, string cronExpression, MulticastDelegate configure, Func<IServiceProvider, EsInstance, Task<bool>> start, 
-            Func<IServiceProvider, EsInstance, Task<bool>> stop, CloudEventCreationOptions cloudEventCreationOptions)
+        public EsInstance(Guid id, EventSource eventSource, TimeSpan? pollingFrequency, string cronExpression, MulticastDelegate configure, Func<IServiceProvider, EsInstance, Task<bool>> start, 
+            Func<IServiceProvider, EsInstance, Task<bool>> stop)
         {
             _start = start;
             _stop = stop;
@@ -33,9 +29,8 @@ namespace Weikio.EventFramework.EventSource
             PollingFrequency = pollingFrequency;
             CronExpression = cronExpression;
             Configure = configure;
-            CloudEventCreationOptions = cloudEventCreationOptions;
             Status = new EventSourceStatus();
-            Id = Guid.NewGuid();
+            Id = id;
         }
         
         public CancellationTokenSource CancellationTokenSource { get; set; }
@@ -48,19 +43,6 @@ namespace Weikio.EventFramework.EventSource
         public async Task Stop(IServiceProvider serviceProvider)
         {
             await _stop(serviceProvider, this);
-        }
-    }
-    
-    public static class CloudEventExtensions 
-    {
-        public static Guid? EventSourceId(this CloudEvent cloudEvent)
-        {
-            if (cloudEvent?.GetAttributes()?.ContainsKey(EventFrameworkEventSourceExtension.EventFrameworkEventSourceAttributeName) == true)
-            {
-                return (Guid) cloudEvent.GetAttributes()[EventFrameworkEventSourceExtension.EventFrameworkEventSourceAttributeName];
-            }
-
-            return null;
         }
     }
 }

@@ -15,16 +15,16 @@ namespace Weikio.EventFramework.EventPublisher
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
         private readonly IServiceProvider _serviceProvider;
-        private readonly CloudEventCreationOptions _cloudEventCreationOptions;
+        private readonly IOptionsMonitor<CloudEventCreationOptions> _optionsMonitor;
         private readonly CloudEventPublisherOptions _options;
 
         public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
-            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, CloudEventCreationOptions cloudEventCreationOptions = null)
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, IOptionsMonitor<CloudEventCreationOptions> optionsMonitor)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
             _serviceProvider = serviceProvider;
-            _cloudEventCreationOptions = cloudEventCreationOptions;
+            _optionsMonitor = optionsMonitor;
             _options = options.Value;
         }
 
@@ -47,7 +47,10 @@ namespace Weikio.EventFramework.EventPublisher
             {
                 var obj = objects[index];
 
-                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: _cloudEventCreationOptions);
+                var creationOptions = _optionsMonitor.CurrentValue;
+                _options.ConfigureCloudEventCreationOptions(eventTypeName ?? obj.GetType().FullName, creationOptions);
+                
+                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: creationOptions);
                 cloudEvents.Add(cloudEvent);
             }
 
@@ -70,7 +73,10 @@ namespace Weikio.EventFramework.EventPublisher
                 throw new ArgumentNullException(nameof(obj));
             }
 
-            var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source, creationOptions: _cloudEventCreationOptions);
+            var creationOptions = _optionsMonitor.CurrentValue;
+            _options.ConfigureCloudEventCreationOptions(eventTypeName ?? obj.GetType().FullName, creationOptions);
+            
+            var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source, creationOptions: creationOptions);
 
             if (string.Equals(gatewayName, GatewayName.Default) && !string.IsNullOrWhiteSpace(_options.DefaultGatewayName))
             {

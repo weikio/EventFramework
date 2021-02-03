@@ -4,45 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
-    public class EventSourceInstanceOptions
-    {
-        public EventSourceDefinition EventSourceDefinition { get; set; }
-        public TimeSpan? PollingFrequency { get; set; }
-        public string CronExpression { get; set; }
-        public MulticastDelegate Configure { get; set; }
-        public bool Autostart { get; set; }
-        public bool RunOnce { get; set; }
-        public CloudEventCreationOptions CloudEventCreationOptions { get; set; }
-    }
-
-    public interface IEventSourceInstanceManager
-    {
-        List<EsInstance> GetAll();
-        Guid Create(EventSourceInstanceOptions options);
-
-        Guid Create(string name, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
-
-        Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
-
-        Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
-
-        Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null);
-
-        Task Start(Guid eventSourceInstanceId);
-        Task StartAll();
-        Task Stop(Guid eventSourceId);
-        Task StopAll();
-        Task Remove(Guid eventSourceId);
-        Task RemoveAll();
-    }
-
     public class DefaultEventSourceInstanceManager : List<EsInstance>, IEventSourceInstanceManager
     {
         private readonly IServiceProvider _serviceProvider;
@@ -72,41 +37,41 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         public Guid Create(EventSourceInstanceOptions options)
         {
-            return Create(options.EventSourceDefinition, options.PollingFrequency, options.CronExpression, options.Configure);
+            return Create(options.EventSourceDefinition, options.PollingFrequency, options.CronExpression, options.Configure, options.ConfigurePublisherOptions);
         }
         
         public Guid Create(string name, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
+            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null )
         {
-            return Create(name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
+            return Create(name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure, configurePublisherOptions);
         }
         
         public Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
+            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null)
         {
             var eventSource = _eventSourceProvider.Get(new EventSourceDefinition(name, version));
-            return Create(eventSource, pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
+            
+            return Create(eventSource, pollingFrequency, cronExpression, configure, configurePublisherOptions);
         }
 
-        
-        public Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
-        {
-            return Create(eventSource.EventSourceDefinition, pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
-        }
-        
         public Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, CloudEventCreationOptions cloudEventCreationOptions = null)
+            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null)
         {
             var eventSource = _eventSourceProvider.Get(eventSourceDefinition);
-
-            var instance = _instanceFactory.Create(eventSource, pollingFrequency, cronExpression, configure, cloudEventCreationOptions);
+            return Create(eventSource, pollingFrequency, cronExpression, configure, configurePublisherOptions);
+        }
+        
+        public Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
+            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null)
+        {
+            var instance = _instanceFactory.Create(eventSource, pollingFrequency, cronExpression, configure, configurePublisherOptions);
             
             Add(instance);
             
             var result = instance.Id;
             return result;
         }
+        
 
         public async Task StartAll()
         {

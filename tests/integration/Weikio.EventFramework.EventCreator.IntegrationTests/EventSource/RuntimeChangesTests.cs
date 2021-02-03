@@ -13,6 +13,7 @@ using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
+using Weikio.EventFramework.EventSource.Polling;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -417,6 +418,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                     action?.Invoke(services);
                     
                     services.AddCloudEventCreator();
+                    services.AddSingleton<ICloudCloudEventPublisherBuilder, TestCloudEventPublisherBuilder>();
                 });
                 
                 builder.ConfigureLogging(logging =>

@@ -1,118 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Quartz;
-using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.EventCreator;
-using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource.Polling
 {
-    public interface ICloudEventPublisherFactory
-    {
-        CloudEventPublisher Create(Guid eventSourceInstanceId, CloudEventCreationOptions creationOptions);
-    }
-
-    public class DefaultCloudEventPublisherFactory : ICloudEventPublisherFactory
-    {
-        private readonly IServiceProvider _serviceProvider;
-
-        public DefaultCloudEventPublisherFactory(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
-
-        public CloudEventPublisher Create(Guid eventSourceInstanceId, CloudEventCreationOptions creationOptions)
-        {
-            var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
-            var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
-            
-            var result = new CloudEventPublisher(gatewayManager, new OptionsWrapper<CloudEventPublisherOptions>(new CloudEventPublisherOptions()
-                {
-                    OnBeforePublish = (provider, cloudEvent) =>
-                    {
-                        var extension = new EventFrameworkEventSourceExtension(eventSourceInstanceId);
-                        extension.Attach(cloudEvent);
-
-                        return Task.FromResult(cloudEvent);
-                    }
-                }),
-                cloudEventCreator, _serviceProvider, creationOptions);
-
-            return result;
-        }
-    }
-
-    public class EventFrameworkEventSourceExtension : ICloudEventExtension
-    {
-        public const string EventFrameworkEventSourceAttributeName = "eventFramework_eventsource";
-
-        IDictionary<string, object> _attributes = new Dictionary<string, object>();
-
-        public Guid EventSourceValue
-        {
-            get => (Guid) _attributes[EventFrameworkEventSourceAttributeName];
-            set => _attributes[EventFrameworkEventSourceAttributeName] = value;
-        }
-
-        public EventFrameworkEventSourceExtension(Guid eventSourceId)
-        {
-            EventSourceValue = eventSourceId;
-        }
-
-        public void Attach(CloudEvent cloudEvent)
-        {
-            var eventAttributes = cloudEvent.GetAttributes();
-
-            if (_attributes == eventAttributes)
-            {
-                // already done
-                return;
-            }
-
-            foreach (var attr in _attributes)
-            {
-                if (attr.Value != null)
-                {
-                    eventAttributes[attr.Key] = attr.Value;
-                }
-            }
-
-            _attributes = eventAttributes;
-        }
-
-        public bool ValidateAndNormalize(string key, ref dynamic value)
-        {
-            if (string.Equals(key, EventFrameworkEventSourceAttributeName))
-            {
-                if (value is Guid)
-                {
-                    return true;
-                }
-
-                throw new InvalidOperationException();
-            }
-
-            return false;
-        }
-
-        public Type GetAttributeType(string name)
-        {
-            if (string.Equals(name, EventFrameworkEventSourceAttributeName))
-            {
-                return typeof(Guid);
-            }
-
-            return null;
-        }
-    }
-
     [DisallowConcurrentExecution]
     [PersistJobDataAfterExecution]
     public class PollingJobRunner : IJob
@@ -120,16 +16,14 @@ namespace Weikio.EventFramework.EventSource.Polling
         private readonly IServiceProvider _serviceProvider;
         private readonly IOptionsMonitor<JobOptions> _optionsMonitor;
         private readonly ILogger<PollingJobRunner> _logger;
-        private readonly ICloudEventPublisher _cloudEventPublisher;
         private readonly ICloudEventPublisherFactory _publisherFactory;
 
-        public PollingJobRunner(IServiceProvider serviceProvider, ICloudEventPublisher publisher, IOptionsMonitor<JobOptions> optionsMonitor,
-            ILogger<PollingJobRunner> logger, ICloudEventPublisher cloudEventPublisher, ICloudEventPublisherFactory publisherFactory)
+        public PollingJobRunner(IServiceProvider serviceProvider, IOptionsMonitor<JobOptions> optionsMonitor,
+            ILogger<PollingJobRunner> logger, ICloudEventPublisherFactory publisherFactory)
         {
             _serviceProvider = serviceProvider;
             _optionsMonitor = optionsMonitor;
             _logger = logger;
-            _cloudEventPublisher = cloudEventPublisher;
             _publisherFactory = publisherFactory;
         }
 
@@ -191,17 +85,15 @@ namespace Weikio.EventFramework.EventSource.Polling
                     {
                         _logger.LogDebug("Publishing new events from event source with {Id}. Event count {EventCount}", id, pollingResult.NewEvents.Count);
 
-                        var eventCreationOptions = job.EventSource.CloudEventCreationOptions;
-
-                        var eventPublisher = _publisherFactory.Create(eventSourceId, eventCreationOptions);
+                        var publisher = _publisherFactory.CreatePublisher(eventSourceId.ToString());
 
                         if (pollingResult.NewEvents.Count == 1)
                         {
-                            await eventPublisher.Publish(pollingResult.NewEvents.First());
+                            await publisher.Publish(pollingResult.NewEvents.First());
                         }
                         else
                         {
-                            await eventPublisher.Publish(pollingResult.NewEvents);
+                            await publisher.Publish(pollingResult.NewEvents);
                         }
                     }
                 }

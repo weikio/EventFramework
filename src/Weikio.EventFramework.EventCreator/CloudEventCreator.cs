@@ -37,7 +37,7 @@ namespace Weikio.EventFramework.EventCreator
             ICloudEventExtension[] extensions = null,
             string subject = null, CloudEventCreationOptions creationOptions = null)
         {
-            var options = creationOptions ?? _cloudEventCreatorOptionsProvider.Get(obj.GetType().FullName);
+            var options = creationOptions ?? _cloudEventCreatorOptionsProvider.Get(eventTypeName ?? obj.GetType().FullName);
 
             try
             {

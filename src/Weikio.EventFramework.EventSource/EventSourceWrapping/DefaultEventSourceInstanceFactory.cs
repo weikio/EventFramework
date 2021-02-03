@@ -2,11 +2,13 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
 
@@ -19,19 +21,24 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly PollingScheduleService _scheduleService;
         private readonly ILogger<DefaultEventSourceInstanceFactory> _logger;
         private readonly EventSourceChangeNotifier _changeNotifier;
+        private readonly IOptionsMonitorCache<CloudEventPublisherFactoryOptions> _optionsMonitorCache;
+        private readonly IOptionsMonitor<CloudEventPublisherFactoryOptions> _optionsMonitor;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
-            PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier)
+            PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier, IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, 
+            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor)
         {
             _serviceProvider = serviceProvider;
             _optionsCache = optionsCache;
             _scheduleService = scheduleService;
             _logger = logger;
             _changeNotifier = changeNotifier;
+            _optionsMonitorCache = optionsMonitorCache;
+            _optionsMonitor = optionsMonitor;
         }
 
         public EsInstance Create(EventSource eventSource, TimeSpan? pollingFrequency = null, string cronExpression = null, MulticastDelegate configure = null,
-            CloudEventCreationOptions cloudEventCreationOptions = null)
+            Action<CloudEventPublisherOptions> configurePublisherOptions = null)
         {
             if (eventSource == null)
             {
@@ -196,7 +203,27 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             // return eventSourceInstance.Status.Status;
 
-            var result = new EsInstance(eventSource, pollingFrequency, cronExpression, configure, start, stop, cloudEventCreationOptions);
+            var eventSourceInstanceId = Guid.NewGuid();
+
+            if (configurePublisherOptions == null)
+            {
+                configurePublisherOptions = _optionsMonitor.CurrentValue.ConfigureOptions;
+            }
+            
+            _optionsMonitorCache.TryAdd(eventSourceInstanceId.ToString(), new CloudEventPublisherFactoryOptions()
+            {
+                ConfigureOptions = options =>
+                {
+                    options.ConfigureDefaultCloudEventCreationOptions = creationOptions =>
+                    {
+                        creationOptions.AdditionalExtensions = new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(eventSourceInstanceId) };
+                    };
+
+                    configurePublisherOptions(options);
+                }
+            });
+            
+            var result = new EsInstance(eventSourceInstanceId, eventSource, pollingFrequency, cronExpression, configure, start, stop);
 
             return result;
         }
