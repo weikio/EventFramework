@@ -96,23 +96,31 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return (WrapperRunner, wrappedMethodCall.ContainsState);
         }
 
+        private static ConcurrentDictionary<string, object> _instanceCache = new ConcurrentDictionary<string, object>();
+
         private object CreateInstance(IServiceProvider serviceProvider)
         {
-            var instance = _instance;
-
-            if (instance == null)
-            {
-                if (_configuration != null)
+            var result =
+                _instanceCache.GetOrAdd(Id, sp =>
                 {
-                    instance = ActivatorUtilities.CreateInstance(serviceProvider, _type, new object[] { _configuration });
-                }
-                else
-                {
-                    instance = ActivatorUtilities.CreateInstance(serviceProvider, _type);
-                }
-            }
+                    var instance = _instance;
 
-            return instance;
+                    if (instance == null)
+                    {
+                        if (_configuration != null)
+                        {
+                            instance = ActivatorUtilities.CreateInstance(serviceProvider, _type, new object[] { _configuration });
+                        }
+                        else
+                        {
+                            instance = ActivatorUtilities.CreateInstance(serviceProvider, _type);
+                        }
+                    }
+
+                    return instance;
+                });
+
+            return result;
         }
 
         private LongPollingEventSourceFactory ConvertMethodToLongPollingServiceFactory(MethodInfo method, IServiceProvider serviceProvider)

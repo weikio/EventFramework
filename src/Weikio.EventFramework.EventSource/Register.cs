@@ -14,6 +14,7 @@ using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
+using Weikio.PluginFramework.Abstractions;
 using Weikio.PluginFramework.Catalogs;
 
 namespace Weikio.EventFramework.EventSource
@@ -44,8 +45,8 @@ namespace Weikio.EventFramework.EventSource
                 throw new ArgumentNullException(nameof(services));
             }
 
-            services.AddHostedService<EventSourceStartupHandler>();
-            services.AddHostedService<EventSourceProviderStartupHandler>();
+            // services.AddHostedService<EventSourceStartupHandler>();
+            // services.AddHostedService<EventSourceProviderStartupHandler>();
             services.AddHostedService<EventSourceInstanceStartupHandler>();
 
             services.TryAddSingleton<IJobFactory, DefaultJobFactory>();
@@ -242,15 +243,27 @@ namespace Weikio.EventFramework.EventSource
             // return services;
         }
 
-        public static IServiceCollection AddEventSource<TEventSourceType>(this IServiceCollection services)
+        public static IServiceCollection AddEventSource<TEventSourceType>(this IServiceCollection services, Action<EventSourceInstanceOptions> configureInstance = null)
         {
+            var typePluginCatalog = new TypePluginCatalog(typeof(TEventSourceType));
             services.AddSingleton<IEventSourceCatalog>(provider =>
             {
-                var catalog = new PluginFrameworkEventSourceCatalog(new TypePluginCatalog(typeof(TEventSourceType)));
+                var catalog = new PluginFrameworkEventSourceCatalog(typePluginCatalog);
 
                 return catalog;
             });
 
+            if (configureInstance != null)
+            {
+                services.AddOptions<EventSourceInstanceOptions>(Options.DefaultName)
+                    .Configure(options =>
+                    {
+                        configureInstance(options);
+
+                        options.EventSourceDefinition = typePluginCatalog.Single().Name;
+                    });
+            }
+            
             return services;
         }
 

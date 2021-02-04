@@ -28,22 +28,104 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
         }
 
         [Fact]
-        public async Task CanAddEventReturningTypeAsEventSource()
+        public async Task CanStart()
         {
-            var server = Init(services =>
+            var serviceProvider = Init(services =>
             {
                 services.AddCloudEventSources();
                 services.AddCloudEventPublisher();
                 services.AddLocal();
-
-                services.AddSource<TestEventSource>(pollingFrequency: TimeSpan.FromSeconds(1));
+                services.AddEventSource<StatelessTestEventSource>();
             });
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource", };
+
+            await eventSourceInstanceManager.Create(options);
+
+            await eventSourceInstanceManager.StartAll();
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
             Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
         }
+        
+        
+        [Fact]
+        public async Task CanUseConfiguration()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
 
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+
+            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1),
+                configuration: new TestEsConfiguration() { ExtraFile = "fromConfig.test" });
+
+            await eventSourceInstanceManager.StartAll();
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            var instanceFile = MyTestCloudEventPublisher.PublishedEvents.Select(CloudEvent<NewFileEvent>.Create)
+                .FirstOrDefault(x => x.Object.FileName == "fromConfig.test");
+            Assert.NotNull(instanceFile);
+        }
+
+        [Fact]
+        public async Task CanAutoStartStateles()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<StatelessTestEventSource>();
+            });
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+
+            var options = new EventSourceInstanceOptions()
+            {
+                PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource", Autostart = true
+            };
+
+            await eventSourceInstanceManager.Create(options);
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+        }
+        
+        [Fact]
+        public async Task CanAutostart()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+
+            var options = new EventSourceInstanceOptions()
+            {
+                Autostart = true, PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource"
+            };
+
+            await eventSourceInstanceManager.Create(options);
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+        }
+        
         [Fact]
         public async Task CanConfigurePollingFrequencyUsingOptions()
         {
@@ -53,16 +135,74 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 services.AddCloudEventPublisher();
                 services.AddLocal();
 
+                services.AddEventSource<TestEventSource>(instanceOptions =>
+                {
+                    instanceOptions.Autostart = true;
+                });
+                
                 services.Configure<PollingOptions>(options =>
                 {
                     options.PollingFrequency = TimeSpan.FromSeconds(100);
                 });
-                services.AddSource<TestEventSource>();
             });
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
             Assert.Empty(MyTestCloudEventPublisher.PublishedEvents);
+        }
+        
+        [Fact]
+        public async Task CanConfigurePollingFrequencyUsingCronAndOptions()
+        {
+            var server = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddEventSource<TestEventSource>(instanceOptions =>
+                {
+                    instanceOptions.Autostart = true;
+                });
+                
+                services.Configure<PollingOptions>(options =>
+                {
+                    options.PollingFrequency = null;
+                    options.Cron = "0 0 12 * * ?";
+                });
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            Assert.Empty(MyTestCloudEventPublisher.PublishedEvents);
+        }
+
+        [Fact]
+        public async Task CanSetInitialStateOnFirstRun()
+        {
+            var server = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<StatefulEventSourceWithInitialization>();
+
+                services.Configure<EventSourceInstanceOptions>(options =>
+                {
+                    options.PollingFrequency = TimeSpan.FromSeconds(1);
+                    options.EventSourceDefinition = "StatefulEventSourceWithInitialization";
+                    options.Autostart = true;
+                });
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            
+            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+
+            for (var i = 0; i < MyTestCloudEventPublisher.PublishedEvents.Count - 1; i++)
+            {
+                Assert.Equal($"{i + 10}.txt", CloudEvent<NewFileEvent>.Create(MyTestCloudEventPublisher.PublishedEvents[i]).Object.FileName);
+            }
         }
 
         [Fact]
@@ -123,12 +263,14 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            var instanceFile = MyTestCloudEventPublisher.PublishedEvents.Select(CloudEvent<NewFileEvent>.Create).FirstOrDefault(x => x.Object.FileName == "first.test");
+            var instanceFile = MyTestCloudEventPublisher.PublishedEvents.Select(CloudEvent<NewFileEvent>.Create)
+                .FirstOrDefault(x => x.Object.FileName == "first.test");
             Assert.NotNull(instanceFile);
         }
-        
+
+
         [Fact]
-        public async Task CanStartStaless()
+        public async Task StatelessIsNotAutoStartedByDefault()
         {
             var serviceProvider = Init(services =>
             {
@@ -137,51 +279,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 services.AddLocal();
                 services.AddEventSource<StatelessTestEventSource>();
             });
-            
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource", };
 
-            await eventSourceInstanceManager.Create(options);
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-        }
-        
-        [Fact]
-        public async Task CanAutoStartStaless()
-        {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<StatelessTestEventSource>();
-            });
-            
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource", Autostart = true};
-
-            await eventSourceInstanceManager.Create(options);
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-        }
-        
-        [Fact]
-        public async Task StatelessIsNotAutoStarted()
-        {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<StatelessTestEventSource>();
-            });
-            
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
             var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource", };
 
@@ -191,7 +289,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             Assert.Empty(MyTestCloudEventPublisher.PublishedEvents);
         }
-        
+
         [Fact]
         public async Task CanRunOnce()
         {
@@ -202,9 +300,13 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 services.AddLocal();
                 services.AddEventSource<StatelessTestEventSource>();
             });
-            
+
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource", RunOnce = true};
+
+            var options = new EventSourceInstanceOptions()
+            {
+                PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource", RunOnce = true
+            };
 
             await eventSourceInstanceManager.Create(options);
 
@@ -214,7 +316,33 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             Assert.Single(MyTestCloudEventPublisher.PublishedEvents);
         }
-        
+
+        [Fact]
+        public async Task SameInstanceIsUsedBetweenRuns()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<StatefulEventSource>();
+
+                services.Configure<EventSourceInstanceOptions>(options =>
+                {
+                    options.PollingFrequency = TimeSpan.FromSeconds(1);
+                    options.EventSourceDefinition = "StatefulEventSource";
+                    options.Autostart = true;
+                });
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            for (var i = 0; i < MyTestCloudEventPublisher.PublishedEvents.Count - 1; i++)
+            {
+                Assert.Equal($"{i}.txt", CloudEvent<NewFileEvent>.Create(MyTestCloudEventPublisher.PublishedEvents[i]).Object.FileName);
+            }
+        }
+
         [Fact]
         public async Task TestStatusLifecycle()
         {
@@ -225,13 +353,13 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 services.AddLocal();
                 services.AddEventSource<StatelessTestEventSource>();
             });
-            
+
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource"};
+            var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "StatelessTestEventSource" };
 
             var id = await eventSourceInstanceManager.Create(options);
             var instance = eventSourceInstanceManager.Get(id);
-            
+
             await eventSourceInstanceManager.StartAll();
             await Task.Delay(TimeSpan.FromSeconds(2));
             await eventSourceInstanceManager.StopAll();
@@ -247,33 +375,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             Assert.Equal(EventSourceStatusEnum.Stopped, instanceStatus.Messages[4].NewStatus);
             Assert.Equal(EventSourceStatusEnum.Removed, instanceStatus.Messages[5].NewStatus);
         }
-        
-        
-        [Fact]
-        public async Task CanAutostart()
-        {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-            });
 
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            var options = new EventSourceInstanceOptions()
-            {
-                Autostart = true, PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource"
-            };
-
-            await eventSourceInstanceManager.Create(options);
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-        }
-        
         [Fact]
         public async Task CanCreateAutoStartInstanceInConfigure()
         {
@@ -296,7 +398,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
         }
-        
+
         [Fact]
         public async Task CanCreateInstanceInConfigure()
         {
@@ -320,33 +422,6 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             var instances = serviceProvider.GetRequiredService<IEventSourceInstanceManager>().GetAll();
             Assert.Single(instances);
-        }
-
-        
-        [Fact]
-        public async Task CanUseConfiguration()
-        {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configuration: new TestEsConfiguration()
-            {
-                ExtraFile = "fromConfig.test"
-            });
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            var instanceFile = MyTestCloudEventPublisher.PublishedEvents.Select(CloudEvent<NewFileEvent>.Create).FirstOrDefault(x => x.Object.FileName == "fromConfig.test");
-            Assert.NotNull(instanceFile);
         }
 
         [Fact]
@@ -396,7 +471,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             });
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            await  eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
+            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
 
             await eventSourceInstanceManager.StartAll();
 
@@ -430,7 +505,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             });
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            await  eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
+            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
 
             await eventSourceInstanceManager.StartAll();
 
@@ -443,7 +518,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 Assert.Equal("specific", ev.Subject);
             }
         }
-        
+
         [Fact]
         public async Task CanConfigureEventTypeSpecificEventCreationOptionsForInstance()
         {
@@ -453,6 +528,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 services.AddCloudEventPublisher();
                 services.AddLocal();
                 services.AddEventSource<TestEventSource>();
+
                 services.Configure<CloudEventPublisherOptions>(options =>
                 {
                     options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
@@ -463,7 +539,8 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             });
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            await  eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
+
+            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
             {
                 options.TypedCloudEventCreationOptions["NewFileEvent"] = creationOptions =>
                 {
@@ -482,7 +559,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
                 Assert.Equal("instance", ev.Subject);
             }
         }
-        
+
         [Fact]
         public async Task CanOverrideEventTypeSpecificEventCreationOptionsForInstance()
         {
@@ -495,7 +572,8 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             });
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            await  eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
+
+            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
             {
                 options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
                 {
@@ -613,7 +691,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
 
-            var id =await  eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
+            var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
 
             await eventSourceInstanceManager.StartAll();
 
@@ -641,7 +719,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
 
-            var id =await  eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
+            var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
             {
                 options.Subject = "hello";
             });
@@ -674,15 +752,17 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
 
-            var firstSourceId = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configure: new Action<TestEventSource>(source =>
-            {
-                source.ExtraFile = "first.test";
-            }));
+            var firstSourceId = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configure: new Action<TestEventSource>(
+                source =>
+                {
+                    source.ExtraFile = "first.test";
+                }));
 
-            var anotherSourceId = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configure: new Action<TestEventSource>(source =>
-            {
-                source.ExtraFile = "another.test";
-            }));
+            var anotherSourceId = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configure: new Action<TestEventSource>(
+                source =>
+                {
+                    source.ExtraFile = "another.test";
+                }));
 
             await eventSourceInstanceManager.StartAll();
 
@@ -697,8 +777,33 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             Assert.Equal(anotherSourceId, anotherFileEvent.EventSourceId());
         }
 
+        
         [Fact]
-        public async Task CanAddEventReturningTypeWithMultipleMethodsAsEventSource()
+        public async Task DoesNotThrowIfNoEvents()
+        {
+            var server = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddEventSource<MultiEventSource>(options =>
+                {
+                    options.Autostart = true;
+                });
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            var createdEvents = MyTestCloudEventPublisher.PublishedEvents.Where(x => x.Type == "NewFileEvent").ToList();
+            var deletedEvents = MyTestCloudEventPublisher.PublishedEvents.Where(x => x.Type == "DeletedFileEvent").ToList();
+            
+            Assert.NotEmpty(createdEvents);
+            Assert.NotEmpty(deletedEvents);
+        }
+        
+        [Fact]
+        public async Task CanAddMultiMethodEventSource()
         {
             throw new NotImplementedException();
         }
@@ -715,130 +820,6 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             throw new NotImplementedException();
         }
 
-        [Fact]
-        public async Task CanAddStatelessEventSource()
-        {
-            var server = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-
-                services.AddSource(() =>
-                {
-                    return new CustomerCreatedEvent();
-                }, TimeSpan.FromSeconds(1));
-            });
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-        }
-
-        [Fact]
-        public async Task CanAddStatelessEventSourceInstance()
-        {
-            var server = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-
-                var testEventSource = new TestEventSource("instance.test");
-                services.AddSource(testEventSource, TimeSpan.FromSeconds(1));
-            });
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            var instanceFile = MyTestCloudEventPublisher.PublishedEvents.OfType<NewFileEvent>().FirstOrDefault(x => x.FileName == "instance.test");
-            Assert.NotNull(instanceFile);
-        }
-
-        [Fact]
-        public async Task StatelessEventSourceInstanceDoesNotThrowIfNoNewEventsAreAvailable()
-        {
-            var server = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-
-                var testEventSource = new TestEventSource("instance.test");
-                services.AddSource(testEventSource, TimeSpan.FromSeconds(1));
-            });
-
-            await Task.Delay(TimeSpan.FromSeconds(3));
-
-            var instanceFile = MyTestCloudEventPublisher.PublishedEvents.OfType<NewFileEvent>().FirstOrDefault(x => x.FileName == "instance.test");
-            Assert.NotNull(instanceFile);
-        }
-
-        [Fact]
-        public async Task StatelessEventSourceIsNotRunInStart()
-        {
-            var server = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-
-                services.AddSource(() => new CustomerCreatedEvent(), TimeSpan.FromMinutes(3));
-            });
-
-            await Task.Delay(TimeSpan.FromSeconds(3));
-
-            Assert.Empty(MyTestCloudEventPublisher.PublishedEvents);
-        }
-
-        [Fact]
-        public async Task StatefullEventSourceIsInitializedInStart()
-        {
-            var server = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-
-                services.AddSource<int>(currentCount =>
-                {
-                    _counter = currentCount + 10;
-
-                    return (new CustomerCreatedEvent(), _counter);
-                }, TimeSpan.FromMinutes(5));
-            });
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.Equal(10, _counter);
-
-            // Events aren't published yet as this is just an initialization run
-            Assert.Empty(MyTestCloudEventPublisher.PublishedEvents);
-        }
-
-        [Fact]
-        public async Task StatefullEventSourceWithCronIntervalIsInitializedInStart()
-        {
-            var server = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-
-                services.AddSource<int>(currentCount =>
-                {
-                    _counter = currentCount + 10;
-
-                    return (new CustomerCreatedEvent(), _counter);
-                }, cronExpression: "0 0 12 * * ?");
-            });
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.Equal(10, _counter);
-
-            // Events aren't published yet as this is just an initialization run
-            Assert.Empty(MyTestCloudEventPublisher.PublishedEvents);
-        }
 
         public void Dispose()
         {

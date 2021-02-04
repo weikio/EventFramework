@@ -42,7 +42,10 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             Func<Task, EventPollingResult> handlingTask = null;
 
-            var containsState = actionParameters?.Any() == true;
+            // Boolean parameter is reserved for the "isFirstRun"-flag
+            var hasNonBooleanParameter = actionParameters?.Any(x => typeof(bool).IsAssignableFrom(x.ParameterType) == false);
+            
+            var containsState = hasNonBooleanParameter == true;
 
             if (hasReturnValue == false) // scenario 1
             {
@@ -93,15 +96,32 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     // TODO: Check for parameter declaration errors.
                     if (containsState)
                     {
-                        if (actionParameters.Count() == 1)
+                        if (actionParameters.Length == 1)
                         {
-                            parameters.Add(state);
+                            if (typeof(bool).IsAssignableFrom(actionParameters.Single().ParameterType))
+                            {
+                                parameters.Add(isFirstRun);
+                            }
+                            else
+                            {
+                                parameters.Add(state);
+                            }
                         }
                         else if (actionParameters.Count() == 2)
                         {
                             parameters.Add(state);
                             parameters.Add(isFirstRun);
                         }
+                    }
+                    else
+                    {
+                        if (actionParameters.Length == 1)
+                        {
+                            if (typeof(bool).IsAssignableFrom(actionParameters.Single().ParameterType))
+                            {
+                                parameters.Add(isFirstRun);
+                            }
+                        }  
                     }
 
                     Task cloudEvent = null;

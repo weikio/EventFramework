@@ -72,12 +72,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                 if (requiresPollingJob)
                 {
-                    if (pollingFrequency == null)
+                    if (pollingFrequency == null && cronExpression == null)
                     {
                         var optionsManager = _serviceProvider.GetService<IOptionsMonitor<PollingOptions>>();
                         var options = optionsManager.CurrentValue;
 
                         pollingFrequency = options.PollingFrequency;
+                        cronExpression = options.Cron;
                     }
                 }
 
@@ -94,14 +95,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                             configure.DynamicInvoke(inst);
                         }
 
-                        // eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
-                        //
                         inst.StartAsync(cancellationToken.Token);
-
-                        //
-                        // eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Running");
-                        //
-                        // eventSourceInstance.SetCancellationTokenSource(cancellationToken);
 
                         return Task.FromResult(true);
                     };

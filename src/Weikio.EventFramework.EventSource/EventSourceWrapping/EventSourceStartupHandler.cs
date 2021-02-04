@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -36,38 +37,58 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
     
     public class EventSourceInstanceStartupHandler : IHostedService
     {
+        private readonly EventSourceProvider _eventSourceProvider;
         private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
-        private readonly IEnumerable<IOptions<EventSourceInstanceOptions>> _initialInstances;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<EventSourceInstanceStartupHandler> _logger;
 
-        public EventSourceInstanceStartupHandler(IEventSourceInstanceManager eventSourceInstanceManager, IEnumerable<IOptions<EventSourceInstanceOptions>> initialInstances, ILogger<EventSourceInstanceStartupHandler> logger)
+        public EventSourceInstanceStartupHandler(EventSourceProvider eventSourceProvider, IEventSourceInstanceManager eventSourceInstanceManager, IServiceProvider serviceProvider, 
+            ILogger<EventSourceInstanceStartupHandler> logger)
         {
+            _eventSourceProvider = eventSourceProvider;
             _eventSourceInstanceManager = eventSourceInstanceManager;
-            _initialInstances = initialInstances;
+            _serviceProvider = serviceProvider;
+
             _logger = logger;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.LogTrace("Creating all the event source instances configured through the IOptions<EventSourceInstanceOptions>");
-
-            var initialInstances = _initialInstances.ToList();
-
-            if (initialInstances.Count < 0)
+            try
             {
-                _logger.LogDebug("No event source instances created on system startup");
+                _logger.LogDebug("Starting event sourcing. Event source provider and event source instances are initialized on startup");
 
-                return;
-            }
+                await _eventSourceProvider.Initialize(cancellationToken); 
+
+                _logger.LogDebug("Event source provider initialized");
             
-            _logger.LogDebug("Found {InitialInstanceCount} event source instances to create on system startup", initialInstances.Count);
+                _logger.LogDebug("Creating all the event source instances configured through the IOptions<EventSourceInstanceOptions>");
+                // Get these from service provider instead of injecting them. This is because we want to make sure that event source provider is first initialized as some of the 
+                // instances use factories which require that provider is up and running.
+                var initialInstances = _serviceProvider.GetRequiredService<IEnumerable<IOptions<EventSourceInstanceOptions>>>().ToList();
+            
+                if (initialInstances.Count < 0)
+                {
+                    _logger.LogDebug("No event source instances created on system startup");
 
-            foreach (var initialInstance in initialInstances)
-            {
-                await _eventSourceInstanceManager.Create(initialInstance.Value);
+                    return;
+                }
+            
+                _logger.LogTrace("Found {InitialInstanceCount} event source instances to create on system startup", initialInstances.Count);
+
+                foreach (var initialInstance in initialInstances)
+                {
+                    await _eventSourceInstanceManager.Create(initialInstance.Value);
+                }
+
+                _logger.LogDebug("Created {InitialInstanceCount} event source instances on system startup", initialInstances.Count);
             }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to start event sourcing");
 
-            _logger.LogDebug("Created {InitialInstanceCount} event source instances on system startup", initialInstances.Count);
+                throw;
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

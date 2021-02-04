@@ -20,6 +20,62 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource.Source
         }
     }
     
+    [DisplayName("StatefulEventSource")]
+    public class StatefulEventSource
+    {
+        private int _runCount = 0;
+        public Task<NewFileEvent> Run()
+        {
+            var newFileEvent = new NewFileEvent($"{_runCount}.txt");
+
+            _runCount += 1;
+            return Task.FromResult(newFileEvent);
+        }
+    }
+    
+    [DisplayName("MultiEventSource")]
+    public class MultiEventSource
+    {
+        public Task<NewFileEvent> Run()
+        {
+            return Task.FromResult(new NewFileEvent("file.txt"));
+        }
+        
+        public Task<DeletedFileEvent> Deleted()
+        {
+            return Task.FromResult(new DeletedFileEvent("file.txt"));
+        }
+    }
+    
+    [DisplayName("EmptyEventSource")]
+    public class EmptyEventSource
+    {
+        public Task<NewFileEvent> Run()
+        {
+            return Task.FromResult<NewFileEvent>(null);
+        }
+    }
+    
+    [DisplayName("StatefulEventSourceWithInitialization")]
+    public class StatefulEventSourceWithInitialization
+    {
+        private int _runCount = 0;
+        public Task<NewFileEvent> Run(bool isFirstRun)
+        {
+            if (isFirstRun)
+            {
+                _runCount += 10;
+
+                return Task.FromResult<NewFileEvent>(null);
+            }
+            
+            var newFileEvent = new NewFileEvent($"{_runCount}.txt");
+
+            _runCount += 1;
+            return Task.FromResult(newFileEvent);
+        }
+    }
+    
     [DisplayName("TestEventSource")]
     public class TestEventSource
     {
