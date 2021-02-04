@@ -38,8 +38,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             _optionsMonitor = optionsMonitor;
         }
 
-        public EsInstance Create(EventSource eventSource, TimeSpan? pollingFrequency = null, string cronExpression = null, MulticastDelegate configure = null,
-            Action<CloudEventPublisherOptions> configurePublisherOptions = null)
+        public EsInstance Create(EventSource eventSource, EventSourceInstanceOptions instanceOptions)
         {
             if (eventSource == null)
             {
@@ -52,6 +51,11 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             var action = eventSource.Action;
             Func<IServiceProvider, EsInstance, Task<bool>> start = null;
             Func<IServiceProvider, EsInstance, Task<bool>> stop = null;
+
+            var pollingFrequency = instanceOptions.PollingFrequency;
+            var cronExpression = instanceOptions.CronExpression;
+            var configurePublisherOptions = instanceOptions.ConfigurePublisherOptions;
+            var configure = instanceOptions.ConfigurePublisherOptions;
             
             try
             {
@@ -116,7 +120,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     start = (provider, esInstance) =>
                     {
                         var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                        var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, instance, configure);
+                        var factory = new TypeToEventSourceFactory(esInstance, logger);
 
                         // Event source can contain multiple event sources...
 
@@ -134,6 +138,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                             var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, esInstance);
                             _scheduleService.Add(schedule);
+                            
+                            esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Started polling");
                         }
 
                         foreach (var eventSourceActionWrapper in sources.LongPollingEventSources)
@@ -167,6 +173,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         cancellationToken.Cancel();
 
                         _changeNotifier.Notify();
+
+                        esInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped);
 
                         return Task.FromResult(true);
                     };
@@ -204,8 +212,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             // return eventSourceInstance.Status.Status;
 
-            var eventSourceInstanceId = Guid.NewGuid();
-
             // if (configurePublisherOptions == null)
             // {
             //     configurePublisherOptions = _optionsMonitor.CurrentValue.ConfigureOptions;
@@ -218,22 +224,24 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 publisherFactoryOptions.ConfigureOptions.Add(configurePublisherOptions);
             }
             
+            Action<CloudEventCreationOptions> addEventSourceIdConfigurator = creationOptions =>
+            {
+                creationOptions.AdditionalExtensions = creationOptions.AdditionalExtensions != null
+                    ? creationOptions.AdditionalExtensions.Concat(new ICloudEventExtension[]
+                    {
+                        new EventFrameworkEventSourceExtension(id)
+                    }).ToArray()
+                    : new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) };
+            };
+            
             publisherFactoryOptions.ConfigureOptions.Add(options =>
             {
-                options.ConfigureDefaultCloudEventCreationOptions = creationOptions =>
-                {
-                    creationOptions.AdditionalExtensions = creationOptions.AdditionalExtensions != null
-                        ? creationOptions.AdditionalExtensions.Concat(new ICloudEventExtension[]
-                        {
-                            new EventFrameworkEventSourceExtension(eventSourceInstanceId)
-                        }).ToArray()
-                        : new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(eventSourceInstanceId) };
-                };
+                options.ConfigureDefaultCloudEventCreationOptions += addEventSourceIdConfigurator;
             });
             
-            _optionsMonitorCache.TryAdd(eventSourceInstanceId.ToString(), publisherFactoryOptions);
+            _optionsMonitorCache.TryAdd(id.ToString(), publisherFactoryOptions);
             
-            var result = new EsInstance(eventSourceInstanceId, eventSource, pollingFrequency, cronExpression, configure, start, stop);
+            var result = new EsInstance(id, eventSource, instanceOptions, start, stop);
 
             return result;
         }

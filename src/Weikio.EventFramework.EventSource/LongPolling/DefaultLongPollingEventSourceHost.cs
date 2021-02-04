@@ -35,7 +35,7 @@ namespace Weikio.EventFramework.EventSource.LongPolling
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Running");
+            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Started long polling");
             
             if (_pollers == null)
             {
@@ -47,7 +47,7 @@ namespace Weikio.EventFramework.EventSource.LongPolling
                 await _cloudEventPublisher.Publish(newEvent);
             }
             
-            // _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped, "Stopped");
+            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped, "Stopped long polling");
         }
     }
 }

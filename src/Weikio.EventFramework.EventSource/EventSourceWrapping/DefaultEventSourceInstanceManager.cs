@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Weikio.EventFramework.EventCreator;
-using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
@@ -13,21 +12,16 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly IServiceProvider _serviceProvider;
         private readonly EventSourceProvider _eventSourceProvider;
         private readonly IEventSourceInstanceFactory _instanceFactory;
+        private readonly ILogger<DefaultEventSourceInstanceManager> _logger;
 
         public DefaultEventSourceInstanceManager(IServiceProvider serviceProvider, EventSourceProvider eventSourceProvider,
-            IEnumerable<IOptions<EventSourceInstanceOptions>> initialInstances, IEventSourceInstanceFactory instanceFactory)
+            IEventSourceInstanceFactory instanceFactory, ILogger<DefaultEventSourceInstanceManager> logger)
         {
             _serviceProvider = serviceProvider;
             _eventSourceProvider = eventSourceProvider;
             _instanceFactory = instanceFactory;
+            _logger = logger;
 
-            // foreach (var initialInstance in initialInstances)
-            // {
-            //     var initialInstanceOptions = initialInstance.Value;
-            //
-            //     Create(initialInstanceOptions.EventSourceDefinition, initialInstanceOptions.PollingFrequency, initialInstanceOptions.CronExpression,
-            //         initialInstanceOptions.Configure);
-            // }
         }
 
         public List<EsInstance> GetAll()
@@ -35,46 +29,34 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return this;
         }
 
-        public Guid Create(EventSourceInstanceOptions options)
+        public EsInstance Get(Guid id)
         {
-            return Create(options.EventSourceDefinition, options.PollingFrequency, options.CronExpression, options.Configure, options.ConfigurePublisherOptions);
-        }
-        
-        public Guid Create(string name, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null )
-        {
-            return Create(name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure, configurePublisherOptions);
-        }
-        
-        public Guid Create(string name, Version version, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null)
-        {
-            var eventSource = _eventSourceProvider.Get(new EventSourceDefinition(name, version));
-            
-            return Create(eventSource, pollingFrequency, cronExpression, configure, configurePublisherOptions);
+            return this.FirstOrDefault(x => x.Id == id);
         }
 
-        public Guid Create(EventSourceDefinition eventSourceDefinition, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null)
+        public async Task<Guid> Create(EventSourceInstanceOptions options)
         {
-            var eventSource = _eventSourceProvider.Get(eventSourceDefinition);
-            return Create(eventSource, pollingFrequency, cronExpression, configure, configurePublisherOptions);
-        }
-        
-        public Guid Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null)
-        {
-            var instance = _instanceFactory.Create(eventSource, pollingFrequency, cronExpression, configure, configurePublisherOptions);
+            _logger.LogInformation("Creating new event source instance from options {Options}", options);
             
+            var eventSource = _eventSourceProvider.Get(options.EventSourceDefinition);
+            var instance = _instanceFactory.Create(eventSource, options);
+
             Add(instance);
-            
+
             var result = instance.Id;
+
+            if (instance.Options.Autostart)
+            {
+                await Start(result);
+            }
+
             return result;
         }
-        
 
         public async Task StartAll()
         {
+            _logger.LogDebug("Starting all event source instances");
+            
             foreach (var eventSourceInstance in this)
             {
                 if (eventSourceInstance.Status.Status != EventSourceStatusEnum.Started && eventSourceInstance.Status.Status != EventSourceStatusEnum.Starting)
@@ -86,6 +68,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         public async Task Start(Guid eventSourceInstanceId)
         {
+            _logger.LogInformation("Stopping event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
+
             var inst = this.FirstOrDefault(x => x.Id == eventSourceInstanceId);
 
             if (inst == null)
@@ -100,19 +84,30 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         public async Task StopAll()
         {
+            _logger.LogDebug("Stopping all event source instances");
+            
             foreach (var eventSourceInstance in this)
             {
                 await Stop(eventSourceInstance.Id);
             }
         }
 
-        public async Task Stop(Guid eventSourceId)
+        public async Task Stop(Guid eventSourceInstanceId)
         {
-            var inst = this.FirstOrDefault(x => x.Id == eventSourceId);
+            _logger.LogInformation("Stopping event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
+
+            var inst = this.FirstOrDefault(x => x.Id == eventSourceInstanceId);
 
             if (inst == null)
             {
-                throw new ArgumentException("Unknown event source instance " + eventSourceId);
+                throw new ArgumentException("Unknown event source instance " + eventSourceInstanceId);
+            }
+
+            if (inst.Status != EventSourceStatusEnum.Starting && inst.Status != EventSourceStatusEnum.Started)
+            {
+                _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, no need to stop", eventSourceInstanceId, inst.Status.Status);
+
+                return;
             }
 
             inst.Status.UpdateStatus(EventSourceStatusEnum.Stopping);
@@ -120,24 +115,31 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             await inst.Stop(_serviceProvider);
         }
 
-        public async Task Remove(Guid eventSourceId)
+        public async Task Remove(Guid eventSourceInstanceId)
         {
-            var inst = this.FirstOrDefault(x => x.Id == eventSourceId);
+            _logger.LogInformation("Removing event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
+
+            var inst = this.FirstOrDefault(x => x.Id == eventSourceInstanceId);
 
             if (inst == null)
             {
-                throw new ArgumentException("Unknown event source instance " + eventSourceId);
+                throw new ArgumentException("Unknown event source instance " + eventSourceInstanceId);
             }
 
-            inst.Status.UpdateStatus(EventSourceStatusEnum.Stopping);
+            if (inst.Status == EventSourceStatusEnum.Starting && inst.Status == EventSourceStatusEnum.Started)
+            {
+                _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, stop before removing", eventSourceInstanceId, inst.Status.Status);
 
-            await inst.Stop(_serviceProvider);
-
-            Remove(inst);
+                await inst.Stop(_serviceProvider);
+            }
+            
+            inst.Status.UpdateStatus(EventSourceStatusEnum.Removed);
         }
 
         public async Task RemoveAll()
         {
+            _logger.LogDebug("Removing all event source instances");
+
             foreach (var eventSourceInstance in this)
             {
                 await Remove(eventSourceInstance.Id);

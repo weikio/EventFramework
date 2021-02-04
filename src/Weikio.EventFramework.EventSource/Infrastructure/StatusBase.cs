@@ -41,4 +41,9 @@
 
             return $"{Status}: {lastMessage.LogTime.ToLocalTime().ToString(CultureInfo.InvariantCulture)} - {lastMessage.Message}";
         }
+        
+        public static implicit operator T(StatusBase<T> status)
+        {
+            return status.Status;
+        }
     }

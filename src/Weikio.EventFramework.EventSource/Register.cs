@@ -46,7 +46,8 @@ namespace Weikio.EventFramework.EventSource
 
             services.AddHostedService<EventSourceStartupHandler>();
             services.AddHostedService<EventSourceProviderStartupHandler>();
-            
+            services.AddHostedService<EventSourceInstanceStartupHandler>();
+
             services.TryAddSingleton<IJobFactory, DefaultJobFactory>();
             services.TryAddSingleton<ISchedulerFactory, StdSchedulerFactory>();
             services.TryAddSingleton<PollingJobRunner>();

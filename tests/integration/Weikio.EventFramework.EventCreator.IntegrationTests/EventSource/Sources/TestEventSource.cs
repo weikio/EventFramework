@@ -6,10 +6,30 @@ using Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource.Sources
 {
+    public class TestEsConfiguration
+    {
+        public string ExtraFile { get; set; }
+    }
+
+    [DisplayName("StatelessTestEventSource")]
+    public class StatelessTestEventSource
+    {
+        public Task<NewFileEvent> Run()
+        {
+            return Task.FromResult(new NewFileEvent("single.txt"));
+        }
+    }
+    
     [DisplayName("TestEventSource")]
     public class TestEventSource
     {
+        private readonly TestEsConfiguration _configuration;
         private string _extraFile;
+
+        public TestEventSource(TestEsConfiguration configuration = null)
+        {
+            _configuration = configuration;
+        }
 
         public string ExtraFile
         {
@@ -43,6 +63,11 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource.Source
                 if (!string.IsNullOrWhiteSpace(ExtraFile))
                 {
                     files.Add(ExtraFile);
+                }
+
+                if (!string.IsNullOrWhiteSpace(_configuration?.ExtraFile))
+                {
+                    files.Add(_configuration.ExtraFile);
                 }
             }
 

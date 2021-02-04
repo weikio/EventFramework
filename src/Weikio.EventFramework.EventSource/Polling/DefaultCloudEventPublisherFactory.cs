@@ -28,7 +28,7 @@ namespace Weikio.EventFramework.EventSource.Polling
                 using var scope = _serviceProvider.CreateScope();
 
                 // Get the default settings
-                var options = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<CloudEventPublisherOptions>>();
+                var options = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<CloudEventPublisherOptions>>().Value;
 
                 // Get the named settings
                 var optionsSnapshopt = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<CloudEventPublisherFactoryOptions>>();
@@ -47,12 +47,12 @@ namespace Weikio.EventFramework.EventSource.Polling
 
                 if (configurator != null)
                 {
-                    configurator(options.Value);
+                    configurator(options);
                 }
                 
-                var builder = scope.ServiceProvider.GetRequiredService<ICloudCloudEventPublisherBuilder>();
+                var builder = _serviceProvider.GetRequiredService<ICloudCloudEventPublisherBuilder>();
 
-                var result = builder.Build(new OptionsWrapper<CloudEventPublisherOptions>(options.Value));
+                var result = builder.Build(new OptionsWrapper<CloudEventPublisherOptions>(options));
 
                 return result;
             }
@@ -75,21 +75,18 @@ namespace Weikio.EventFramework.EventSource.Polling
         private readonly IServiceProvider _serviceProvider;
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
-        private readonly IOptionsSnapshot<CloudEventCreationOptions> _cloudEventCreationOptionsMonitor;
 
         public DefaultCloudEventPublisherBuilder(IServiceProvider serviceProvider, ICloudEventGatewayManager gatewayManager,
-            ICloudEventCreator cloudEventCreator,
-            IOptionsSnapshot<CloudEventCreationOptions> cloudEventCreationOptionsMonitor)
+            ICloudEventCreator cloudEventCreator)
         {
             _serviceProvider = serviceProvider;
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
-            _cloudEventCreationOptionsMonitor = cloudEventCreationOptionsMonitor;
         }
 
         public CloudEventPublisher Build(IOptions<CloudEventPublisherOptions> options)
         {
-            var result = new CloudEventPublisher(_gatewayManager, options, _cloudEventCreator, _serviceProvider, _cloudEventCreationOptionsMonitor);
+            var result = new CloudEventPublisher(_gatewayManager, options, _cloudEventCreator, _serviceProvider, _serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>());
 
             return result;
         }

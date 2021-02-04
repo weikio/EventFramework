@@ -17,22 +17,26 @@ namespace Weikio.EventFramework.EventPublisher
 
         public Action<CloudEventCreationOptions> ConfigureDefaultCloudEventCreationOptions { get; set; } = options =>
         {
-
         };
-        
+
         public Func<IServiceProvider, CloudEvent, Task<CloudEvent>> OnBeforePublish = (provider, cloudEvent) => Task.FromResult(cloudEvent);
     }
 
     public static class CloudEventPublisherOptionsExtensions
     {
-        public static void ConfigureCloudEventCreationOptions(this CloudEventPublisherOptions publisherOptions, string eventType, 
-            CloudEventCreationOptions creationOptions)
+        public static void ConfigureCloudEventCreationOptions(this CloudEventPublisherOptions publisherOptions, string eventType, object obj,
+            CloudEventCreationOptions creationOptions, IServiceProvider serviceProvider)
         {
             publisherOptions.ConfigureDefaultCloudEventCreationOptions(creationOptions);
-            
+
             if (publisherOptions.TypedCloudEventCreationOptions?.Any() != true)
             {
                 return;
+            }
+
+            if (string.IsNullOrWhiteSpace(eventType))
+            {
+                eventType = creationOptions.GetEventTypeName(creationOptions, serviceProvider, obj);
             }
 
             if (publisherOptions.TypedCloudEventCreationOptions.ContainsKey(eventType) == false)

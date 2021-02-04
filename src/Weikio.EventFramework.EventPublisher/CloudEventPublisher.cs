@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Extensions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
@@ -15,16 +17,16 @@ namespace Weikio.EventFramework.EventPublisher
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
         private readonly IServiceProvider _serviceProvider;
-        private readonly CloudEventCreationOptions _optionsSnapshot;
+        private readonly ILogger<CloudEventPublisher> _logger;
         private readonly CloudEventPublisherOptions _options;
 
         public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
-            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, IOptionsSnapshot<CloudEventCreationOptions> optionsSnapshot)
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
             _serviceProvider = serviceProvider;
-            _optionsSnapshot = optionsSnapshot.Value;
+            _logger = logger;
             _options = options.Value;
         }
 
@@ -47,9 +49,9 @@ namespace Weikio.EventFramework.EventPublisher
             {
                 var obj = objects[index];
 
-                var creationOptions = _optionsSnapshot;
-                _options.ConfigureCloudEventCreationOptions(eventTypeName ?? obj.GetType().FullName, creationOptions);
-                
+                var creationOptions = GetDefaultCloudEventCreationOptions();
+                _options.ConfigureCloudEventCreationOptions(eventTypeName, obj, creationOptions, _serviceProvider);
+
                 var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: creationOptions);
                 cloudEvents.Add(cloudEvent);
             }
@@ -72,9 +74,9 @@ namespace Weikio.EventFramework.EventPublisher
             {
                 throw new ArgumentNullException(nameof(obj));
             }
-
-            var creationOptions = _optionsSnapshot;
-            _options.ConfigureCloudEventCreationOptions(eventTypeName ?? obj.GetType().FullName, creationOptions);
+   
+            var creationOptions = GetDefaultCloudEventCreationOptions();
+            _options.ConfigureCloudEventCreationOptions(eventTypeName, obj, creationOptions, _serviceProvider);
             
             var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source, creationOptions: creationOptions);
 
@@ -86,6 +88,25 @@ namespace Weikio.EventFramework.EventPublisher
             var result = await Publish(cloudEvent, gatewayName);
 
             return result;
+        }
+
+        private CloudEventCreationOptions GetDefaultCloudEventCreationOptions()
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+
+                // Get the default cloud event creation options for each publish
+                var result = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<CloudEventCreationOptions>>().Value;
+
+                return result;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to get default cloud event creation options");
+
+                throw;
+            }
         }
 
         public async Task<CloudEvent> Publish(CloudEvent cloudEvent)

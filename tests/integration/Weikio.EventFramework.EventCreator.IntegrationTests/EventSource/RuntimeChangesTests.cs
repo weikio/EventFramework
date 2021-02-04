@@ -44,7 +44,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource
             var eventSource = eventSourceProvider.Get("TestEventSource");
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            var esInstanceGuid = eventSourceInstanceManager.Create(eventSource, TimeSpan.FromSeconds(1));
+            var esInstanceGuid = await eventSourceInstanceManager.Create(eventSource, TimeSpan.FromSeconds(1));
 
             await eventSourceInstanceManager.Start(esInstanceGuid);
             

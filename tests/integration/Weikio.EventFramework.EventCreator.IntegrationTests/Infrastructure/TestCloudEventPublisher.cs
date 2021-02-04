@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
@@ -55,7 +56,7 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
         }
 
         public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, 
-            IServiceProvider serviceProvider, IOptionsSnapshot<CloudEventCreationOptions> optionsSnapshot) : base(gatewayManager, options, cloudEventCreator, serviceProvider, optionsSnapshot)
+            IServiceProvider serviceProvider) : base(gatewayManager, options, cloudEventCreator, serviceProvider, serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>())
         {
         }
     }
@@ -73,9 +74,8 @@ namespace Weikio.EventFramework.EventCreator.IntegrationTests.Infrastructure
         {
             var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
             var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
-            var optionsMonitor = _serviceProvider.GetRequiredService<IOptionsSnapshot<CloudEventCreationOptions>>();
 
-            var result = new MyTestCloudEventPublisher(gatewayManager, options, cloudEventCreator, _serviceProvider, optionsMonitor);
+            var result = new MyTestCloudEventPublisher(gatewayManager, options, cloudEventCreator, _serviceProvider);
 
             return result;
         }

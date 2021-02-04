@@ -10,6 +10,7 @@
         Started,
         Stopping,
         Stopped,
+        Removed,
         Failed
     }
 }

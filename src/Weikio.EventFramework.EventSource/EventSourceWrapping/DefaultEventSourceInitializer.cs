@@ -87,7 +87,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 else if (eventSourceType != null)
                 {
                     var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                    var factory = new TypeToEventSourceFactory(eventSourceType, id, logger, instance, configure);
+                    var factory = new TypeToEventSourceFactory(null, logger);
 
                     // Event source can contain multiple event sources...
 

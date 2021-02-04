@@ -24,7 +24,21 @@ namespace Weikio.EventFramework.EventSource
         {
             return $"{Name}: {Version} {GetMoreVersionDetails()}".Trim();
         }
+        
+        public static implicit operator EventSourceDefinition(string name)
+        {
+            return new EventSourceDefinition(name, Version.Parse("1.0.0.0"));
+        }
+        
+        public static implicit operator EventSourceDefinition((string Name, Version Version) nameAndVersion)
+        {
+            return new EventSourceDefinition(nameAndVersion.Name, nameAndVersion.Version);
+        }
 
+        public static implicit operator EventSourceDefinition((string Name, string Version) nameAndVersion)
+        {
+            return new EventSourceDefinition(nameAndVersion.Name, Version.Parse(nameAndVersion.Version));
+        }
         private string GetMoreVersionDetails()
         {
             if (string.IsNullOrWhiteSpace(Description) && string.IsNullOrWhiteSpace(ProductVersion))

@@ -6,7 +6,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
     public interface IEventSourceInstanceFactory
     {
-        EsInstance Create(EventSource eventSource, TimeSpan? pollingFrequency = null,
-            string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null);
+        EsInstance Create(EventSource eventSource,EventSourceInstanceOptions options);
     }
 }

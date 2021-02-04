@@ -9,26 +9,22 @@ namespace Weikio.EventFramework.EventSource
 {
     public class EsInstance
     {
+        public EventSourceInstanceOptions Options { get; }
         private readonly Func<IServiceProvider, EsInstance, Task<bool>> _start;
         private readonly Func<IServiceProvider, EsInstance, Task<bool>> _stop;
         public Guid Id { get; }
         public EventSource EventSource { get; }
         public EventSourceStatus Status { get; }
-        public TimeSpan? PollingFrequency { get; }
-
-        public string CronExpression { get; }
-
-        public MulticastDelegate Configure { get; }
-        
-        public EsInstance(Guid id, EventSource eventSource, TimeSpan? pollingFrequency, string cronExpression, MulticastDelegate configure, Func<IServiceProvider, EsInstance, Task<bool>> start, 
+        public TimeSpan? PollingFrequency { get => Options.PollingFrequency; }
+        public string CronExpression { get => Options.CronExpression; }
+        public MulticastDelegate Configure { get => Options.Configure; }
+        public EsInstance(Guid id, EventSource eventSource, EventSourceInstanceOptions options, Func<IServiceProvider, EsInstance, Task<bool>> start, 
             Func<IServiceProvider, EsInstance, Task<bool>> stop)
         {
+            Options = options;
             _start = start;
             _stop = stop;
             EventSource = eventSource;
-            PollingFrequency = pollingFrequency;
-            CronExpression = cronExpression;
-            Configure = configure;
             Status = new EventSourceStatus();
             Id = id;
         }

@@ -23,14 +23,16 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly ILogger<TypeToEventSourceFactory> _logger;
         private readonly object _instance;
         private readonly MulticastDelegate _configure;
+        private readonly object _configuration;
 
-        public TypeToEventSourceFactory(Type type, Guid id, ILogger<TypeToEventSourceFactory> logger, object instance, MulticastDelegate configure)
+        public TypeToEventSourceFactory(EsInstance esInstance, ILogger<TypeToEventSourceFactory> logger)
         {
-            _type = type;
-            Id = id.ToString();
+            _type = esInstance.EventSource.EventSourceType;
+            Id = esInstance.Id.ToString();
             _logger = logger;
-            _instance = instance;
-            _configure = configure;
+            _instance = esInstance.EventSource.Instance;
+            _configure = esInstance.Configure;
+            _configuration = esInstance.Options.Configuration;
         }
 
         public TypeToEventSourceFactoryResult Create(IServiceProvider serviceProvider)
@@ -76,13 +78,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             Task<EventPollingResult> WrapperRunner(object state, bool isFirstRun)
             {
-                var instance = _instance ?? ActivatorUtilities.CreateInstance(serviceProvider, _type);
+                var instance = CreateInstance(serviceProvider);
 
                 if (_configure != null)
                 {
                     _configure.DynamicInvoke(instance);
                 }
-                
+
                 var del = CreateDelegate(method, instance);
 
                 var res = wrappedMethodCall.Action.DynamicInvoke(del, state, isFirstRun);
@@ -94,11 +96,31 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return (WrapperRunner, wrappedMethodCall.ContainsState);
         }
 
+        private object CreateInstance(IServiceProvider serviceProvider)
+        {
+            var instance = _instance;
+
+            if (instance == null)
+            {
+                if (_configuration != null)
+                {
+                    instance = ActivatorUtilities.CreateInstance(serviceProvider, _type, new object[] { _configuration });
+                }
+                else
+                {
+                    instance = ActivatorUtilities.CreateInstance(serviceProvider, _type);
+                }
+            }
+
+            return instance;
+        }
+
         private LongPollingEventSourceFactory ConvertMethodToLongPollingServiceFactory(MethodInfo method, IServiceProvider serviceProvider)
         {
             Func<CancellationToken, IAsyncEnumerable<object>> Result()
             {
-                var instance = _instance ?? ActivatorUtilities.CreateInstance(serviceProvider, _type);
+                var instance = CreateInstance(serviceProvider);
+
                 var del = CreateDelegate(method, instance);
 
                 var res = (Func<CancellationToken, IAsyncEnumerable<object>>) del;

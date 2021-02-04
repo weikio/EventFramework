@@ -33,6 +33,48 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return Task.CompletedTask;
         }
     }
+    
+    public class EventSourceInstanceStartupHandler : IHostedService
+    {
+        private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
+        private readonly IEnumerable<IOptions<EventSourceInstanceOptions>> _initialInstances;
+        private readonly ILogger<EventSourceInstanceStartupHandler> _logger;
+
+        public EventSourceInstanceStartupHandler(IEventSourceInstanceManager eventSourceInstanceManager, IEnumerable<IOptions<EventSourceInstanceOptions>> initialInstances, ILogger<EventSourceInstanceStartupHandler> logger)
+        {
+            _eventSourceInstanceManager = eventSourceInstanceManager;
+            _initialInstances = initialInstances;
+            _logger = logger;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogTrace("Creating all the event source instances configured through the IOptions<EventSourceInstanceOptions>");
+
+            var initialInstances = _initialInstances.ToList();
+
+            if (initialInstances.Count < 0)
+            {
+                _logger.LogDebug("No event source instances created on system startup");
+
+                return;
+            }
+            
+            _logger.LogDebug("Found {InitialInstanceCount} event source instances to create on system startup", initialInstances.Count);
+
+            foreach (var initialInstance in initialInstances)
+            {
+                await _eventSourceInstanceManager.Create(initialInstance.Value);
+            }
+
+            _logger.LogDebug("Created {InitialInstanceCount} event source instances on system startup", initialInstances.Count);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+    }
     //
     // /// <summary>
     // /// Types can contain multiple event sources. Because of this a event source action factory is created for each event source.
