@@ -112,7 +112,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         var poller = method.Invoke();
 
                         var host = _serviceProvider.GetRequiredService<ILongPollingEventSourceHost>();
-                        host.Initialize(eventSourceInstance, poller);
+                        host.Initialize(null, poller, null);
                         
                         var cancellationToken = new CancellationTokenSource();
                         eventSourceInstance.SetCancellationTokenSource(cancellationToken);

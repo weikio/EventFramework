@@ -65,7 +65,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 _logger.LogDebug("Creating all the event source instances configured through the IOptions<EventSourceInstanceOptions>");
                 // Get these from service provider instead of injecting them. This is because we want to make sure that event source provider is first initialized as some of the 
                 // instances use factories which require that provider is up and running.
-                var initialInstances = _serviceProvider.GetRequiredService<IEnumerable<IOptions<EventSourceInstanceOptions>>>().ToList();
+                var initialInstances = _serviceProvider.GetServices<EventSourceInstanceOptions>().ToList();
             
                 if (initialInstances.Count < 0)
                 {
@@ -78,7 +78,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                 foreach (var initialInstance in initialInstances)
                 {
-                    await _eventSourceInstanceManager.Create(initialInstance.Value);
+                    await _eventSourceInstanceManager.Create(initialInstance);
                 }
 
                 _logger.LogDebug("Created {InitialInstanceCount} event source instances on system startup", initialInstances.Count);

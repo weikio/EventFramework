@@ -255,13 +255,13 @@ namespace Weikio.EventFramework.EventSource
 
             if (configureInstance != null)
             {
-                services.AddOptions<EventSourceInstanceOptions>(Options.DefaultName)
-                    .Configure(options =>
-                    {
-                        configureInstance(options);
+                services.AddSingleton(provider =>
+                {
+                    var options = new EventSourceInstanceOptions();
+                    configureInstance(options);
 
-                        options.EventSourceDefinition = typePluginCatalog.Single().Name;
-                    });
+                    return options;
+                });
             }
             
             return services;

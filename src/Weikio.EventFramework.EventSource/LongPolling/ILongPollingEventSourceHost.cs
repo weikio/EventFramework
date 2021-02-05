@@ -7,7 +7,8 @@ namespace Weikio.EventFramework.EventSource.LongPolling
 {
     public interface ILongPollingEventSourceHost
     {
-        void Initialize(EventSourceWrapping.EventSourceInstance eventSourceInstance, Func<CancellationToken, IAsyncEnumerable<object>> pollers);
+        void Initialize(EsInstance eventSourceInstance, Func<CancellationToken, IAsyncEnumerable<object>> pollers,
+            CancellationTokenSource cancellationTokenSource);
         Task StartPolling(CancellationToken stoppingToken);
     }
 }
