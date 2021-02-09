@@ -22,16 +22,20 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         public string Id { get; }
         private readonly ILogger<TypeToEventSourceFactory> _logger;
         private readonly object _instance;
+        private readonly MulticastDelegate _configure;
+        private readonly object _configuration;
 
-        public TypeToEventSourceFactory(Type type, Guid id, ILogger<TypeToEventSourceFactory> logger, object instance)
+        public TypeToEventSourceFactory(EsInstance esInstance, ILogger<TypeToEventSourceFactory> logger)
         {
-            _type = type;
-            Id = id.ToString();
+            _type = esInstance.EventSource.EventSourceType;
+            Id = esInstance.Id.ToString();
             _logger = logger;
-            _instance = instance;
+            _instance = esInstance.EventSource.Instance;
+            _configure = esInstance.Configure;
+            _configuration = esInstance.Options.Configuration;
         }
 
-        public List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)> Create(IServiceProvider serviceProvider)
+        public TypeToEventSourceFactoryResult Create(IServiceProvider serviceProvider)
         {
             // TODO: Currently this class handles all the supported conversions:
             // 1. Methods to polling event sources and
@@ -43,36 +47,43 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             var longPollingMethods = publicMethods.Where(x =>
                 x.ReturnType.IsGenericType && typeof(IAsyncEnumerable<>).IsAssignableFrom(x.ReturnType.GetGenericTypeDefinition())).ToList();
 
-            var taskMethods = publicMethods.Except(longPollingMethods);
-            
-            var result = new List<(string Id, (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) EventSource)>();
+            var taskMethods = publicMethods.Except(longPollingMethods)
+                .Where(x => x.ReturnType.IsGenericType && typeof(Task<>).IsAssignableFrom(x.ReturnType.GetGenericTypeDefinition())).ToList();
+
+            var result = new TypeToEventSourceFactoryResult();
 
             foreach (var methodInfo in taskMethods)
             {
                 var wrapper = ConvertMethodToPollingEventSource(methodInfo, serviceProvider);
                 var id = GetId(methodInfo);
-                
-                result.Add((id, wrapper));
+
+                result.PollingEventSources.Add((id, wrapper));
             }
 
-            var longPollingFactoryService = serviceProvider.GetRequiredService<LongPollingService>();
             foreach (var methodInfo in longPollingMethods)
             {
                 var wrapper = ConvertMethodToLongPollingServiceFactory(methodInfo, serviceProvider);
-                longPollingFactoryService.Add(wrapper);
+                result.LongPollingEventSources.Add(wrapper);
             }
 
             return result;
         }
 
-        private (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method, IServiceProvider serviceProvider)
+        private (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method,
+            IServiceProvider serviceProvider)
         {
             var wrapper = serviceProvider.GetRequiredService<IActionWrapper>();
             var wrappedMethodCall = wrapper.Wrap(method);
 
             Task<EventPollingResult> WrapperRunner(object state, bool isFirstRun)
             {
-                var instance = _instance ?? serviceProvider.GetRequiredService(_type);
+                var instance = CreateInstance(serviceProvider);
+
+                if (_configure != null)
+                {
+                    _configure.DynamicInvoke(instance);
+                }
+
                 var del = CreateDelegate(method, instance);
 
                 var res = wrappedMethodCall.Action.DynamicInvoke(del, state, isFirstRun);
@@ -83,12 +94,40 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             return (WrapperRunner, wrappedMethodCall.ContainsState);
         }
-        
+
+        private static ConcurrentDictionary<string, object> _instanceCache = new ConcurrentDictionary<string, object>();
+
+        private object CreateInstance(IServiceProvider serviceProvider)
+        {
+            var result =
+                _instanceCache.GetOrAdd(Id, sp =>
+                {
+                    var instance = _instance;
+
+                    if (instance == null)
+                    {
+                        if (_configuration != null)
+                        {
+                            instance = ActivatorUtilities.CreateInstance(serviceProvider, _type, new object[] { _configuration });
+                        }
+                        else
+                        {
+                            instance = ActivatorUtilities.CreateInstance(serviceProvider, _type);
+                        }
+                    }
+
+                    return instance;
+                });
+
+            return result;
+        }
+
         private LongPollingEventSourceFactory ConvertMethodToLongPollingServiceFactory(MethodInfo method, IServiceProvider serviceProvider)
         {
             Func<CancellationToken, IAsyncEnumerable<object>> Result()
             {
-                var instance = _instance ?? serviceProvider.GetRequiredService(_type);
+                var instance = CreateInstance(serviceProvider);
+
                 var del = CreateDelegate(method, instance);
 
                 var res = (Func<CancellationToken, IAsyncEnumerable<object>>) del;
@@ -120,7 +159,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         private static string GetId(MethodInfo methodInfo)
         {
-            return methodInfo.DeclaringType?.FullName + methodInfo.Name;
+            return methodInfo.DeclaringType?.FullName + methodInfo.Name + "_" + Guid.NewGuid();
         }
 
         private static readonly ConcurrentDictionary<string, Type> _cache = new ConcurrentDictionary<string, Type>();

@@ -10,11 +10,6 @@ using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
-    public interface IActionWrapper
-    {
-        (Func<Delegate, object, bool, Task<EventPollingResult>> Action, bool ContainsState) Wrap(MethodInfo method);
-    }
-
     public class DefaultActionWrapper : IActionWrapper
     {
         private readonly ILogger<DefaultActionWrapper> _logger;
@@ -47,7 +42,10 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             Func<Task, EventPollingResult> handlingTask = null;
 
-            var containsState = actionParameters?.Any() == true;
+            // Boolean parameter is reserved for the "isFirstRun"-flag
+            var hasNonBooleanParameter = actionParameters?.Any(x => typeof(bool).IsAssignableFrom(x.ParameterType) == false);
+            
+            var containsState = hasNonBooleanParameter == true;
 
             if (hasReturnValue == false) // scenario 1
             {
@@ -98,15 +96,32 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     // TODO: Check for parameter declaration errors.
                     if (containsState)
                     {
-                        if (actionParameters.Count() == 1)
+                        if (actionParameters.Length == 1)
                         {
-                            parameters.Add(state);
+                            if (typeof(bool).IsAssignableFrom(actionParameters.Single().ParameterType))
+                            {
+                                parameters.Add(isFirstRun);
+                            }
+                            else
+                            {
+                                parameters.Add(state);
+                            }
                         }
                         else if (actionParameters.Count() == 2)
                         {
                             parameters.Add(state);
                             parameters.Add(isFirstRun);
                         }
+                    }
+                    else
+                    {
+                        if (actionParameters.Length == 1)
+                        {
+                            if (typeof(bool).IsAssignableFrom(actionParameters.Single().ParameterType))
+                            {
+                                parameters.Add(isFirstRun);
+                            }
+                        }  
                     }
 
                     Task cloudEvent = null;
@@ -132,7 +147,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 }
                 catch (Exception e)
                 {
-                    // _logger.LogError(e, "Failed to run event source's action");
+                    _logger.LogError(e, "Failed to run event source's action");
 
                     throw;
                 }
@@ -151,10 +166,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             ITuple actionResult = ((dynamic) pollingResult).Result;
 
             var eventsType = actionResult[0]?.GetType();
+            var upatedState = actionResult[1];
 
             if (eventsType == null)
             {
-                throw new ArgumentNullException();
+                // This means that event source completed but no new events were products
+                return new EventPollingResult() { NewEvents = null, NewState = upatedState };
             }
 
             var newCloudEvents = new List<object>();
@@ -169,7 +186,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 newCloudEvents.Add(actionResult[0]);
             }
 
-            var upatedState = actionResult[1];
 
             return new EventPollingResult() { NewEvents = newCloudEvents, NewState = upatedState };
         }

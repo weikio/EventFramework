@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Quartz;
-using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.EventSourceWrapping;
 
 namespace Weikio.EventFramework.EventSource.Polling
 {
@@ -16,15 +16,17 @@ namespace Weikio.EventFramework.EventSource.Polling
         private readonly IServiceProvider _serviceProvider;
         private readonly IOptionsMonitor<JobOptions> _optionsMonitor;
         private readonly ILogger<PollingJobRunner> _logger;
-        private readonly ICloudEventPublisher _cloudEventPublisher;
+        private readonly ICloudEventPublisherFactory _publisherFactory;
+        private readonly IEventSourceInstanceManager _instanceManager;
 
-        public PollingJobRunner(IServiceProvider serviceProvider, ICloudEventPublisher publisher, IOptionsMonitor<JobOptions> optionsMonitor,
-            ILogger<PollingJobRunner> logger, ICloudEventPublisher cloudEventPublisher)
+        public PollingJobRunner(IServiceProvider serviceProvider, IOptionsMonitor<JobOptions> optionsMonitor,
+            ILogger<PollingJobRunner> logger, ICloudEventPublisherFactory publisherFactory, IEventSourceInstanceManager instanceManager)
         {
             _serviceProvider = serviceProvider;
             _optionsMonitor = optionsMonitor;
             _logger = logger;
-            _cloudEventPublisher = cloudEventPublisher;
+            _publisherFactory = publisherFactory;
+            _instanceManager = instanceManager;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -44,6 +46,7 @@ namespace Weikio.EventFramework.EventSource.Polling
                     }
 
                     var action = job.Action;
+                    var eventSourceId = job.EventSource.Id;
 
                     var currentState = context.JobDetail.JobDataMap["state"];
                     var isFirstRun = (bool) context.JobDetail.JobDataMap["isfirstrun"];
@@ -84,13 +87,21 @@ namespace Weikio.EventFramework.EventSource.Polling
                     {
                         _logger.LogDebug("Publishing new events from event source with {Id}. Event count {EventCount}", id, pollingResult.NewEvents.Count);
 
+                        var publisher = _publisherFactory.CreatePublisher(eventSourceId.ToString());
+
                         if (pollingResult.NewEvents.Count == 1)
                         {
-                            await _cloudEventPublisher.Publish(pollingResult.NewEvents.First());
+                            await publisher.Publish(pollingResult.NewEvents.First());
                         }
                         else
                         {
-                            await _cloudEventPublisher.Publish(pollingResult.NewEvents);
+                            await publisher.Publish(pollingResult.NewEvents);
+                        }
+
+                        if (job.EventSource.Options.RunOnce)
+                        {
+                            _logger.LogDebug("Event source instance with id {Id} is configured to run once, auto stopping it.", job.EventSource.Id);
+                            await _instanceManager.Stop(job.EventSource.Id);
                         }
                     }
                 }
@@ -104,80 +115,5 @@ namespace Weikio.EventFramework.EventSource.Polling
         }
     }
 
-    //
-    // public class TextFileContentEventSource : IHostedService, IDisposable
-    // {
-    //     private readonly ILogger<Files.TextFileContentEventSource> _logger;
-    //     private readonly ICloudEventPublisher _cloudEventPublisher;
-    //     private Timer _timer;
-    //     private List<string> _allLines = new List<string>();
-    //
-    //     // private object _currentState;
-    //
-    //     public TextFileContentEventSource(ILogger<Files.TextFileContentEventSource> logger, ICloudEventPublisher cloudEventPublisher)
-    //     {
-    //         _logger = logger;
-    //         _cloudEventPublisher = cloudEventPublisher;
-    //     }
-    //
-    //     private void DoWork(object state)
-    //     {
-    //         var lines = File.ReadLines(@"c:\temp\contentfile.txt").ToList();
-    //
-    //         var myState = (Files.TextFileContentEventSource.MyState) state;
-    //
-    //         var currentState = JToken.FromObject(myState.Data);
-    //         var newState = JToken.FromObject(lines);
-    //
-    //         var diff = new JsonDiffPatch();
-    //         var res = diff.Diff(currentState, newState);
-    //
-    //         if (res?.Any() != true)
-    //         {
-    //             return;
-    //         }
-    //
-    //         if (lines.Count <= _allLines.Count)
-    //         {
-    //             return;
-    //         }
-    //
-    //         var newLines = lines.Skip(_allLines.Count).ToList();
-    //
-    //         var result = new NewLinesAddedEvent(newLines);
-    //
-    //         myState.Data = lines;
-    //
-    //         // state = lines;
-    //
-    //         _cloudEventPublisher.Publish(result);
-    //     }
-    //
-    //     public class MyState
-    //     {
-    //         public object Data { get; set; }
-    //     }
-    //
-    //     public Task StartAsync(CancellationToken stoppingToken)
-    //     {
-    //         var startingState = File.ReadLines(@"c:\temp\contentfile.txt").ToList();
-    //
-    //         var myState = new Files.TextFileContentEventSource.MyState() { Data = startingState };
-    //
-    //         return Task.CompletedTask;
-    //     }
-    //
-    //     public Task StopAsync(CancellationToken stoppingToken)
-    //     {
-    //         _logger.LogInformation("Timed Hosted Service is stopping.");
-    //         _timer?.Change(Timeout.Infinite, 0);
-    //
-    //         return Task.CompletedTask;
-    //     }
-    //
-    //     public void Dispose()
-    //     {
-    //         _timer?.Dispose();
-    //     }
-    // }
+   
 }

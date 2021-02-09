@@ -16,6 +16,7 @@ using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Extensions.EventAggregator;
 using Weikio.EventFramework.Files;
+using Weikio.EventFramework.Plugins.Files;
 using Weikio.EventFramework.Router;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration
@@ -101,7 +102,14 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             services.AddOpenApiDocument();
 
             services.AddEventFramework();
-            services.AddHandler(typeof(UserUsedLicenseHandler));
+            // services.AddHandler(typeof(UserUsedLicenseHandler));
+
+            services.AddSource<FileEventSource>(configure: source =>
+            {
+                source.Filter = "*.html";
+                source.Folder = "c:/data/invoices";
+            });
+            
 
             // services.Configure<CloudEventPublisherOptions>(options =>
             // {

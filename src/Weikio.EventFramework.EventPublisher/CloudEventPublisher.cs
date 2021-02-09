@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Extensions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
@@ -14,16 +17,44 @@ namespace Weikio.EventFramework.EventPublisher
     {
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<CloudEventPublisher> _logger;
         private readonly CloudEventPublisherOptions _options;
 
-        public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator)
+        public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
+            _serviceProvider = serviceProvider;
+            _logger = logger;
             _options = options.Value;
         }
 
-        public async Task<List<CloudEvent>> Publish(IList<object> objects, string eventTypeName = "", string id = "", Uri source = null,
+        public async Task<CloudEvent> Publish(object obj, string eventTypeName = "", string id = "", Uri source = null,
+            string gatewayName = GatewayName.Default)
+        {
+            if (obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj));
+            }
+   
+            var creationOptions = GetDefaultCloudEventCreationOptions();
+            _options.ConfigureCloudEventCreationOptions(eventTypeName, obj, creationOptions, _serviceProvider);
+            
+            var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source, creationOptions: creationOptions);
+
+            if (string.Equals(gatewayName, GatewayName.Default) && !string.IsNullOrWhiteSpace(_options.DefaultGatewayName))
+            {
+                gatewayName = _options.DefaultGatewayName;
+            }
+            
+            var result = await Publish(cloudEvent, gatewayName);
+
+            return result;
+        }
+        
+        public async Task<List<CloudEvent>> Publish(IEnumerable objects, string eventTypeName = "", string id = "", Uri source = null,
             string gatewayName = GatewayName.Default)
         {
             if (objects == null)
@@ -38,12 +69,16 @@ namespace Weikio.EventFramework.EventPublisher
 
             var cloudEvents = new List<CloudEvent>();
 
-            for (var index = 0; index < objects.Count; index++)
+            var index = 0;
+            foreach (var obj in objects)
             {
-                var obj = objects[index];
+                var creationOptions = GetDefaultCloudEventCreationOptions();
+                _options.ConfigureCloudEventCreationOptions(eventTypeName, obj, creationOptions, _serviceProvider);
 
-                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) });
+                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: creationOptions);
                 cloudEvents.Add(cloudEvent);
+                
+                index += 1;
             }
 
             var result = new List<CloudEvent>(cloudEvents.Count);
@@ -57,24 +92,23 @@ namespace Weikio.EventFramework.EventPublisher
             return result;
         }
 
-        public async Task<CloudEvent> Publish(object obj, string eventTypeName = "", string id = "", Uri source = null,
-            string gatewayName = GatewayName.Default)
+        private CloudEventCreationOptions GetDefaultCloudEventCreationOptions()
         {
-            if (obj == null)
+            try
             {
-                throw new ArgumentNullException(nameof(obj));
+                using var scope = _serviceProvider.CreateScope();
+
+                // Get the default cloud event creation options for each publish
+                var result = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<CloudEventCreationOptions>>().Value;
+
+                return result;
             }
-
-            var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, id, source);
-
-            if (string.Equals(gatewayName, GatewayName.Default) && !string.IsNullOrWhiteSpace(_options.DefaultGatewayName))
+            catch (Exception e)
             {
-                gatewayName = _options.DefaultGatewayName;
-            }
-            
-            var result = await Publish(cloudEvent, gatewayName);
+                _logger.LogError(e, "Failed to get default cloud event creation options");
 
-            return result;
+                throw;
+            }
         }
 
         public async Task<CloudEvent> Publish(CloudEvent cloudEvent)
@@ -84,7 +118,7 @@ namespace Weikio.EventFramework.EventPublisher
             return await Publish(cloudEvent, gatewayName);
         }
 
-        public async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName)
+        public virtual async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName)
         {
             if (cloudEvent == null)
             {
@@ -115,6 +149,13 @@ namespace Weikio.EventFramework.EventPublisher
                 cloudEvent.Id = Guid.NewGuid().ToString();
             }
 
+            var beforePublish = _options.OnBeforePublish;
+
+            if (beforePublish != null)
+            {
+                cloudEvent = await beforePublish(_serviceProvider, cloudEvent);
+            }
+            
             await outgoingChannel.Send(cloudEvent);
 
             return cloudEvent;

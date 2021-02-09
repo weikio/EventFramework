@@ -3,15 +3,15 @@ using System.Linq;
 
 namespace Weikio.EventFramework.EventCreator
 {
-    public class CloudEventCreatorOptions : ICloudEventCreatorOptionsProvider
+    public class DictionaryCloudEventCreatorOptionsProvider : ICloudEventCreatorOptionsProvider
     {
         private readonly Dictionary<string, CloudEventCreationOptions> _optionsDictionary;
 
-        public CloudEventCreatorOptions(CloudEventCreationOptions options) : this(new Dictionary<string, CloudEventCreationOptions>() { { "", options } })
+        public DictionaryCloudEventCreatorOptionsProvider(CloudEventCreationOptions options) : this(new Dictionary<string, CloudEventCreationOptions>() { { "", options } })
         {
         }
 
-        public CloudEventCreatorOptions(Dictionary<string, CloudEventCreationOptions> optionsDictionary)
+        public DictionaryCloudEventCreatorOptionsProvider(Dictionary<string, CloudEventCreationOptions> optionsDictionary)
         {
             if (optionsDictionary == null)
             {

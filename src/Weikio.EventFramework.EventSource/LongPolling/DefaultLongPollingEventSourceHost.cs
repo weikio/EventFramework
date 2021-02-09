@@ -4,40 +4,55 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.EventSourceWrapping;
+using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.LongPolling
 {
     public class DefaultLongPollingEventSourceHost : BackgroundService, ILongPollingEventSourceHost
     {
-        private Func<CancellationToken, IAsyncEnumerable<object>> _eventSource;
-        private readonly ICloudEventPublisher _cloudEventPublisher;
+        private readonly ICloudEventPublisherFactory _cloudEventPublisherFactory;
+        private Func<CancellationToken, IAsyncEnumerable<object>> _poller;
+        private EsInstance _eventSourceInstance;
+        private CancellationTokenSource _cancellationTokenSource;
+        private CloudEventPublisher _cloudEventPublisher;
 
-        public DefaultLongPollingEventSourceHost(ICloudEventPublisher cloudEventPublisher)
+        public DefaultLongPollingEventSourceHost(ICloudEventPublisherFactory cloudEventPublisherFactory)
         {
-            _cloudEventPublisher = cloudEventPublisher;
+            _cloudEventPublisherFactory = cloudEventPublisherFactory;
         }
 
-        public void Initialize(Func<CancellationToken, IAsyncEnumerable<object>> eventSource)
+        public void Initialize(EsInstance eventSourceInstance, Func<CancellationToken, IAsyncEnumerable<object>> pollers,
+            CancellationTokenSource cancellationTokenSource)
         {
-            _eventSource = eventSource;
+            _cancellationTokenSource = cancellationTokenSource;
+            _eventSourceInstance = eventSourceInstance;
+            _poller = pollers;
+            _cloudEventPublisher = _cloudEventPublisherFactory.CreatePublisher(_eventSourceInstance.Id.ToString());
         }
 
-        public async Task StartPolling(CancellationToken stoppingToken)
+        public Task StartPolling(CancellationToken stoppingToken)
         {
-            if (_eventSource == null)
-            {
-                throw new ArgumentNullException(nameof(_eventSource));
-            }
-            
-            await foreach (var newEvent in _eventSource(stoppingToken))
-            {
-                await _cloudEventPublisher.Publish(newEvent);
-            }
+            StartAsync(stoppingToken);
+
+            return Task.CompletedTask;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await StartPolling(stoppingToken);
+            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Started long polling");
+            
+            if (_poller == null)
+            {
+                throw new ArgumentNullException(nameof(_poller));
+            }
+            
+            await foreach (var newEvent in _poller(_cancellationTokenSource.Token))
+            {
+                await _cloudEventPublisher.Publish(newEvent);
+            }
+            
+            _eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped, "Stopped long polling");
         }
     }
 }

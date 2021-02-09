@@ -7,9 +7,10 @@ namespace Weikio.EventFramework.EventCreator
     public interface ICloudEventCreator
     {
         CloudEvent CreateCloudEvent(object obj, string eventTypeName = null, string id = null, Uri source = null, ICloudEventExtension[] extensions = null,
-            string subject = null);
+            string subject = null, CloudEventCreationOptions creationOptions = null);
         
         IEnumerable<CloudEvent> CreateCloudEvents(IEnumerable<object> objects, string eventTypeName = null, string id = null, Uri source = null, ICloudEventExtension[] extensions = null,
-            string subject = null);
+            string subject = null, CloudEventCreationOptions creationOptions = null);
+
     }
 }

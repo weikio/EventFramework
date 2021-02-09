@@ -17,16 +17,20 @@ namespace Weikio.EventFramework.EventSource.Polling
         private readonly IJobFactory _jobFactory;
         private readonly ILogger<DefaultPollingEventSourceHostedService> _logger;
         private readonly IOptionsMonitor<JobOptions> _optionsMonitor;
+        private readonly EventSourceChangeProvider _eventSourceChangeProvider;
         private readonly PollingScheduleService _pollingScheduleService;
+        private readonly List<IJobDetail> _startedJobs = new List<IJobDetail>();
 
         public DefaultPollingEventSourceHostedService(
             ISchedulerFactory schedulerFactory,
-            IJobFactory jobFactory, ILogger<DefaultPollingEventSourceHostedService> logger, IOptionsMonitor<JobOptions> optionsMonitor, PollingScheduleService pollingScheduleService)
+            IJobFactory jobFactory, ILogger<DefaultPollingEventSourceHostedService> logger, PollingScheduleService pollingScheduleService,
+            IOptionsMonitor<JobOptions> optionsMonitor, EventSourceChangeProvider eventSourceChangeProvider)
         {
             _schedulerFactory = schedulerFactory;
             _logger = logger;
-            _optionsMonitor = optionsMonitor;
             _pollingScheduleService = pollingScheduleService;
+            _optionsMonitor = optionsMonitor;
+            _eventSourceChangeProvider = eventSourceChangeProvider;
             _jobFactory = jobFactory;
         }
 
@@ -36,34 +40,82 @@ namespace Weikio.EventFramework.EventSource.Polling
         {
             Scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             Scheduler.JobFactory = _jobFactory;
-            
+
             _logger.LogInformation("Starting polling event sources. Event source count: {Count}", _pollingScheduleService.Count);
 
-            foreach (var jobSchedule in _pollingScheduleService)
-            {
-                try
-                {
-                    _logger.LogDebug("Starting polling event source with {Id}", jobSchedule.Id);
+            await StartJobs(cancellationToken);
 
-                    var job = CreateJob(jobSchedule);
-
-                    await Scheduler.AddJob(job, true, cancellationToken);
-                    
-                    var triggers = CreateTriggers(jobSchedule, job);
-
-                    foreach (var trigger in triggers)
-                    {
-                        await Scheduler.ScheduleJob(trigger, cancellationToken);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to schedule job");
-                }
-            }
 
             _logger.LogInformation("Created {Count} polling event sources. Starting the polling service for the sources", _pollingScheduleService.Count());
             await Scheduler.Start(cancellationToken);
+        }
+
+        private static readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
+        
+        private async Task StartJobs(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _semaphoreSlim.WaitAsync(cancellationToken);
+            
+                foreach (var jobSchedule in _pollingScheduleService)
+                {
+                    try
+                    {
+                        var job = CreateJob(jobSchedule);
+                        _logger.LogDebug("Created job with {Id}", jobSchedule.Id);
+
+                        var existingJob = _startedJobs.FirstOrDefault(x => string.Equals(x.Key.Name, jobSchedule.Id, StringComparison.InvariantCultureIgnoreCase));
+
+                        if (existingJob != null)
+                        {
+                            _logger.LogDebug("Job has already started, no need create it again.", jobSchedule.Id);
+                            continue;
+                        }
+                    
+                        _logger.LogDebug("Starting polling event source with {Id}", jobSchedule.Id);
+                        await Scheduler.AddJob(job, true, cancellationToken);
+
+                        var triggers = CreateTriggers(jobSchedule, job);
+
+                        foreach (var trigger in triggers)
+                        {
+                            await Scheduler.ScheduleJob(trigger, cancellationToken);
+                        }
+                    
+                        _startedJobs.Add(job);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to schedule job");
+                    }
+                }
+
+                foreach (var startedJob in _startedJobs)
+                {
+                    var existingJob = _pollingScheduleService.FirstOrDefault(x => string.Equals(x.Id, startedJob.Key.Name));
+
+                    if (existingJob != null)
+                    {
+                        continue;
+                    }
+                    
+                    _logger.LogDebug("Removing polling event source with {Id}", startedJob.Key.Name);
+                    await Scheduler.DeleteJob(startedJob.Key, cancellationToken);
+                }
+            
+                // Listen for changes
+                var changeToken = _eventSourceChangeProvider.GetChangeToken();
+
+                changeToken.RegisterChangeCallback(async o =>
+                {
+                    await StartJobs(cancellationToken);
+                }, null);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
@@ -92,7 +144,7 @@ namespace Weikio.EventFramework.EventSource.Polling
             }
 
             var result = new List<ITrigger>();
-            
+
             var triggerBuilder = TriggerBuilder
                 .Create()
                 .ForJob(jobDetail)
@@ -144,9 +196,9 @@ namespace Weikio.EventFramework.EventSource.Polling
                 .WithDescription(schedule.CronExpression)
                 .StartNow()
                 .Build();
-            
+
             result.Add(initilizationTrigger);
-            
+
             return result;
         }
     }

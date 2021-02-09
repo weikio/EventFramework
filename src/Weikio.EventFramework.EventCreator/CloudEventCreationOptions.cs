@@ -25,6 +25,8 @@ namespace Weikio.EventFramework.EventCreator
 
         public Func<CloudEventCreationOptions, IServiceProvider, object, string> GetDataContentType { get; set; } =
             (options, provider, o) => options.DataContentType;
+        
+        public ICloudEventExtension[] AdditionalExtensions = Array.Empty<ICloudEventExtension>();
 
         public Func<CloudEventCreationOptions, IServiceProvider, object, string> GetSubject { get; set; } = (options, provider, o) => options.Subject;
         public Func<CloudEventCreationOptions, IServiceProvider, object, string> GetId { get; set; } = (options, provider, o) => Guid.NewGuid().ToString();
@@ -42,6 +44,6 @@ namespace Weikio.EventFramework.EventCreator
         };
 
         public Func<CloudEventCreationOptions, IServiceProvider, object, ICloudEventExtension[]> GetExtensions { get; set; } =
-            (options, provider, o) => Array.Empty<ICloudEventExtension>();
+            (options, provider, o) => options.AdditionalExtensions;
     }
 }
