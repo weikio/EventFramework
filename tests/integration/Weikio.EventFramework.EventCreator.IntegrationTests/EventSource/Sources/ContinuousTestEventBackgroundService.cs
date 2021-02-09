@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventCreator.IntegrationTests.EventSource.Sources
 {
+    [DisplayName("ContinuousTestEventBackgroundService")]
     public class ContinuousTestEventBackgroundService : BackgroundService
     {
         private readonly ICloudEventPublisher _cloudEventPublisher;

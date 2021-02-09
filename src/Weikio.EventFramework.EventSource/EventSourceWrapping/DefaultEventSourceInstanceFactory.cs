@@ -23,11 +23,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly EventSourceChangeNotifier _changeNotifier;
         private readonly IOptionsMonitorCache<CloudEventPublisherFactoryOptions> _optionsMonitorCache;
         private readonly IOptionsMonitor<CloudEventPublisherFactoryOptions> _optionsMonitor;
+        private readonly ICloudEventPublisherFactory _publisherFactory;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
             PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier, 
             IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, 
-            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor)
+            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudEventPublisherFactory publisherFactory)
         {
             _serviceProvider = serviceProvider;
             _optionsCache = optionsCache;
@@ -36,6 +37,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             _changeNotifier = changeNotifier;
             _optionsMonitorCache = optionsMonitorCache;
             _optionsMonitor = optionsMonitor;
+            _publisherFactory = publisherFactory;
         }
 
         public EsInstance Create(EventSource eventSource, EventSourceInstanceOptions instanceOptions)
@@ -55,7 +57,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             var pollingFrequency = instanceOptions.PollingFrequency;
             var cronExpression = instanceOptions.CronExpression;
             var configurePublisherOptions = instanceOptions.ConfigurePublisherOptions;
-            var configure = instanceOptions.ConfigurePublisherOptions;
+            var configure = instanceOptions.Configure;
             
             try
             {
@@ -88,7 +90,9 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                     start = (provider, esInstance) =>
                     {
-                        var inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType);
+                        var publisher = _publisherFactory.CreatePublisher(esInstance.Id.ToString());
+                        
+                        var inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, publisher);
 
                         if (configure != null)
                         {
