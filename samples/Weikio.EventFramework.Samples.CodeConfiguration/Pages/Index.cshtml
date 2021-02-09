@@ -1,4 +1,5 @@
 ﻿@page
+@using Weikio.EventFramework.Abstractions
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
@@ -25,3 +26,13 @@
 <form method="post" asp-page-handler="createChannel">
     <input type="submit" value="Create"/>
 </form>
+
+<form method="post" asp-page-handler="CreateInstance">
+    <input type="submit" value="CreateInstance"/>
+</form>
+
+@foreach (var ev in IndexModel.ReceivedEvents)
+{
+    var json = ev.ToJson();
+    <pre>@json</pre>
+}

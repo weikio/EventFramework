@@ -1,4 +1,5 @@
 ﻿using System;
+using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource.Polling
 {

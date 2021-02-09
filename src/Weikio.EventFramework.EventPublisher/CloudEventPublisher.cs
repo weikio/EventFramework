@@ -130,11 +130,22 @@ namespace Weikio.EventFramework.EventPublisher
                 cloudEvent.Id = Guid.NewGuid().ToString();
             }
 
-            var gateway = _gatewayManager.Get(gatewayName);
+            ICloudEventGateway gateway;
 
-            if (gateway == null)
+            try
             {
-                throw new UnknownGatewayException(gatewayName);
+                gateway = _gatewayManager.Get(gatewayName);
+
+                if (gateway == null)
+                {
+                    throw new UnknownGatewayException(gatewayName);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to get gateway with name {GatewayName}", gatewayName);
+
+                throw;
             }
 
             var outgoingChannel = gateway.OutgoingChannel;
@@ -157,6 +168,8 @@ namespace Weikio.EventFramework.EventPublisher
             }
             
             await outgoingChannel.Send(cloudEvent);
+            
+            _logger.LogDebug("Published cloud event {CloudEvent} to channel {Channel}", cloudEvent, outgoingChannel.Name);
 
             return cloudEvent;
         }

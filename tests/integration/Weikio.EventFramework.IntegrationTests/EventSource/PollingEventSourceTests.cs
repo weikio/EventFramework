@@ -11,6 +11,7 @@ using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.IntegrationTests.EventSource.Sources;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;

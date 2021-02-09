@@ -4,11 +4,12 @@ using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.IntegrationTests.Infrastructure
 {
-    public class TestCloudEventPublisherBuilder : ICloudCloudEventPublisherBuilder
+    public class TestCloudEventPublisherBuilder : ICloudEventPublisherBuilder
     {
         private readonly IServiceProvider _serviceProvider;
 

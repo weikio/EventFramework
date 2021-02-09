@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.Polling;
 

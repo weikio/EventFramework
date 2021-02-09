@@ -6,13 +6,18 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/weikio/PluginFramework</RepositoryUrl>
     <PackageProjectUrl>https://github.com/weikio/PluginFramework</PackageProjectUrl>
-    <Copyright>©2020 Weik.io</Copyright>
+    <Copyright>©2021 Weik.io</Copyright>
     <LangVersion>8.0</LangVersion>
     <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    <PackageIcon>logo_256.png</PackageIcon>
   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="MinVer" Version="2.0.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="../../docs/logo_256.png" Pack="true" Visible="false" PackagePath="" />
   </ItemGroup>
   
 </Project>

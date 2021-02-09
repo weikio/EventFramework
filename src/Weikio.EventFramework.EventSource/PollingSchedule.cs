@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 
 namespace Weikio.EventFramework.EventSource

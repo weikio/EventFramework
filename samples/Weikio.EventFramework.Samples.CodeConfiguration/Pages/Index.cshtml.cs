@@ -12,6 +12,9 @@ using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.EventSourceWrapping;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 {
@@ -20,23 +23,23 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
         private readonly ILogger<IndexModel> _logger;
         private readonly ICloudEventPublisher _cloudEventPublisher;
         private readonly ICloudEventGatewayManager _cloudEventGatewayManager;
+        private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
 
         public IndexModel(ILogger<IndexModel> logger, ICloudEventPublisher cloudEventPublisher, 
-            ICloudEventGatewayManager cloudEventGatewayManager)
+            ICloudEventGatewayManager cloudEventGatewayManager, IEventSourceInstanceManager eventSourceInstanceManager)
         {
             _logger = logger;
             _cloudEventPublisher = cloudEventPublisher;
             _cloudEventGatewayManager = cloudEventGatewayManager;
+            _eventSourceInstanceManager = eventSourceInstanceManager;
         }
 
         public CloudEvent CloudEvent { get; set; }
 
+        public static List<CloudEvent> ReceivedEvents { get; set; } = new List<CloudEvent>();
+
         public void OnGet()
         {
-            _cloudEventPublisher.Publish(new Startup.UserUsedLicense()
-            {
-                
-            });
             if (TempData.ContainsKey("el"))
             {
                 CloudEvent = JsonSerializer.Deserialize<CloudEvent>(TempData["el"].ToString());
@@ -70,15 +73,17 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 
             return RedirectToPage();
         }
+        
+        public async Task<IActionResult> OnPostCreateInstance()
+        {
+            // var esId = await _eventSourceInstanceManager.Create(new EventSourceInstanceOptions()
+            // {
+            //     EventSourceDefinition = "FileEventSource",
+            //     Configuration = new FileEventSourceConfiguration() { Filter = "*.txt", Folder = @"c:\temp\listen" },
+            //     Autostart = true
+            // });
 
-        // public async Task<IActionResult> OnPostcreateChannel()
-        // {
-        //     var gateway = _factory.Create("priority", "/api/prioEvents");
-        //     _cloudEventGatewayManager.Add("priority", gateway);
-        //
-        //     await _cloudEventGatewayManager.Update();
-        //
-        //     return RedirectToPage();
-        // }
+            return RedirectToPage();
+        }
     }
 }

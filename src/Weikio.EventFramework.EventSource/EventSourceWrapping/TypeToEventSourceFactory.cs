@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
 

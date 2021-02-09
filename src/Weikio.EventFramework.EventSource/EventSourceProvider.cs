@@ -4,14 +4,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource
 {
-    public class EventSourceProvider : List<IEventSourceCatalog>
+    public class DefaultEventSourceProvider : List<IEventSourceCatalog>, IEventSourceProvider
     {
-        private readonly ILogger<EventSourceProvider> _logger;
+        private readonly ILogger<DefaultEventSourceProvider> _logger;
 
-        public EventSourceProvider(IEnumerable<IEventSourceCatalog> catalogs, ILogger<EventSourceProvider> logger)
+        public DefaultEventSourceProvider(IEnumerable<IEventSourceCatalog> catalogs, ILogger<DefaultEventSourceProvider> logger)
         {
             _logger = logger;
             AddRange(catalogs);
@@ -38,7 +39,7 @@ namespace Weikio.EventFramework.EventSource
             return result;
         }
 
-        public EventSource Get(EventSourceDefinition definition)
+        public Abstractions.EventSource Get(EventSourceDefinition definition)
         {
             foreach (var catalog in this)
             {
@@ -55,12 +56,12 @@ namespace Weikio.EventFramework.EventSource
             return null;
         }
 
-        public EventSource Get(string name, Version version)
+        public Abstractions.EventSource Get(string name, Version version)
         {
             return Get(new EventSourceDefinition(name, version));
         }
 
-        public EventSource Get(string name)
+        public Abstractions.EventSource Get(string name)
         {
             return Get(name, Version.Parse("1.0.0.0"));
         }

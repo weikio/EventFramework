@@ -17,7 +17,7 @@ namespace Weikio.EventFramework.EventGateway.Http
 
         public async Task Initialize(HttpGateway gateway)
         {
-            var api = await _apiProvider.Get(typeof(HttpCloudEventReceiverApi).FullName);
+            var api = _apiProvider.Get(typeof(HttpCloudEventReceiverApi).FullName);
             
             // Create HTTP Endpoint for the gateway
             var endpoint = new Endpoint(gateway.Endpoint, api, new HttpCloudEventReceiverApiConfiguration()

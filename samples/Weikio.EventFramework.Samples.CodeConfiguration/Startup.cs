@@ -15,28 +15,27 @@ using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Extensions.EventAggregator;
-using Weikio.EventFramework.Files;
-using Weikio.EventFramework.Plugins.Files;
 using Weikio.EventFramework.Router;
+using Weikio.EventFramework.Samples.CodeConfiguration.Pages;
 
 namespace Weikio.EventFramework.Samples.CodeConfiguration
 {
-    public class FileCreatedHandler
-    {
-        private readonly ILogger<FileCreatedHandler> _logger;
-
-        public FileCreatedHandler(ILogger<FileCreatedHandler> logger)
-        {
-            _logger = logger;
-        }
-
-        public Task Handle(FileCreatedEvent createdEvent)
-        {
-            _logger.LogInformation("Received {Created}", createdEvent);
-
-            return Task.CompletedTask;
-        }
-    }
+    // public class FileCreatedHandler
+    // {
+    //     private readonly ILogger<FileCreatedHandler> _logger;
+    //
+    //     public FileCreatedHandler(ILogger<FileCreatedHandler> logger)
+    //     {
+    //         _logger = logger;
+    //     }
+    //
+    //     public Task Handle(FileCreatedEvent createdEvent)
+    //     {
+    //         _logger.LogInformation("Received {Created}", createdEvent);
+    //
+    //         return Task.CompletedTask;
+    //     }
+    // }
 
     // public class NewLinesAddedHandler
     // {
@@ -89,7 +88,6 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
             }
         }
 
-        
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -101,15 +99,21 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddOpenApiDocument();
 
-            services.AddEventFramework();
-            // services.AddHandler(typeof(UserUsedLicenseHandler));
+            services.AddEventFramework()
+                .AddLocal()
+                // .AddFileEventSource()
+                // .AddEventSource<FileEventSource>()
+                .AddHandler(ev =>
+                {
+                    IndexModel.ReceivedEvents.Add(ev);
+                });
 
-            services.AddSource<FileEventSource>(configure: source =>
-            {
-                source.Filter = "*.html";
-                source.Folder = "c:/data/invoices";
-            });
-            
+            // services.AddSource<FileEventSource>(configure: source =>
+            // {
+            //     source.Filter = "*.html";
+            //     source.Folder = "c:/data/invoices";
+            // });
+
 
             // services.Configure<CloudEventPublisherOptions>(options =>
             // {

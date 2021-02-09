@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.PluginFramework.Abstractions;
 
 namespace Weikio.EventFramework.EventSource
 {
-    public class PluginFrameworkEventSourceCatalog : List<EventSource>, IEventSourceCatalog
+    public class PluginFrameworkEventSourceCatalog : List<Abstractions.EventSource>, IEventSourceCatalog
     {
         private readonly IPluginCatalog _pluginCatalog;
 
@@ -26,22 +27,22 @@ namespace Weikio.EventFramework.EventSource
             return this.Select(x => x.EventSourceDefinition).ToList();
         }
 
-        public EventSource Get(EventSourceDefinition definition)
+        public Abstractions.EventSource Get(EventSourceDefinition definition)
         {
             return GetEventSourceByDefinition(definition);
         }
 
-        public EventSource Get(string name, Version version)
+        public Abstractions.EventSource Get(string name, Version version)
         {
             return Get(new EventSourceDefinition(name, version));
         }
 
-        public EventSource Get(string name)
+        public Abstractions.EventSource Get(string name)
         {
             return Get(name, Version.Parse("1.0.0.0"));
         }
 
-        private EventSource GetEventSourceByDefinition(EventSourceDefinition definition)
+        private Abstractions.EventSource GetEventSourceByDefinition(EventSourceDefinition definition)
         {
             var plugin =  _pluginCatalog.Get(definition.Name, definition.Version);
 
@@ -50,7 +51,7 @@ namespace Weikio.EventFramework.EventSource
                 return null;
             }
 
-            var result = new EventSource(definition, eventSourceType: plugin.Type);
+            var result = new Abstractions.EventSource(definition, eventSourceType: plugin.Type);
 
             return result;
         }

@@ -11,6 +11,7 @@ using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
+using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
@@ -45,17 +46,16 @@ namespace Weikio.EventFramework.EventSource
                 throw new ArgumentNullException(nameof(services));
             }
 
-            // services.AddHostedService<EventSourceStartupHandler>();
-            // services.AddHostedService<EventSourceProviderStartupHandler>();
-            services.AddHostedService<EventSourceInstanceStartupHandler>();
+            if (services.All(x => x.ImplementationType != typeof(EventSourceInstanceStartupHandler)))
+            {
+                services.AddHostedService<EventSourceInstanceStartupHandler>();
+            }
 
             services.TryAddSingleton<IJobFactory, DefaultJobFactory>();
             services.TryAddSingleton<ISchedulerFactory, StdSchedulerFactory>();
             services.TryAddSingleton<PollingJobRunner>();
             services.TryAddSingleton<PollingScheduleService>();
             services.TryAddTransient<IActionWrapper, DefaultActionWrapper>();
-            services.TryAddSingleton<IEventSourceManager, DefaultEventSourceManager>();
-            services.TryAddSingleton<IEventSourceInitializer, DefaultEventSourceInitializer>();
             services.TryAddSingleton<IEventSourceFactory, DefaultEventSourceFactory>();
 
             services.TryAddTransient<EventSourceActionWrapper>();
@@ -64,12 +64,13 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<EventSourceChangeToken>();
             services.TryAddSingleton<EventSourceChangeNotifier>();
             services.TryAddSingleton<EventSourceChangeProvider>();
-            services.TryAddSingleton<EventSourceProvider>();
+            services.TryAddSingleton<IEventSourceProvider, DefaultEventSourceProvider>();
             services.TryAddSingleton<IEventSourceInstanceManager, DefaultEventSourceInstanceManager>();
             services.TryAddSingleton<IEventSourceInstanceFactory, DefaultEventSourceInstanceFactory>();
             services.TryAddSingleton<ICloudEventPublisherFactory, DefaultCloudEventPublisherFactory>();
-            services.TryAddTransient<ICloudCloudEventPublisherBuilder, DefaultCloudEventPublisherBuilder>();
-
+            services.TryAddTransient<ICloudEventPublisherBuilder, DefaultCloudEventPublisherBuilder>();
+            services.TryAddSingleton<IEventSourceCatalog, PluginEventSourceCatalog>();
+            
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
                 services.AddHostedService<DefaultPollingEventSourceHostedService>();
@@ -243,8 +244,19 @@ namespace Weikio.EventFramework.EventSource
             // return services;
         }
 
+        public static IEventFrameworkBuilder AddEventSource<TEventSourceType>(this IEventFrameworkBuilder builder, Action<EventSourceInstanceOptions> configureInstance = null)
+        {
+            var services = builder.Services;
+
+            services.AddEventSource<TEventSourceType>(configureInstance);
+
+            return builder;
+        }
+        
         public static IServiceCollection AddEventSource<TEventSourceType>(this IServiceCollection services, Action<EventSourceInstanceOptions> configureInstance = null)
         {
+            services.AddCloudEventSources();
+            
             var typePluginCatalog = new TypePluginCatalog(typeof(TEventSourceType));
             services.AddSingleton<IEventSourceCatalog>(provider =>
             {
@@ -284,6 +296,8 @@ namespace Weikio.EventFramework.EventSource
         public static IServiceCollection AddEventSource(this IServiceCollection services, string name, Version version, MulticastDelegate action = null,
             Type eventSourceType = null, object eventSourceInstance = null)
         {
+            services.AddCloudEventSources();
+
             services.AddSingleton<IEventSourceCatalog>(provider =>
             {
                 var factory = provider.GetRequiredService<IEventSourceFactory>();

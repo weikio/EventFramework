@@ -26,6 +26,11 @@ namespace Weikio.EventFramework.EventGateway
                 {
                     return this.Single();
                 }
+
+                if (Count == 0)
+                {
+                    throw new NoGatewaysConfiguredException();
+                }
                 
                 throw new UnknownGatewayException(gatewayName);
             }

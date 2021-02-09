@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.Polling;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;
@@ -38,7 +39,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                     action?.Invoke(services);
                     
                     services.AddCloudEventCreator();
-                    services.AddTransient<ICloudCloudEventPublisherBuilder, TestCloudEventPublisherBuilder>();
+                    services.AddTransient<ICloudEventPublisherBuilder, TestCloudEventPublisherBuilder>();
                 });
                 
                 builder.ConfigureLogging(logging =>
