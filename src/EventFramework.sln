@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventCreator", "Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj", "{42C5A117-FE39-4565-AD8F-C4DB948CF15F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventCreator.IntegrationTests", "..\tests\integration\Weikio.EventFramework.EventCreator.IntegrationTests\Weikio.EventFramework.EventCreator.IntegrationTests.csproj", "{B2B719A5-2239-403A-8700-DC1458DC9C73}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.IntegrationTests", "..\tests\integration\Weikio.EventFramework.IntegrationTests\Weikio.EventFramework.IntegrationTests.csproj", "{B2B719A5-2239-403A-8700-DC1458DC9C73}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventFrameworkTestBed", "..\tests\integration\WebSites\EventFrameworkTestBed\EventFrameworkTestBed.csproj", "{6E0B6885-4CA4-4C5E-975B-4440363FA8F7}"
 EndProject
@@ -45,7 +45,7 @@ EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventGateway.Http", "Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj", "{E1F88763-FADA-4533-99B2-81307E85A945}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventCreator.Tests", "..\tests\unit\Weikio.EventFramework.EventCreator.Tests\Weikio.EventFramework.EventCreator.Tests.csproj", "{6B9B635A-3EA5-4C6B-8C2B-7D1E4FC3E71C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.UnitTests", "..\tests\unit\Weikio.EventFramework.UnitTests\Weikio.EventFramework.UnitTests.csproj", "{6B9B635A-3EA5-4C6B-8C2B-7D1E4FC3E71C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Samples.Gateway", "..\samples\Weikio.EventFramework.Samples.Gateway\Weikio.EventFramework.Samples.Gateway.csproj", "{1BE633F9-9D06-44D0-AD25-F45C6464103A}"
 EndProject

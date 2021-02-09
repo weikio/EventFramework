@@ -126,7 +126,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
             var genericCloudEvent = typeof(CloudEvent<>);
             var constructed = genericCloudEvent.MakeGenericType(new[] { cloudEventObjectType });
 
-            var mi = constructed.GetMethod("Create");
+            var mi = constructed.GetMethods().FirstOrDefault(x => x.GetParameters().Length == 2);
 
             if (mi == null)
             {

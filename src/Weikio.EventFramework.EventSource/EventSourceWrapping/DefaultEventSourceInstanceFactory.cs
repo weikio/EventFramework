@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -88,25 +89,37 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 {
                     var cancellationToken = new CancellationTokenSource();
 
+                    IHostedService inst = null;
                     start = (provider, esInstance) =>
                     {
-                        var publisher = _publisherFactory.CreatePublisher(esInstance.Id.ToString());
+                        var extraParams = new List<object>();
+                        if (instanceOptions.Configuration != null)
+                        {
+                            extraParams.Add(instanceOptions.Configuration);
+                        }
                         
-                        var inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, publisher);
+                        var publisher = _publisherFactory.CreatePublisher(id.ToString());
+                        extraParams.Add(publisher);
+                        
+                        inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
 
                         if (configure != null)
                         {
                             configure.DynamicInvoke(inst);
                         }
+                        
+                        _logger.LogDebug("Starting hosted service based event source {EventSourceType} with id {Id}", eventSourceType, id);
 
                         inst.StartAsync(cancellationToken.Token);
+                        esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started);
 
                         return Task.FromResult(true);
                     };
 
                     stop = (provider, esInstance) =>
                     {
-                        cancellationToken.Cancel();
+                        inst.StopAsync(cancellationToken.Token);
+                        esInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped);
 
                         return Task.FromResult(true);
                     };
@@ -124,7 +137,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                         var sources = factory.Create(_serviceProvider);
 
-                        // eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
 
                         foreach (var eventSourceActionWrapper in sources.PollingEventSources)
                         {

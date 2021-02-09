@@ -260,6 +260,12 @@ namespace Weikio.EventFramework.EventSource
                     var options = new EventSourceInstanceOptions();
                     configureInstance(options);
 
+                    if (options.EventSourceDefinition == null)
+                    {
+                        var definition = typePluginCatalog.Single();
+                        options.EventSourceDefinition = definition.Name;
+                    }
+                    
                     return options;
                 });
             }

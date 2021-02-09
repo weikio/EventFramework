@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -30,43 +31,6 @@ namespace Weikio.EventFramework.EventPublisher
             _options = options.Value;
         }
 
-        public async Task<List<CloudEvent>> Publish(IList<object> objects, string eventTypeName = "", string id = "", Uri source = null,
-            string gatewayName = GatewayName.Default)
-        {
-            if (objects == null)
-            {
-                throw new ArgumentNullException(nameof(objects));
-            }
-            
-            if (string.Equals(gatewayName, GatewayName.Default))
-            {
-                gatewayName = _options.DefaultGatewayName;
-            }
-
-            var cloudEvents = new List<CloudEvent>();
-
-            for (var index = 0; index < objects.Count; index++)
-            {
-                var obj = objects[index];
-
-                var creationOptions = GetDefaultCloudEventCreationOptions();
-                _options.ConfigureCloudEventCreationOptions(eventTypeName, obj, creationOptions, _serviceProvider);
-
-                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: creationOptions);
-                cloudEvents.Add(cloudEvent);
-            }
-
-            var result = new List<CloudEvent>(cloudEvents.Count);
-
-            foreach (var cloudEvent in cloudEvents)
-            {
-                var publishedEvent = await Publish(cloudEvent, gatewayName);
-                result.Add(publishedEvent);
-            }
-
-            return result;
-        }
-
         public async Task<CloudEvent> Publish(object obj, string eventTypeName = "", string id = "", Uri source = null,
             string gatewayName = GatewayName.Default)
         {
@@ -86,6 +50,44 @@ namespace Weikio.EventFramework.EventPublisher
             }
             
             var result = await Publish(cloudEvent, gatewayName);
+
+            return result;
+        }
+        
+        public async Task<List<CloudEvent>> Publish(IEnumerable objects, string eventTypeName = "", string id = "", Uri source = null,
+            string gatewayName = GatewayName.Default)
+        {
+            if (objects == null)
+            {
+                throw new ArgumentNullException(nameof(objects));
+            }
+            
+            if (string.Equals(gatewayName, GatewayName.Default))
+            {
+                gatewayName = _options.DefaultGatewayName;
+            }
+
+            var cloudEvents = new List<CloudEvent>();
+
+            var index = 0;
+            foreach (var obj in objects)
+            {
+                var creationOptions = GetDefaultCloudEventCreationOptions();
+                _options.ConfigureCloudEventCreationOptions(eventTypeName, obj, creationOptions, _serviceProvider);
+
+                var cloudEvent = _cloudEventCreator.CreateCloudEvent(obj, eventTypeName, "", source, new ICloudEventExtension[] { new IntegerSequenceExtension(index) }, creationOptions: creationOptions);
+                cloudEvents.Add(cloudEvent);
+                
+                index += 1;
+            }
+
+            var result = new List<CloudEvent>(cloudEvents.Count);
+
+            foreach (var cloudEvent in cloudEvents)
+            {
+                var publishedEvent = await Publish(cloudEvent, gatewayName);
+                result.Add(publishedEvent);
+            }
 
             return result;
         }
