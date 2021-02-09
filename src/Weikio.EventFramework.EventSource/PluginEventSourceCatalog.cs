@@ -31,7 +31,15 @@ namespace Weikio.EventFramework.EventSource
 
         public List<EventSourceDefinition> List()
         {
-            return this.SelectMany(x => x.List()).ToList();
+            var result = new List<EventSourceDefinition>();
+
+            foreach (var pluginCatalog in this)
+            {
+                var all = pluginCatalog.List();
+                result.AddRange(all);
+            }
+
+            return result;
         }
 
         public Abstractions.EventSource Get(EventSourceDefinition definition)

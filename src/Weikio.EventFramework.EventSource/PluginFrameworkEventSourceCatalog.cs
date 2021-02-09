@@ -24,7 +24,13 @@ namespace Weikio.EventFramework.EventSource
 
         public List<EventSourceDefinition> List()
         {
-            return this.Select(x => x.EventSourceDefinition).ToList();
+            var result = new List<EventSourceDefinition>();
+
+            var plugin = _pluginCatalog.Single();
+
+            result.Add((plugin.Name, plugin.Version));
+
+            return result;
         }
 
         public Abstractions.EventSource Get(EventSourceDefinition definition)
@@ -44,7 +50,7 @@ namespace Weikio.EventFramework.EventSource
 
         private Abstractions.EventSource GetEventSourceByDefinition(EventSourceDefinition definition)
         {
-            var plugin =  _pluginCatalog.Get(definition.Name, definition.Version);
+            var plugin = _pluginCatalog.Get(definition.Name, definition.Version);
 
             if (plugin == null)
             {
