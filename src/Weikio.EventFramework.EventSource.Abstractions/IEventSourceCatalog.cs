@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,7 +9,5 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         Task Initialize(CancellationToken cancellationToken);
         List<EventSourceDefinition> List();
         EventSource Get(EventSourceDefinition definition);
-        EventSource Get(string name, Version version);
-        EventSource Get(string name);
     }
 }

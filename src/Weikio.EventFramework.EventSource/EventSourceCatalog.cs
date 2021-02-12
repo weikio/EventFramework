@@ -23,15 +23,5 @@ namespace Weikio.EventFramework.EventSource
         {
             return this.FirstOrDefault(x => x.EventSourceDefinition == definition);
         }
-
-        public Abstractions.EventSource Get(string name, Version version)
-        {
-            return Get(new EventSourceDefinition(name, version));
-        }
-
-        public Abstractions.EventSource Get(string name)
-        {
-            return Get(name, Version.Parse("1.0.0.0"));
-        }
     }
 }

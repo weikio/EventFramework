@@ -70,6 +70,8 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<ICloudEventPublisherFactory, DefaultCloudEventPublisherFactory>();
             services.TryAddTransient<ICloudEventPublisherBuilder, DefaultCloudEventPublisherBuilder>();
             services.TryAddSingleton<IEventSourceCatalog, PluginEventSourceCatalog>();
+            services.TryAddSingleton<IEventSourceDefinitionProvider, DefaultEventSourceDefinitionProvider>();
+            services.TryAddSingleton<IEventSourceDefinitionConfigurationTypeProvider, DefaultEventSourceDefinitionConfigurationTypeProvider>();
             
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
@@ -166,14 +168,14 @@ namespace Weikio.EventFramework.EventSource
             services.AddCloudEventSources();
 
             // var id = Guid.NewGuid();
-
-            services.AddSingleton(provider =>
-            {
-                var factory = provider.GetRequiredService<IEventSourceFactory>();
-                var eventSource = factory.Create(action, pollingFrequency, cronExpression, configure, eventSourceType, eventSourceInstance);
-
-                return eventSource;
-            });
+            //
+            // services.AddSingleton(provider =>
+            // {
+            //     var factory = provider.GetRequiredService<IEventSourceFactory>();
+            //     var eventSource = factory.Create(action, pollingFrequency, cronExpression, configure, eventSourceType, eventSourceInstance);
+            //
+            //     return eventSource;
+            // });
 
             return services;
 
@@ -285,15 +287,15 @@ namespace Weikio.EventFramework.EventSource
             return services;
         }
 
-        public static IEventFrameworkBuilder AddEventSource(this IEventFrameworkBuilder builder, string name, Version version, MulticastDelegate action = null,
+        public static IEventFrameworkBuilder AddEventSource(this IEventFrameworkBuilder builder, EventSourceDefinition eventSourceDefinition, MulticastDelegate action = null,
             Type eventSourceType = null, object eventSourceInstance = null)
         {
-            builder.Services.AddEventSource(name, version, action, eventSourceType, eventSourceInstance);
+            builder.Services.AddEventSource(eventSourceDefinition, action, eventSourceType, eventSourceInstance);
 
             return builder;
         }
 
-        public static IServiceCollection AddEventSource(this IServiceCollection services, string name, Version version, MulticastDelegate action = null,
+        public static IServiceCollection AddEventSource(this IServiceCollection services, EventSourceDefinition eventSourceDefinition, MulticastDelegate action = null,
             Type eventSourceType = null, object eventSourceInstance = null)
         {
             services.AddCloudEventSources();
@@ -301,7 +303,10 @@ namespace Weikio.EventFramework.EventSource
             services.AddSingleton<IEventSourceCatalog>(provider =>
             {
                 var factory = provider.GetRequiredService<IEventSourceFactory>();
-                var eventSource = factory.Create(name, version, action, eventSourceType, eventSourceInstance);
+                var eventSourceDefinitionProvider = provider.GetRequiredService<IEventSourceDefinitionProvider>();
+                var definition = eventSourceDefinitionProvider.Get(eventSourceDefinition.Name, eventSourceDefinition.Version);
+                
+                var eventSource = factory.Create(definition, action, eventSourceType, eventSourceInstance);
 
                 var catalog = new EventSourceCatalog { eventSource };
 

@@ -7,7 +7,7 @@ using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource
 {
-    public class DefaultEventSourceInstanceManager : List<EsInstance>, IEventSourceInstanceManager
+    public class DefaultEventSourceInstanceManager : List<EventSourceInstance>, IEventSourceInstanceManager
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IEventSourceProvider _eventSourceProvider;
@@ -24,12 +24,12 @@ namespace Weikio.EventFramework.EventSource
 
         }
 
-        public List<EsInstance> GetAll()
+        public List<EventSourceInstance> GetAll()
         {
             return this;
         }
 
-        public EsInstance Get(Guid id)
+        public EventSourceInstance Get(Guid id)
         {
             return this.FirstOrDefault(x => x.Id == id);
         }

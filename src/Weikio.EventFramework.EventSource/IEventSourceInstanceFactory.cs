@@ -4,6 +4,6 @@ namespace Weikio.EventFramework.EventSource
 {
     public interface IEventSourceInstanceFactory
     {
-        EsInstance Create(Abstractions.EventSource eventSource,EventSourceInstanceOptions options);
+        EventSourceInstance Create(Abstractions.EventSource eventSource,EventSourceInstanceOptions options);
     }
 }

@@ -24,18 +24,21 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
         private readonly ICloudEventPublisher _cloudEventPublisher;
         private readonly ICloudEventGatewayManager _cloudEventGatewayManager;
         private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
+        private readonly IEventSourceDefinitionProvider _eventSourceDefinitionProvider;
 
         public IndexModel(ILogger<IndexModel> logger, ICloudEventPublisher cloudEventPublisher, 
-            ICloudEventGatewayManager cloudEventGatewayManager, IEventSourceInstanceManager eventSourceInstanceManager)
+            ICloudEventGatewayManager cloudEventGatewayManager, IEventSourceInstanceManager eventSourceInstanceManager, IEventSourceDefinitionProvider eventSourceDefinitionProvider)
         {
             _logger = logger;
             _cloudEventPublisher = cloudEventPublisher;
             _cloudEventGatewayManager = cloudEventGatewayManager;
             _eventSourceInstanceManager = eventSourceInstanceManager;
+            _eventSourceDefinitionProvider = eventSourceDefinitionProvider;
         }
 
         public CloudEvent CloudEvent { get; set; }
 
+        public List<EventSourceDefinition> EventSourceDefinitions { get; set; } = new List<EventSourceDefinition>();
         public static List<CloudEvent> ReceivedEvents { get; set; } = new List<CloudEvent>();
 
         public void OnGet()
@@ -44,6 +47,8 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
             {
                 CloudEvent = JsonSerializer.Deserialize<CloudEvent>(TempData["el"].ToString());
             }
+
+            EventSourceDefinitions = _eventSourceDefinitionProvider.List();
         }
 
         public async Task<IActionResult> OnPost()

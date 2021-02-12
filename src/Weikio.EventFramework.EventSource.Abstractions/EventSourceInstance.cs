@@ -4,19 +4,19 @@ using System.Threading.Tasks;
 
 namespace Weikio.EventFramework.EventSource.Abstractions
 {
-    public class EsInstance
+    public class EventSourceInstance
     {
         public EventSourceInstanceOptions Options { get; }
-        private readonly Func<IServiceProvider, EsInstance, Task<bool>> _start;
-        private readonly Func<IServiceProvider, EsInstance, Task<bool>> _stop;
+        private readonly Func<IServiceProvider, EventSourceInstance, Task<bool>> _start;
+        private readonly Func<IServiceProvider, EventSourceInstance, Task<bool>> _stop;
         public Guid Id { get; }
         public EventSource EventSource { get; }
         public EventSourceStatus Status { get; }
         public TimeSpan? PollingFrequency { get => Options.PollingFrequency; }
         public string CronExpression { get => Options.CronExpression; }
         public MulticastDelegate Configure { get => Options.Configure; }
-        public EsInstance(Guid id, EventSource eventSource, EventSourceInstanceOptions options, Func<IServiceProvider, EsInstance, Task<bool>> start, 
-            Func<IServiceProvider, EsInstance, Task<bool>> stop)
+        public EventSourceInstance(Guid id, EventSource eventSource, EventSourceInstanceOptions options, Func<IServiceProvider, EventSourceInstance, Task<bool>> start, 
+            Func<IServiceProvider, EventSourceInstance, Task<bool>> stop)
         {
             Options = options;
             _start = start;

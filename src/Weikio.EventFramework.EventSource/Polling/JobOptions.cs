@@ -7,6 +7,6 @@ namespace Weikio.EventFramework.EventSource.Polling
     {
         public MulticastDelegate Action { get; set; }
         public bool ContainsState { get; set; }
-        public EsInstance EventSource { get; set; }
+        public EventSourceInstance EventSource { get; set; }
     }
 }

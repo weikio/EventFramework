@@ -746,6 +746,24 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             });
         }
 
+        [Fact]
+        public async Task CanSetConfigurationType()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddEventSourceWithConfigurationTypeExtensions();
+            });
+
+            var definitionProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionProvider>();
+            var definition = definitionProvider.GetByType(typeof(EventSourceWithConfigurationType));
+
+            Assert.Equal(typeof(EventSourceWithConfigurationTypeTheConfigurationType), definition.ConfigurationType);
+        }
+
         public void Dispose()
         {
         }

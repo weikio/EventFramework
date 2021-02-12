@@ -42,7 +42,7 @@ namespace Weikio.EventFramework.EventSource
             _publisherFactory = publisherFactory;
         }
 
-        public EsInstance Create(Abstractions.EventSource eventSource, EventSourceInstanceOptions instanceOptions)
+        public EventSourceInstance Create(Abstractions.EventSource eventSource, EventSourceInstanceOptions instanceOptions)
         {
             if (eventSource == null)
             {
@@ -53,8 +53,8 @@ namespace Weikio.EventFramework.EventSource
             var instance = eventSource.Instance;
             var id = Guid.NewGuid();
             var action = eventSource.Action;
-            Func<IServiceProvider, EsInstance, Task<bool>> start = null;
-            Func<IServiceProvider, EsInstance, Task<bool>> stop = null;
+            Func<IServiceProvider, EventSourceInstance, Task<bool>> start = null;
+            Func<IServiceProvider, EventSourceInstance, Task<bool>> stop = null;
 
             var pollingFrequency = instanceOptions.PollingFrequency;
             var cronExpression = instanceOptions.CronExpression;
@@ -251,7 +251,7 @@ namespace Weikio.EventFramework.EventSource
             
             _optionsMonitorCache.TryAdd(id.ToString(), publisherFactoryOptions);
             
-            var result = new EsInstance(id, eventSource, instanceOptions, start, stop);
+            var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop);
 
             return result;
         }

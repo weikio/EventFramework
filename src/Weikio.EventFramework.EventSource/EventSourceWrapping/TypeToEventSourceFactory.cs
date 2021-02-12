@@ -26,14 +26,14 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly MulticastDelegate _configure;
         private readonly object _configuration;
 
-        public TypeToEventSourceFactory(EsInstance esInstance, ILogger<TypeToEventSourceFactory> logger)
+        public TypeToEventSourceFactory(EventSourceInstance eventSourceInstance, ILogger<TypeToEventSourceFactory> logger)
         {
-            _type = esInstance.EventSource.EventSourceType;
-            Id = esInstance.Id.ToString();
+            _type = eventSourceInstance.EventSource.EventSourceType;
+            Id = eventSourceInstance.Id.ToString();
             _logger = logger;
-            _instance = esInstance.EventSource.Instance;
-            _configure = esInstance.Configure;
-            _configuration = esInstance.Options.Configuration;
+            _instance = eventSourceInstance.EventSource.Instance;
+            _configure = eventSourceInstance.Configure;
+            _configuration = eventSourceInstance.Options.Configuration;
         }
 
         public TypeToEventSourceFactoryResult Create(IServiceProvider serviceProvider)

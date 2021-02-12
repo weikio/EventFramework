@@ -55,15 +55,5 @@ namespace Weikio.EventFramework.EventSource
 
             return null;
         }
-
-        public Abstractions.EventSource Get(string name, Version version)
-        {
-            return Get(new EventSourceDefinition(name, version));
-        }
-
-        public Abstractions.EventSource Get(string name)
-        {
-            return Get(name, Version.Parse("1.0.0.0"));
-        }
     }
 }

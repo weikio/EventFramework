@@ -14,7 +14,7 @@ namespace Weikio.EventFramework.EventSource.LongPolling
     {
         private readonly ICloudEventPublisherFactory _cloudEventPublisherFactory;
         private Func<CancellationToken, IAsyncEnumerable<object>> _poller;
-        private EsInstance _eventSourceInstance;
+        private EventSourceInstance _eventSourceInstance;
         private CancellationTokenSource _cancellationTokenSource;
         private CloudEventPublisher _cloudEventPublisher;
 
@@ -23,7 +23,7 @@ namespace Weikio.EventFramework.EventSource.LongPolling
             _cloudEventPublisherFactory = cloudEventPublisherFactory;
         }
 
-        public void Initialize(EsInstance eventSourceInstance, Func<CancellationToken, IAsyncEnumerable<object>> pollers,
+        public void Initialize(EventSourceInstance eventSourceInstance, Func<CancellationToken, IAsyncEnumerable<object>> pollers,
             CancellationTokenSource cancellationTokenSource)
         {
             _cancellationTokenSource = cancellationTokenSource;

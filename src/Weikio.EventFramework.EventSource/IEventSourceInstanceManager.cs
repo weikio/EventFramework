@@ -7,8 +7,8 @@ namespace Weikio.EventFramework.EventSource
 {
     public interface IEventSourceInstanceManager
     {
-        List<EsInstance> GetAll();
-        EsInstance Get(Guid id);
+        List<EventSourceInstance> GetAll();
+        EventSourceInstance Get(Guid id);
         Task<Guid> Create(EventSourceInstanceOptions options);
         Task Start(Guid eventSourceInstanceId);
         Task StartAll();
