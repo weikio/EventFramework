@@ -13,11 +13,11 @@ namespace Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration
 {
     public class SyncEndpointInitializer : IEndpointInitializer
     {
-        private readonly ILogger<EndpointInitializer> _logger;
+        private readonly ILogger<SyncEndpointInitializer> _logger;
         private readonly ApiChangeNotifier _changeNotifier;
         private readonly ApiFrameworkOptions _options;
 
-        public SyncEndpointInitializer(ILogger<EndpointInitializer> logger, ApiChangeNotifier changeNotifier, IOptions<ApiFrameworkOptions> options)
+        public SyncEndpointInitializer(ILogger<SyncEndpointInitializer> logger, ApiChangeNotifier changeNotifier, IOptions<ApiFrameworkOptions> options)
         {
             _logger = logger;
             _changeNotifier = changeNotifier;

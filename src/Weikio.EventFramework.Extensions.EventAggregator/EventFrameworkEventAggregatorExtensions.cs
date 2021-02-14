@@ -247,7 +247,7 @@ namespace Weikio.EventFramework.Extensions.EventAggregator
                 canHandle = ev => Task.FromResult(true);
             }
             
-            services.AddTransient(provider =>
+            services.AddSingleton(provider =>
             {
                 var typeToEventLinksConverter = provider.GetRequiredService<ITypeToEventLinksConverter>();
 

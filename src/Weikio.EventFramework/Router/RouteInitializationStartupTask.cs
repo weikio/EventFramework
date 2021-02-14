@@ -7,7 +7,7 @@ using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.Router
 {
-    public class RouteInitializationStartupTask : IHostedService //IStartupTask
+    public class RouteInitializationStartupTask : IHostedService 
     {
         private readonly IEnumerable<ICloudEventRoute> _routes;
         private readonly RouteInitializer _initializer;

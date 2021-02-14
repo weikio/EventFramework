@@ -6,15 +6,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Weikio.EventFramework.EventAggregator.Core
 {
-    public class EventLinkStartupTask : IHostedService 
+    public class EventLinkStartupService : IHostedService 
     {
         private readonly IEnumerable<EventLink> _eventLinks;
         private readonly IEnumerable<EventLinkSource> _eventLinkSources;
         private readonly EventLinkInitializer _handlerInitializer;
-        private readonly ILogger<EventLinkStartupTask> _logger;
+        private readonly ILogger<EventLinkStartupService> _logger;
 
-        public EventLinkStartupTask(IEnumerable<EventLink> links, IEnumerable<EventLinkSource> eventLinkSources, EventLinkInitializer handlerInitializer,  
-            ILogger<EventLinkStartupTask> logger)
+        public EventLinkStartupService(IEnumerable<EventLink> links, IEnumerable<EventLinkSource> eventLinkSources, EventLinkInitializer handlerInitializer,  
+            ILogger<EventLinkStartupService> logger)
         {
             _eventLinks = links;
             _eventLinkSources = eventLinkSources;
@@ -24,6 +24,13 @@ namespace Weikio.EventFramework.EventAggregator.Core
 
         public void Execute(CancellationToken cancellationToken)
         {
+
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            //Execute(cancellationToken);
+            
             foreach (var eventLink in _eventLinks)
             {
                 _handlerInitializer.Initialize(eventLink);
@@ -41,17 +48,13 @@ namespace Weikio.EventFramework.EventAggregator.Core
             {
                 _handlerInitializer.Initialize(eventLink);
             }
-        }
-
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            Execute(cancellationToken);
 
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _logger.LogDebug("Stopping event link startup service");
             return Task.CompletedTask;
         }
     }

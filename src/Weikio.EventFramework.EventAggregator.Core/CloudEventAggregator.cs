@@ -3,12 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Microsoft.Extensions.Logging;
 
 namespace Weikio.EventFramework.EventAggregator.Core
 {
     public class CloudEventAggregator : ICloudEventAggregator
     {
+        private readonly ILogger<CloudEventAggregator> _logger;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly List<Handler> _handlers = new List<Handler>();
+
+        public CloudEventAggregator(ILogger<CloudEventAggregator> logger, ILoggerFactory loggerFactory)
+        {
+            _logger = logger;
+            _loggerFactory = loggerFactory;
+        }
 
         public virtual void Subscribe(object subscriber)
         {
@@ -24,7 +33,9 @@ namespace Weikio.EventFramework.EventAggregator.Core
                     return;
                 }
 
-                _handlers.Add(new Handler(subscriber));
+                _logger.LogDebug("Subscribed new handler {Handler} to Cloud Event Aggregator", subscriber);
+
+                _handlers.Add(new Handler(subscriber, _loggerFactory));
             }
         }
 
@@ -37,12 +48,16 @@ namespace Weikio.EventFramework.EventAggregator.Core
 
             lock (_handlers)
             {
-                var handlersFound = _handlers.FirstOrDefault(x => x.Matches(subscriber));
+                var handlerFound = _handlers.FirstOrDefault(x => x.Matches(subscriber));
 
-                if (handlersFound != null)
+                if (handlerFound == null)
                 {
-                    _handlers.Remove(handlersFound);
+                    return;
                 }
+
+                _handlers.Remove(handlerFound);
+                
+                _logger.LogDebug("Unsubscribed handler {Handler} from Cloud Event Aggregator", subscriber);
             }
         }
 
@@ -64,49 +79,27 @@ namespace Weikio.EventFramework.EventAggregator.Core
             {
                 await handler.Handle(cloudEvent);
             }
-            
-            var deadHandlers = handlersToNotify.Where(h => h.IsDead).ToList();
-
-            if (deadHandlers.Any())
-            {
-                lock (_handlers)
-                {
-                    foreach (var item in deadHandlers)
-                    {
-                        _handlers.Remove(item);
-                    }
-                }
-            }
         }
 
         private class Handler
         {
-            private readonly WeakReference _reference;
-
-            public Handler(object handler)
+            private readonly ILogger _logger;
+            private readonly object _handler;
+            
+            public Handler(object handler, ILoggerFactory loggerFactory)
             {
-                _reference = new WeakReference(handler);
+                _handler = handler;
+                _logger = loggerFactory.CreateLogger(typeof(Handler));
             }
-
-            public bool IsDead => _reference.Target == null;
-
-            public WeakReference Reference => _reference;
 
             public bool Matches(object instance)
             {
-                return _reference.Target == instance;
+                return _handler == instance;
             }
 
             public async Task Handle(CloudEvent cloudEvent)
             {
-                var target = _reference.Target;
-
-                if (target == null)
-                {
-                    return;
-                }
-
-                var eventLink = target as EventLink;
+                var eventLink = _handler as EventLink;
 
                 if (eventLink == null)
                 {
@@ -120,6 +113,7 @@ namespace Weikio.EventFramework.EventAggregator.Core
                     return;
                 }
 
+                _logger.LogDebug("Handler {Handler} can handle cloud event, handling", this);
                 await eventLink.Action(cloudEvent);
             }
         }

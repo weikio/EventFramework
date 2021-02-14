@@ -44,8 +44,6 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             
             builder.Services.TryAddSingleton<RouteInitializer>();
 
-            // builder.Services.AddStartupTasks();
-
             var options = new EventFrameworkOptions();
             setupAction?.Invoke(options);
             
