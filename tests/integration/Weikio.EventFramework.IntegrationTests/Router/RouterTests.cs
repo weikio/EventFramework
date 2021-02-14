@@ -25,8 +25,8 @@ namespace Weikio.EventFramework.IntegrationTests.Router
 
             server = Init(services =>
             {
-                services.AddHttpGateway("web1", "/api/first");
-                services.AddHttpGateway("web2", "/api/second", "http://localhost/router/endpoint", clientFactory: GetClient);
+                services.AddHttpGateway("web1", "/first");
+                services.AddHttpGateway("web2", "/second", "http://localhost/router/endpoint", clientFactory: GetClient);
 
                 services.AddRoute("web1", "web2");
             });

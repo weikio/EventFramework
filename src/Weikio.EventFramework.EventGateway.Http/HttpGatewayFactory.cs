@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net.Http;
+using Microsoft.Extensions.Options;
+using Weikio.ApiFramework.Core.Configuration;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.EventGateway.Http

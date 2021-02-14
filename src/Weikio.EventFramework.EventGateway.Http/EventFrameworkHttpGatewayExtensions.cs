@@ -36,6 +36,9 @@ namespace Weikio.EventFramework.EventGateway.Http
             services.TryAddTransient<HttpGatewayFactory>();
             services.TryAddTransient<HttpGatewayInitializer>();
 
+            var customerEndpointConfigurationProvider = new CustomEndpointConfigurationProvider();
+            services.AddSingleton(customerEndpointConfigurationProvider);
+
             if (services.All(x => x.ServiceType != typeof(IEndpointInitializer)))
             {
                 // TODO: Collection concurrent problem in Api Framework
@@ -43,7 +46,6 @@ namespace Weikio.EventFramework.EventGateway.Http
 
                 services.AddApiFrameworkCore(options =>
                 {
-                    options.ApiAddressBase = "";
                     options.AutoResolveEndpoints = false;
                     options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
                     options.ApiProvider = new TypeApiProvider(typeof(HttpCloudEventReceiverApi));
@@ -53,18 +55,17 @@ namespace Weikio.EventFramework.EventGateway.Http
                 {
                     var gatewayCollection = provider.GetRequiredService<ICloudEventGatewayManager>();
                     var httpGateways = gatewayCollection.Gateways.OfType<HttpGateway>().ToList();
-                
-                    var endpoints = new List<EndpointDefinition>();
+                    var customConfigProvider = provider.GetRequiredService<CustomEndpointConfigurationProvider>();
                 
                     foreach (var httpGateway in httpGateways)
                     {
                         var endpointDefinition = new EndpointDefinition(httpGateway.Endpoint, typeof(HttpCloudEventReceiverApi).FullName,
                             new HttpCloudEventReceiverApiConfiguration() { GatewayName = httpGateway.Name }, new EmptyHealthCheck(), string.Empty);
                 
-                        endpoints.Add(endpointDefinition);
+                        customConfigProvider.Add(endpointDefinition);
                     }
-                
-                    return new CustomEndpointConfigurationProvider(endpoints);
+
+                    return customConfigProvider;
                 });
             }
             else
@@ -75,6 +76,8 @@ namespace Weikio.EventFramework.EventGateway.Http
 
                     return typeCatalog;
                 });
+
+                services.AddSingleton<IEndpointConfigurationProvider>(customerEndpointConfigurationProvider);
             }
 
             return services;
