@@ -22,15 +22,17 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         private readonly Type _type;
         public string Id { get; }
         private readonly ILogger<TypeToEventSourceFactory> _logger;
+        private readonly IEventSourceDefinitionConfigurationTypeProvider _configurationTypeProvider;
         private readonly object _instance;
         private readonly MulticastDelegate _configure;
         private readonly object _configuration;
 
-        public TypeToEventSourceFactory(EventSourceInstance eventSourceInstance, ILogger<TypeToEventSourceFactory> logger)
+        public TypeToEventSourceFactory(EventSourceInstance eventSourceInstance, ILogger<TypeToEventSourceFactory> logger, IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider)
         {
             _type = eventSourceInstance.EventSource.EventSourceType;
             Id = eventSourceInstance.Id.ToString();
             _logger = logger;
+            _configurationTypeProvider = configurationTypeProvider;
             _instance = eventSourceInstance.EventSource.Instance;
             _configure = eventSourceInstance.Configure;
             _configuration = eventSourceInstance.Options.Configuration;
@@ -113,7 +115,22 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                         }
                         else
                         {
-                            instance = ActivatorUtilities.CreateInstance(serviceProvider, _type);
+                            var configurationType = _configurationTypeProvider.Get(_type);
+
+                            object configuration = null;
+                            if (configurationType != null)
+                            {
+                                configuration = GetDefaultValue(configurationType, serviceProvider);
+                            }
+
+                            if (configuration != null)
+                            {
+                                instance = ActivatorUtilities.CreateInstance(serviceProvider, _type, new object[] { configuration });
+                            }
+                            else
+                            {
+                                instance = ActivatorUtilities.CreateInstance(serviceProvider, _type);
+                            }
                         }
                     }
 
@@ -163,6 +180,18 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return methodInfo.DeclaringType?.FullName + methodInfo.Name + "_" + Guid.NewGuid();
         }
 
+        private object GetDefaultValue(Type t, IServiceProvider serviceProvider)
+        {
+            if (t.IsValueType)
+            {
+                return Activator.CreateInstance(t);
+            }
+            
+            var res = ActivatorUtilities.CreateInstance(serviceProvider, t);
+
+            return res;
+        }
+        
         private static readonly ConcurrentDictionary<string, Type> _cache = new ConcurrentDictionary<string, Type>();
     }
 }

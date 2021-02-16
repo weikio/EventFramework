@@ -25,14 +25,55 @@ namespace Weikio.EventFramework.EventSource
                 throw new ArgumentNullException(nameof(eventSourceDefinition));
             }
 
-            var key = eventSourceDefinition.Name + eventSourceDefinition.Version;
+            var source = _sourceProvider.Get(eventSourceDefinition);
+            var eventSourceType = source.EventSourceType;
+
+            return Get(eventSourceType);
+        }
+
+        public Type Get(Type eventSourceType)
+        {
+            var key = eventSourceType.FullName;
 
             var result = _cache.GetOrAdd(key, s =>
             {
-                var source = _sourceProvider.Get(eventSourceDefinition);
-                var eventSourceType = source.EventSourceType;
+                var configurationTypeResult = _optionsMonitor.Get(eventSourceType.FullName).ConfigurationType;
 
-                return _optionsMonitor.Get(eventSourceType.FullName).ConfigurationType;
+                if (configurationTypeResult != null)
+                {
+                    return configurationTypeResult;
+                }
+
+                var ctors = eventSourceType.GetConstructors();
+
+                foreach (var constructorInfo in ctors)
+                {
+                    foreach (var param in constructorInfo.GetParameters())
+                    {
+                        if (!string.Equals(param.Name, "configuration", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        if (param.ParameterType.Assembly != eventSourceType.Assembly)
+                        {
+                            continue;
+                        }
+
+                        configurationTypeResult = param.ParameterType;
+
+                        break;
+                    }
+
+                    if (configurationTypeResult == null)
+                    {
+                        continue;
+                    }
+
+                    break;
+                }
+
+                return configurationTypeResult;
             });
 
             return result;

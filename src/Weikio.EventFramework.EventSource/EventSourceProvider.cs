@@ -17,7 +17,7 @@ namespace Weikio.EventFramework.EventSource
             _logger = logger;
             AddRange(catalogs);
         }
-        
+
         public async Task Initialize(CancellationToken cancellationToken)
         {
             foreach (var catalog in this)
@@ -53,7 +53,10 @@ namespace Weikio.EventFramework.EventSource
                 return eventSource;
             }
 
-            return null;
+            var allDefinitions = List();
+
+            throw new UnknownEventSourceException(
+                $"No event source found with definition {definition}. Available definitions:{Environment.NewLine}{string.Join(Environment.NewLine, allDefinitions)}");
         }
     }
 }

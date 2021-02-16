@@ -747,7 +747,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
         }
 
         [Fact]
-        public async Task CanSetConfigurationType()
+        public void CanGetConfigurationType()
         {
             var serviceProvider = Init(services =>
             {
@@ -759,9 +759,67 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             });
 
             var definitionProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionProvider>();
+            var definitionConfigurationProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionConfigurationTypeProvider>();
             var definition = definitionProvider.GetByType(typeof(EventSourceWithConfigurationType));
+            var configurationType = definitionConfigurationProvider.Get(definition);
 
-            Assert.Equal(typeof(EventSourceWithConfigurationTypeTheConfigurationType), definition.ConfigurationType);
+            Assert.Equal(typeof(EventSourceWithConfigurationTypeTheConfigurationType), configurationType);
+        }
+        
+        [Fact]
+        public void CanGetConfigurationTypeByConstructorParameterName()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddEventSource<EventSourceWithConfigurationType>();
+            });
+
+            var definitionProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionProvider>();
+            var definitionConfigurationProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionConfigurationTypeProvider>();
+            var definition = definitionProvider.GetByType(typeof(EventSourceWithConfigurationType));
+            var configurationType = definitionConfigurationProvider.Get(definition);
+
+            Assert.Equal(typeof(EventSourceWithConfigurationTypeTheConfigurationType), configurationType);
+        }
+        
+        [Fact]
+        public async Task CanInitializeConfigurationWithDefault()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddEventSource<EventSourceWithConfigurationType>();
+            });
+
+            var manager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            await manager.Create("EventSourceWithConfigurationType", pollingFrequency: TimeSpan.FromSeconds(1));
+            await manager.StartAll();
+            
+            await ContinueWhen(() => MyTestCloudEventPublisher.PublishedEvents.Any());
+        }
+
+        [Fact]
+        public async Task TryingToCreateEventInstanceFromUnknownEventSourceGivesClearException()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddEventSource<EventSourceWithConfigurationType>();
+            });
+            
+            var manager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+
+            await Assert.ThrowsAsync<UnknownEventSourceException>(async () => await manager.Create("UnknownEventSource", pollingFrequency: TimeSpan.FromSeconds(1)));
         }
 
         public void Dispose()

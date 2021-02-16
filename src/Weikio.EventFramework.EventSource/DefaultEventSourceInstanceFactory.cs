@@ -132,12 +132,12 @@ namespace Weikio.EventFramework.EventSource
                     start = (provider, esInstance) =>
                     {
                         var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                        var factory = new TypeToEventSourceFactory(esInstance, logger);
+                        var configurationTypeProvider = _serviceProvider.GetRequiredService<IEventSourceDefinitionConfigurationTypeProvider>();
+                        var factory = new TypeToEventSourceFactory(esInstance, logger, configurationTypeProvider);
 
                         // Event source can contain multiple event sources...
 
                         var sources = factory.Create(_serviceProvider);
-
 
                         foreach (var eventSourceActionWrapper in sources.PollingEventSources)
                         {
@@ -160,8 +160,6 @@ namespace Weikio.EventFramework.EventSource
 
                             var host = _serviceProvider.GetRequiredService<ILongPollingEventSourceHost>();
                             host.Initialize(esInstance, poller, cancellationToken);
-
-                            // eventSourceInstance.SetCancellationTokenSource(cancellationToken);
 
                             host.StartPolling(cancellationToken.Token);
                         }
@@ -216,16 +214,8 @@ namespace Weikio.EventFramework.EventSource
             }
             catch (Exception e)
             {
-                _logger.LogError("Failed to create event source instance from event source {EventSource}", eventSource);
-                // eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.InitializingFailed, "Failed: " + e);
+                _logger.LogError(e, "Failed to create event source instance from event source {EventSource}", eventSource);
             }
-
-            // return eventSourceInstance.Status.Status;
-
-            // if (configurePublisherOptions == null)
-            // {
-            //     configurePublisherOptions = _optionsMonitor.CurrentValue.ConfigureOptions;
-            // }
 
             var publisherFactoryOptions = new CloudEventPublisherFactoryOptions();
 

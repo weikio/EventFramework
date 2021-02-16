@@ -19,18 +19,17 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         public Version Version { get; }
         public string Description { get; set; }
         public string ProductVersion { get; set; }
-        public Type ConfigurationType { get; set; }
 
         public override string ToString()
         {
             return $"{Name}: {Version} {GetMoreVersionDetails()}".Trim();
         }
-
+        
         public static implicit operator EventSourceDefinition(string name)
         {
             return new EventSourceDefinition(name, Version.Parse("1.0.0.0"));
         }
-
+        
         public static implicit operator EventSourceDefinition((string Name, Version Version) nameAndVersion)
         {
             return new EventSourceDefinition(nameAndVersion.Name, nameAndVersion.Version);
@@ -40,41 +39,31 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         {
             return new EventSourceDefinition(nameAndVersion.Name, Version.Parse(nameAndVersion.Version));
         }
-
         private string GetMoreVersionDetails()
         {
-            if (string.IsNullOrWhiteSpace(Description) && string.IsNullOrWhiteSpace(ProductVersion) && ConfigurationType == null)
+            if (string.IsNullOrWhiteSpace(Description) && string.IsNullOrWhiteSpace(ProductVersion))
             {
                 return string.Empty;
             }
 
-            var result = new StringBuilder();
+            var result = new StringBuilder("(");
 
-            if (!string.IsNullOrWhiteSpace(Description) || !string.IsNullOrWhiteSpace(ProductVersion))
+            if (string.IsNullOrWhiteSpace(Description))
             {
-                result.Append("(");
-                if (string.IsNullOrWhiteSpace(Description))
-                {
-                    result.Append(ProductVersion);
-                }
-                else if (string.IsNullOrWhiteSpace(ProductVersion))
-                {
-                    result.Append(Description);
-                }
-                else
-                {
-                    result.Append($"{ProductVersion}, {Description}");
-                }
-
-                result.Append(")");
+                result.Append(ProductVersion);
             }
-
-            if (ConfigurationType != null)
+            else if (string.IsNullOrWhiteSpace(ProductVersion))
             {
-                result.Append($" (Configuration: {ConfigurationType.FullName})");
+                result.Append(Description);
             }
+            else
+            {
+                result.Append($"{ProductVersion}, {Description}");
+            }
+            
+            result.Append(")");
 
-            return result.ToString().Trim();
+            return result.ToString();
         }
 
         private bool Equals(EventSourceDefinition other)

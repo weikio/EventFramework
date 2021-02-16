@@ -25,8 +25,6 @@ namespace Weikio.EventFramework.EventSource
 
                 if (source.EventSourceType == type)
                 {
-                    def.ConfigurationType = GetConfigurationType(def);
-                    
                     return def;
                 }
             }
@@ -37,11 +35,6 @@ namespace Weikio.EventFramework.EventSource
         public List<EventSourceDefinition> List()
         {
             var result = _sourceProvider.List();
-
-            foreach (var def in result)
-            {
-                def.ConfigurationType = GetConfigurationType(def);
-            }
 
             return result;
         }
@@ -56,8 +49,6 @@ namespace Weikio.EventFramework.EventSource
 
                 if (source.EventSourceDefinition == (name, version))
                 {
-                    def.ConfigurationType = GetConfigurationType(def);
-
                     return def;
                 }
             }

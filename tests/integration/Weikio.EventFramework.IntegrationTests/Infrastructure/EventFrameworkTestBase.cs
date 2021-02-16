@@ -42,5 +42,25 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
 
             return result;
         }
+        
+        protected WebApplicationFactory<Startup> InitFactory(Action<IServiceCollection> action = null)
+        {
+            var result = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    action?.Invoke(services);
+                });
+
+                builder.ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders(); // Remove other loggers
+                    logging.AddXUnit(Output); // Use the ITestOutputHelper instance
+                });
+
+            });
+
+            return result;
+        }
     }
 }
