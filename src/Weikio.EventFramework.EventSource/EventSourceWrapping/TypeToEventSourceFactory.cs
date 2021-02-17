@@ -180,6 +180,11 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         private object GetDefaultValue(Type t, IServiceProvider serviceProvider)
         {
+            if (t == null)
+            {
+                return null;
+            }           
+            
             if (t.IsValueType)
             {
                 return Activator.CreateInstance(t);
