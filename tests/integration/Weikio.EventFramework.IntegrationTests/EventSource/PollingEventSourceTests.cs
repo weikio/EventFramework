@@ -821,6 +821,24 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             await Assert.ThrowsAsync<UnknownEventSourceException>(async () => await manager.Create("UnknownEventSource", pollingFrequency: TimeSpan.FromSeconds(1)));
         }
+        
+        [Fact]
+        public void CanGetIfPollingIsRequired()
+        {
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+
+                services.AddEventSource<EventSourceWithConfigurationType>();
+            });
+            
+            var configurationTypeProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionConfigurationTypeProvider>();
+            var confType = configurationTypeProvider.Get("EventSourceWithConfigurationType");
+            
+            Assert.True(confType.RequiresPolling);
+        }
 
         public void Dispose()
         {

@@ -161,5 +161,14 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             Assert.Equal(EventSourceStatusEnum.Stopped, instanceStatus.Messages[4].NewStatus);
             Assert.Equal(EventSourceStatusEnum.Removed, instanceStatus.Messages[5].NewStatus);
         }
+
+        [Fact]
+        public void CanGetIfPollingIsRequired()
+        {
+            var configurationTypeProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionConfigurationTypeProvider>();
+            var confType = configurationTypeProvider.Get("ContinuousTestEventBackgroundService");
+            
+            Assert.False(confType.RequiresPolling);
+        }
     }
 }

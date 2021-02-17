@@ -26,11 +26,12 @@ namespace Weikio.EventFramework.EventSource
         private readonly IOptionsMonitorCache<CloudEventPublisherFactoryOptions> _optionsMonitorCache;
         private readonly IOptionsMonitor<CloudEventPublisherFactoryOptions> _optionsMonitor;
         private readonly ICloudEventPublisherFactory _publisherFactory;
+        private readonly IEventSourceDefinitionConfigurationTypeProvider _configurationTypeProvider;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
             PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier, 
             IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, 
-            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudEventPublisherFactory publisherFactory)
+            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudEventPublisherFactory publisherFactory, IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider)
         {
             _serviceProvider = serviceProvider;
             _optionsCache = optionsCache;
@@ -40,6 +41,7 @@ namespace Weikio.EventFramework.EventSource
             _optionsMonitorCache = optionsMonitorCache;
             _optionsMonitor = optionsMonitor;
             _publisherFactory = publisherFactory;
+            _configurationTypeProvider = configurationTypeProvider;
         }
 
         public EventSourceInstance Create(Abstractions.EventSource eventSource, EventSourceInstanceOptions instanceOptions)
@@ -70,11 +72,9 @@ namespace Weikio.EventFramework.EventSource
                     eventSourceType = instance.GetType();
                 }
 
-                var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
 
-                var requiresPollingJob = isHostedService == false;
-
-                if (requiresPollingJob)
+                var configurationType = _configurationTypeProvider.Get(eventSourceType);
+                if (configurationType.RequiresPolling)
                 {
                     if (pollingFrequency == null && cronExpression == null)
                     {
@@ -86,6 +86,7 @@ namespace Weikio.EventFramework.EventSource
                     }
                 }
 
+                var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
                 if (isHostedService)
                 {
                     var cancellationToken = new CancellationTokenSource();
@@ -132,8 +133,8 @@ namespace Weikio.EventFramework.EventSource
                     start = (provider, esInstance) =>
                     {
                         var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                        var configurationTypeProvider = _serviceProvider.GetRequiredService<IEventSourceDefinitionConfigurationTypeProvider>();
-                        var factory = new TypeToEventSourceFactory(esInstance, logger, configurationTypeProvider);
+                        var typeToEventSourceTypeProvider = _serviceProvider.GetRequiredService<ITypeToEventSourceTypeProvider>();
+                        var factory = new TypeToEventSourceFactory(esInstance, logger, _configurationTypeProvider, typeToEventSourceTypeProvider);
 
                         // Event source can contain multiple event sources...
 

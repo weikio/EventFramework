@@ -72,7 +72,7 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<IEventSourceCatalog, PluginEventSourceCatalog>();
             services.TryAddSingleton<IEventSourceDefinitionProvider, DefaultEventSourceDefinitionProvider>();
             services.TryAddSingleton<IEventSourceDefinitionConfigurationTypeProvider, DefaultEventSourceDefinitionConfigurationTypeProvider>();
-            
+            services.TryAddSingleton<ITypeToEventSourceTypeProvider, DefaultTypeToEventSourceTypeProvider>();
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
                 services.AddHostedService<DefaultPollingEventSourceHostedService>();

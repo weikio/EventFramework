@@ -23,16 +23,19 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         public string Id { get; }
         private readonly ILogger<TypeToEventSourceFactory> _logger;
         private readonly IEventSourceDefinitionConfigurationTypeProvider _configurationTypeProvider;
+        private readonly ITypeToEventSourceTypeProvider _typeToEventSourceTypeProvider;
         private readonly object _instance;
         private readonly MulticastDelegate _configure;
         private readonly object _configuration;
 
-        public TypeToEventSourceFactory(EventSourceInstance eventSourceInstance, ILogger<TypeToEventSourceFactory> logger, IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider)
+        public TypeToEventSourceFactory(EventSourceInstance eventSourceInstance, ILogger<TypeToEventSourceFactory> logger, 
+            IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider, ITypeToEventSourceTypeProvider typeToEventSourceTypeProvider)
         {
             _type = eventSourceInstance.EventSource.EventSourceType;
             Id = eventSourceInstance.Id.ToString();
             _logger = logger;
             _configurationTypeProvider = configurationTypeProvider;
+            _typeToEventSourceTypeProvider = typeToEventSourceTypeProvider;
             _instance = eventSourceInstance.EventSource.Instance;
             _configure = eventSourceInstance.Configure;
             _configuration = eventSourceInstance.Options.Configuration;
@@ -45,14 +48,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             // 2. Methods to long polling event sources
             // It would be better if we could inject different handlers into this class and each of those could handle the different need.
             // This way developers could add their own conversion implementations
-            var publicMethods = _type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).ToList();
-
-            var longPollingMethods = publicMethods.Where(x =>
-                x.ReturnType.IsGenericType && typeof(IAsyncEnumerable<>).IsAssignableFrom(x.ReturnType.GetGenericTypeDefinition())).ToList();
-
-            var taskMethods = publicMethods.Except(longPollingMethods)
-                .Where(x => x.ReturnType.IsGenericType && typeof(Task<>).IsAssignableFrom(x.ReturnType.GetGenericTypeDefinition())).ToList();
-
+            var (taskMethods, longPollingMethods) = _typeToEventSourceTypeProvider.GetSourceTypes(_type);
+            
             var result = new TypeToEventSourceFactoryResult();
 
             foreach (var methodInfo in taskMethods)
@@ -71,6 +68,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             return result;
         }
+
 
         private (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method,
             IServiceProvider serviceProvider)
@@ -98,7 +96,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return (WrapperRunner, wrappedMethodCall.ContainsState);
         }
 
-        private static ConcurrentDictionary<string, object> _instanceCache = new ConcurrentDictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, object> _instanceCache = new ConcurrentDictionary<string, object>();
 
         private object CreateInstance(IServiceProvider serviceProvider)
         {

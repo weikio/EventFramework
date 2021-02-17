@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.EventSourceWrapping;
 
 namespace Weikio.EventFramework.EventSource
 {
@@ -9,16 +12,18 @@ namespace Weikio.EventFramework.EventSource
     {
         private readonly IOptionsMonitor<EventSourceConfigurationOptions> _optionsMonitor;
         private readonly IEventSourceProvider _sourceProvider;
-        private readonly ConcurrentDictionary<string, Type> _cache = new ConcurrentDictionary<string, Type>();
+        private readonly ITypeToEventSourceTypeProvider _typeToEventSourceTypeProvider;
+        private readonly ConcurrentDictionary<string, EventSourceConfigurationType> _cache = new ConcurrentDictionary<string, EventSourceConfigurationType>();
 
         public DefaultEventSourceDefinitionConfigurationTypeProvider(IOptionsMonitor<EventSourceConfigurationOptions> optionsMonitor,
-            IEventSourceProvider sourceProvider)
+            IEventSourceProvider sourceProvider, ITypeToEventSourceTypeProvider typeToEventSourceTypeProvider)
         {
             _optionsMonitor = optionsMonitor;
             _sourceProvider = sourceProvider;
+            _typeToEventSourceTypeProvider = typeToEventSourceTypeProvider;
         }
 
-        public Type Get(EventSourceDefinition eventSourceDefinition)
+        public EventSourceConfigurationType Get(EventSourceDefinition eventSourceDefinition)
         {
             if (eventSourceDefinition == null)
             {
@@ -31,17 +36,30 @@ namespace Weikio.EventFramework.EventSource
             return Get(eventSourceType);
         }
 
-        public Type Get(Type eventSourceType)
+        public EventSourceConfigurationType Get(Type eventSourceType)
         {
             var key = eventSourceType.FullName;
 
             var result = _cache.GetOrAdd(key, s =>
             {
+                var isHostedService = typeof(IHostedService).IsAssignableFrom(eventSourceType);
+                var requiresPolling = isHostedService == false;
+
+                if (!isHostedService)
+                {
+                    var eventSourceTypes = _typeToEventSourceTypeProvider.GetSourceTypes(eventSourceType);
+
+                    if (eventSourceTypes.PollingSources?.Any() != true)
+                    {
+                        requiresPolling = false;
+                    }
+                }
+                
                 var configurationTypeResult = _optionsMonitor.Get(eventSourceType.FullName).ConfigurationType;
 
                 if (configurationTypeResult != null)
                 {
-                    return configurationTypeResult;
+                    return new EventSourceConfigurationType(requiresPolling, configurationTypeResult);
                 }
 
                 var ctors = eventSourceType.GetConstructors();
@@ -73,7 +91,7 @@ namespace Weikio.EventFramework.EventSource
                     break;
                 }
 
-                return configurationTypeResult;
+                return new EventSourceConfigurationType(requiresPolling, configurationTypeResult);
             });
 
             return result;
