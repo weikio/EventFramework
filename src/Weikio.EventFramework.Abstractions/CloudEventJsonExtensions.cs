@@ -42,6 +42,16 @@ namespace Weikio.EventFramework.Abstractions
             return result;
         }
 
+        public static CloudEvent ToCloudEvent(this string eventString)
+        {
+            var formatter = new JsonEventFormatter();
+            var jObject = JObject.Parse(eventString);
+
+            var result = formatter.DecodeJObject(jObject);
+
+            return result;
+        }
+
         public static HttpContent ToHttpContent(this CloudEvent cloudEvent)
         {
             var json = cloudEvent.ToJson();
