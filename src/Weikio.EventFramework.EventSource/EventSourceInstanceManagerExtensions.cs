@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource.Abstractions;
 
@@ -26,7 +27,7 @@ namespace Weikio.EventFramework.EventSource
 
         public static Task<Guid> Create(this IEventSourceInstanceManager manager, string name, Version version, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null,
-            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null)
+            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, string channelName = null)
         {
             var eventSourceDefinition = new EventSourceDefinition(name, version);
 
@@ -54,7 +55,8 @@ namespace Weikio.EventFramework.EventSource
                 CronExpression = cronExpression,
                 EventSourceDefinition = eventSourceDefinition,
                 PollingFrequency = pollingFrequency,
-                Configuration = configuration
+                Configuration = configuration,
+                TargetChannelName = channelName ?? ChannelName.Default
             };
 
             return manager.Create(options);

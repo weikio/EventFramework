@@ -4,11 +4,15 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using EventFrameworkTestBed;
+using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;
 using Xunit;
@@ -16,6 +20,30 @@ using Xunit.Abstractions;
 
 namespace Weikio.EventFramework.IntegrationTests.Gateways
 {
+    public class ChannelTests : EventFrameworkTestBase
+    {
+        public ChannelTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)
+        {
+        }
+
+        [Fact]
+        public async Task DataflowsWork()
+        {
+            Init(services =>
+            {
+                services.AddCloudEventGateway();
+                services.AddLocal();
+            });
+
+            var gwManager = ServiceProvider.GetRequiredService<ICloudEventChannelManager>();
+            var gw = new CloudEventGateway("test", null, new DataflowChannel(gwManager, "test", "local"));
+
+            var c = gw.OutgoingChannel;
+            await c.Send(CloudEventCreator.Create(new CustomerCreatedEvent()));
+            await Task.Delay(TimeSpan.FromSeconds(5));
+        }
+    }
+
     public class HttpGatewayTests :  EventFrameworkTestBase
     {
         public HttpGatewayTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)

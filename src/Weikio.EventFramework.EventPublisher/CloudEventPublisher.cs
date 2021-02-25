@@ -19,15 +19,17 @@ namespace Weikio.EventFramework.EventPublisher
         private readonly ICloudEventCreator _cloudEventCreator;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CloudEventPublisher> _logger;
+        private readonly ICloudEventChannelManager _cloudEventChannelManager;
         private readonly CloudEventPublisherOptions _options;
 
         public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
-            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger)
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger, ICloudEventChannelManager cloudEventChannelManager)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _cloudEventChannelManager = cloudEventChannelManager;
             _options = options.Value;
         }
 
@@ -130,7 +132,7 @@ namespace Weikio.EventFramework.EventPublisher
                 cloudEvent.Id = Guid.NewGuid().ToString();
             }
 
-            ICloudEventGateway gateway;
+            ICloudEventGateway gateway = null;
 
             try
             {
@@ -145,10 +147,15 @@ namespace Weikio.EventFramework.EventPublisher
             {
                 _logger.LogError(e, "Failed to get gateway with name {GatewayName}", gatewayName);
 
-                throw;
+                //throw;
             }
 
-            var outgoingChannel = gateway.OutgoingChannel;
+            IChannel outgoingChannel = gateway?.OutgoingChannel;
+
+            if (!string.IsNullOrWhiteSpace(_options.DefaultChannelName))
+            {
+                outgoingChannel = _cloudEventChannelManager.Get(_options.DefaultChannelName);
+            }
 
             if (outgoingChannel == null)
             {

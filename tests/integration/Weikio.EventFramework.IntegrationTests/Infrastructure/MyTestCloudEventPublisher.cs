@@ -24,7 +24,7 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
         }
 
         public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, 
-            IServiceProvider serviceProvider) : base(gatewayManager, options, cloudEventCreator, serviceProvider, serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>())
+            IServiceProvider serviceProvider, ICloudEventChannelManager channelManager) : base(gatewayManager, options, cloudEventCreator, serviceProvider, serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>(), channelManager)
         {
         }
     }

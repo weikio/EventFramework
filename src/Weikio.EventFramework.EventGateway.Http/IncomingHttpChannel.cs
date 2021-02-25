@@ -1,4 +1,5 @@
 ﻿using System.Threading.Channels;
+using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
 
@@ -14,6 +15,11 @@ namespace Weikio.EventFramework.EventGateway.Http
         }
 
         public string Name { get; }
+        public Task Send(CloudEvent cloudEvent)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public ChannelWriter<CloudEvent> Writer { get; }
         public ChannelReader<CloudEvent> Reader { get; }
         public int ReaderCount { get; set; }

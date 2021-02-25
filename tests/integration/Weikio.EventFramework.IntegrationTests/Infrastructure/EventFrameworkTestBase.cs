@@ -17,6 +17,8 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
         // Must be set in each test
         public ITestOutputHelper Output { get; set; }
         
+        public IServiceProvider ServiceProvider { get; set; }
+        
         protected EventFrameworkTestBase(WebApplicationFactory<Startup> factory, ITestOutputHelper output)
         {
             Output = output;
@@ -31,16 +33,18 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
                 {
                     action?.Invoke(services);
                 });
-                
+
                 builder.ConfigureLogging(logging =>
                 {
                     logging.ClearProviders(); // Remove other loggers
                     logging.AddXUnit(Output); // Use the ITestOutputHelper instance
                 });
-                
-            }).CreateClient();
 
-            return result;
+            });
+
+            ServiceProvider = result.Services;
+            
+            return result.CreateClient();
         }
         
         protected WebApplicationFactory<Startup> InitFactory(Action<IServiceCollection> action = null)

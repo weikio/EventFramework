@@ -12,6 +12,7 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         public bool Autostart { get; set; }
         public bool RunOnce { get; set; }
         public object Configuration { get; set; }
+        public string TargetChannelName { get; set; }
 
         public Action<CloudEventPublisherOptions> ConfigurePublisherOptions = options =>
         {

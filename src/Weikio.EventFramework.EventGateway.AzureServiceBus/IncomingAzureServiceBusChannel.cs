@@ -19,6 +19,11 @@ namespace Weikio.EventFramework.EventGateway.AzureServiceBus
     public class IncomingAzureServiceBusChannel : IIncomingChannel
     {
         public string Name { get; }
+        public Task Send(CloudEvent cloudEvent)
+        {
+            throw new NotImplementedException();
+        }
+
         public ChannelWriter<CloudEvent> Writer { get; }
         public ChannelReader<CloudEvent> Reader { get; }
         public int ReaderCount { get; set; }

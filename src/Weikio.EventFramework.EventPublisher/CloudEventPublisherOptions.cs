@@ -11,6 +11,7 @@ namespace Weikio.EventFramework.EventPublisher
     public class CloudEventPublisherOptions
     {
         public string DefaultGatewayName { get; set; } = GatewayName.Default;
+        public string DefaultChannelName { get; set; } = ChannelName.Default;
 
         public Dictionary<string, Action<CloudEventCreationOptions>> TypedCloudEventCreationOptions { get; set; } =
             new Dictionary<string, Action<CloudEventCreationOptions>>();

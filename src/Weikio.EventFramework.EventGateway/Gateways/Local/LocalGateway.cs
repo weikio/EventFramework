@@ -29,10 +29,5 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Local
         }
 
         public CloudEventGatewayStatus Status { get; set; }
-
-        public void Dispose()
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }

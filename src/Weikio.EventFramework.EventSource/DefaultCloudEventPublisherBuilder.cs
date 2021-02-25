@@ -13,18 +13,20 @@ namespace Weikio.EventFramework.EventSource
         private readonly IServiceProvider _serviceProvider;
         private readonly ICloudEventGatewayManager _gatewayManager;
         private readonly ICloudEventCreator _cloudEventCreator;
+        private readonly ICloudEventChannelManager _channelManager;
 
         public DefaultCloudEventPublisherBuilder(IServiceProvider serviceProvider, ICloudEventGatewayManager gatewayManager,
-            ICloudEventCreator cloudEventCreator)
+            ICloudEventCreator cloudEventCreator, ICloudEventChannelManager channelManager)
         {
             _serviceProvider = serviceProvider;
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
+            _channelManager = channelManager;
         }
 
         public CloudEventPublisher Build(IOptions<CloudEventPublisherOptions> options)
         {
-            var result = new CloudEventPublisher(_gatewayManager, options, _cloudEventCreator, _serviceProvider, _serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>());
+            var result = new CloudEventPublisher(_gatewayManager, options, _cloudEventCreator, _serviceProvider, _serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>(), _channelManager);
 
             return result;
         }

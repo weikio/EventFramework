@@ -17,4 +17,19 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Null
             return Task.CompletedTask;
         }
     }
+    
+    public class NullChannel : IChannel
+    {
+        public string Name { get; }
+
+        public NullChannel(string name)
+        {
+            Name = name;
+        }
+
+        public Task Send(CloudEvent cloudEvent)
+        {
+            return Task.CompletedTask;
+        }
+    }
 }

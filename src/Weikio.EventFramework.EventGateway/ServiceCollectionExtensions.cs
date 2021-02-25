@@ -22,6 +22,7 @@ namespace Weikio.EventFramework.EventGateway
             services.AddCloudEventAggregatorCore();
             
             services.TryAddSingleton<ICloudEventGatewayManager, CloudEventGatewayManager>();
+            services.TryAddSingleton<ICloudEventChannelManager, DefaultCloudEventChannelManager>();
             services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
             services.AddHostedService<ServiceCreationHostedService>();
             services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
