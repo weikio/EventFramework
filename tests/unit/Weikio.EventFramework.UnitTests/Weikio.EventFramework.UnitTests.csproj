@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventGateway\Weikio.EventFramework.EventGateway.csproj" />
   </ItemGroup>
   
 </Project>

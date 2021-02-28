@@ -27,6 +27,7 @@ namespace Weikio.EventFramework.EventGateway
             services.AddHostedService<ServiceCreationHostedService>();
             services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
             services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
+            services.TryAddSingleton<IChannelBuilder, DefaultChannelBuilder>();
 
             if (setupAction != null)
             {

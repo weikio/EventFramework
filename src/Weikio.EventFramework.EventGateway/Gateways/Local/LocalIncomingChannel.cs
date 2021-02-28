@@ -21,7 +21,7 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Local
         }
 
         public string Name { get; }
-        public Task Send(CloudEvent cloudEvent)
+        public Task Send(object cloudEvent)
         {
             throw new System.NotImplementedException();
         }
@@ -30,54 +30,54 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Local
         public ChannelReader<CloudEvent> Reader { get; }
         public int ReaderCount { get; set; }
     }
-
-    public class NewLocalChannel : IChannel, IDisposable
-    {
-        private readonly ICloudEventAggregator _cloudEventAggregator;
-        public string Name { get; } = "local";
-        private readonly ICloudEventChannelManager _channelManager;
-        private readonly string _targetChannelName;
-        private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
-        private ITargetBlock<CloudEvent> _startingPoint;
-        
-        public NewLocalChannel(ICloudEventAggregator cloudEventAggregator)
-        {
-            _cloudEventAggregator = cloudEventAggregator;
-
-            var logger = new TransformBlock<CloudEvent, CloudEvent>(ev =>
-            {
-                Debug.WriteLine(ev.ToJson());
-
-                return ev;
-            });
-            
-            _startingPoint = logger;
-            _blocks.Add(logger);
-            
-            var broadCast = new BroadcastBlock<CloudEvent>(ev => ev);
-            
-            _blocks.Add(broadCast);
-            
-            var outputAction = new ActionBlock<CloudEvent>(async ev =>
-            {
-                await _cloudEventAggregator.Publish(ev);
-            });
-
-            _blocks.Add(outputAction);
-            var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = true };
-            logger.LinkTo(broadCast, linkOptions: dataflowLinkOptions);
-            broadCast.LinkTo(outputAction, linkOptions: dataflowLinkOptions);
-        }
-
-        public async Task Send(CloudEvent cloudEvent)
-        {
-            await _startingPoint.SendAsync(cloudEvent);
-        }
-        
-        public void Dispose()
-        {
-            _startingPoint.Complete();
-            _startingPoint.Completion.Wait();
-        }
-    }
+    //
+    // public class NewLocalChannel : IChannel, IDisposable
+    // {
+    //     private readonly ICloudEventAggregator _cloudEventAggregator;
+    //     public string Name { get; } = "local";
+    //     private readonly ICloudEventChannelManager _channelManager;
+    //     private readonly string _targetChannelName;
+    //     private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
+    //     private ITargetBlock<CloudEvent> _startingPoint;
+    //     
+    //     public NewLocalChannel(ICloudEventAggregator cloudEventAggregator)
+    //     {
+    //         _cloudEventAggregator = cloudEventAggregator;
+    //
+    //         var logger = new TransformBlock<CloudEvent, CloudEvent>(ev =>
+    //         {
+    //             Debug.WriteLine(ev.ToJson());
+    //
+    //             return ev;
+    //         });
+    //         
+    //         _startingPoint = logger;
+    //         _blocks.Add(logger);
+    //         
+    //         var broadCast = new BroadcastBlock<CloudEvent>(ev => ev);
+    //         
+    //         _blocks.Add(broadCast);
+    //         
+    //         var outputAction = new ActionBlock<CloudEvent>(async ev =>
+    //         {
+    //             await _cloudEventAggregator.Publish(ev);
+    //         });
+    //
+    //         _blocks.Add(outputAction);
+    //         var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = true };
+    //         logger.LinkTo(broadCast, linkOptions: dataflowLinkOptions);
+    //         broadCast.LinkTo(outputAction, linkOptions: dataflowLinkOptions);
+    //     }
+    //
+    //     public async Task Send(object cloudEvent)
+    //     {
+    //         await _startingPoint.SendAsync(cloudEvent);
+    //     }
+    //     
+    //     public void Dispose()
+    //     {
+    //         _startingPoint.Complete();
+    //         _startingPoint.Completion.Wait();
+    //     }
+    // }
 }

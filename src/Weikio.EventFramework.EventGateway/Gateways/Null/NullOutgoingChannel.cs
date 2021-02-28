@@ -12,7 +12,7 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Null
 
         public string Name { get; }
 
-        public Task Send(CloudEvent cloudEvent)
+        public Task Send(object cloudEvent)
         {
             return Task.CompletedTask;
         }
@@ -27,7 +27,7 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Null
             Name = name;
         }
 
-        public Task Send(CloudEvent cloudEvent)
+        public Task Send(object cloudEvent)
         {
             return Task.CompletedTask;
         }

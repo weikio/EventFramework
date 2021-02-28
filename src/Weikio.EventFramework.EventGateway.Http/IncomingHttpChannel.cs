@@ -15,7 +15,7 @@ namespace Weikio.EventFramework.EventGateway.Http
         }
 
         public string Name { get; }
-        public Task Send(CloudEvent cloudEvent)
+        public Task Send(object cloudEvent)
         {
             throw new System.NotImplementedException();
         }

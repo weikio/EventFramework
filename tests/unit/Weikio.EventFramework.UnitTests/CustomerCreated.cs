@@ -15,4 +15,9 @@ namespace Weikio.EventFramework.UnitTests
             LastName = lastName;
         }
     }
+
+    public class InvoiceCreated
+    {
+        public int Index { get; set; } = 0;
+    }
 }

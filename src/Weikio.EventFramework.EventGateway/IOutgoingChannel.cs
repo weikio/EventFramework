@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CloudNative.CloudEvents;
+using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.EventGateway
 {
@@ -12,111 +11,122 @@ namespace Weikio.EventFramework.EventGateway
     {
     }
 
-    public static class ChannelBuilderExtensions
+    // public static class ChannelBuilderExtensions
+    // {
+    //     public static ChannelBuilder Channel(this ChannelBuilder channelBuilder, string channelName)
+    //     {
+    //         
+    //     }
+    //
+    //     public static ChannelBuilder Transform(this ChannelBuilder channelBuilder, Func<CloudEvent, CloudEvent> transform)
+    //     {
+    //         
+    //     }
+    //     public static ChannelBuilder Filter(this ChannelBuilder channelBuilder, Predicate<CloudEvent> predicate)
+    //     {
+    //         
+    //     }
+    // }
+
+    // public class ChannelBuilder
+    // {
+    //     private bool _isPubSub = true;
+    //     private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
+    //
+    //     public static ChannelBuilder Build()
+    //     {
+    //         return new ChannelBuilder();
+    //     }
+    //
+    //     public IChannel Create()
+    //     {
+    //         var logger = new TransformBlock<CloudEvent, CloudEvent>(ev =>
+    //         {
+    //             Debug.WriteLine(ev.ToJson());
+    //
+    //             return ev;
+    //         });
+    //     }
+    //
+    //     public void AddComponent(IDataflowBlock block)
+    //     {
+    //         
+    //     }
+    // }
+
+    public class EventAggregatorComponent
     {
-        public static ChannelBuilder Channel(this ChannelBuilder channelBuilder, string channelName)
+        private readonly ICloudEventAggregator _eventAggregator;
+
+        public EventAggregatorComponent(ICloudEventAggregator eventAggregator)
         {
-            
+            _eventAggregator = eventAggregator;
         }
 
-        public static ChannelBuilder Transform(this ChannelBuilder channelBuilder, Func<CloudEvent, CloudEvent> transform)
+        public ITargetBlock<CloudEvent> Create()
         {
-            
-        }
-        public static ChannelBuilder Filter(this ChannelBuilder channelBuilder, Predicate<CloudEvent> predicate)
-        {
-            
+            var result = new ActionBlock<CloudEvent>(async ev =>
+            {
+                await _eventAggregator.Publish(ev);
+            });
+
+            return result;
         }
     }
 
-    public class ChannelBuilder
+    public class LoggerComponent
     {
-        private bool _isPubSub = true;
-        private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
+        private readonly ILogger<LoggerComponent> _logger;
 
-        public static ChannelBuilder Build()
+        public LoggerComponent(ILogger<LoggerComponent> logger)
         {
-            return new ChannelBuilder();
+            _logger = logger;
         }
 
+        public Task<CloudEvent> Handle(CloudEvent ev)
+        {
+            var msg = ev.ToJson();
+            _logger.LogDebug(msg);
+            
+            return Task.FromResult(ev);
+        }
+
+        public IDataflowBlock Create()
+        {
+            var result = new TransformBlock<CloudEvent, CloudEvent>(ev =>
+            {
+                _logger.LogDebug(ev.ToJson());
+
+                return ev;
+            });
+
+            return result;
+        }
+    }
+
+    public class DefaultChannelFactory : IChannelFactory
+    {
         public IChannel Create()
         {
-            var logger = new TransformBlock<CloudEvent, CloudEvent>(ev =>
-            {
-                Debug.WriteLine(ev.ToJson());
-
-                return ev;
-            });
-            
-            
-        }
-
-        public void AddBlock(IDataflowBlock block)
-        {
-            
+            return new DataflowChannel();
         }
     }
-    
-    public class DataflowChannel : IOutgoingChannel, IDisposable
+
+    public interface IChannelFactory
     {
-        private readonly ICloudEventChannelManager _channelManager;
-        private readonly string _targetChannelName;
-        private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
-        private ITargetBlock<CloudEvent> _startingPoint;
-        public string Name { get; } = "test";
+        IChannel Create();
+    }
 
-        public DataflowChannel(ICloudEventChannelManager channelManager, string name, string targetChannelName)
+    public interface IChannelBuilder
+    {
+        IChannel Create(string channelName = ChannelName.Default);
+    }
+
+    public class DefaultChannelBuilder : IChannelBuilder
+    {
+        public IChannel Create(string channelName = ChannelName.Default)
         {
-            Name = name;
-            _channelManager = channelManager;
-            _targetChannelName = targetChannelName;
-
-            var logger = new TransformBlock<CloudEvent, CloudEvent>(ev =>
-            {
-                Debug.WriteLine(ev.ToJson());
-
-                return ev;
-            });
-
-            _startingPoint = logger;
-            _blocks.Add(logger);
-            
-            var transform = new TransformBlock<CloudEvent, CloudEvent>(ev =>
-            {
-                ev.Subject = "transformed";
-
-                return ev;
-            });
-
-            _blocks.Add(transform);
-            
-            var broadCast = new BroadcastBlock<CloudEvent>(ev => ev);
-            
-            _blocks.Add(broadCast);
-            
-            var outputAction = new ActionBlock<CloudEvent>(async ev =>
-            {
-                var local = _channelManager.Get(_targetChannelName);
-                await local.Send(ev);
-            });
-
-            _blocks.Add(outputAction);
-            
-            var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = true };
-            logger.LinkTo(transform, linkOptions: dataflowLinkOptions);
-            transform.LinkTo(broadCast, linkOptions: dataflowLinkOptions);
-            broadCast.LinkTo(outputAction, linkOptions: dataflowLinkOptions);
-        }
-        
-        public async Task Send(CloudEvent cloudEvent)
-        {
-            await _startingPoint.SendAsync(cloudEvent);
-        }
-
-        public void Dispose()
-        {
-            _startingPoint.Complete();
-            _startingPoint.Completion.Wait();
+            return new DataflowChannel(channelName);
         }
     }
 }

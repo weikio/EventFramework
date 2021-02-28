@@ -22,8 +22,9 @@ namespace Weikio.EventFramework.EventGateway.Http
 
         public string Name { get; }
 
-        public async Task Send(CloudEvent cloudEvent)
+        public async Task Send(object cloudEvents)
         {
+            var cloudEvent = (CloudEvent) cloudEvents;
             var client = _httpClientFactory();
 
             if (_configureClient != null)

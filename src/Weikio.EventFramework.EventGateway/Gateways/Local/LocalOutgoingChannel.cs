@@ -16,9 +16,9 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Local
 
         public string Name { get; }
 
-        public async Task Send(CloudEvent cloudEvent)
+        public async Task Send(object cloudEvent)
         {
-            await _writer.WriteAsync(cloudEvent);
+            await _writer.WriteAsync((CloudEvent) cloudEvent);
         }
     }
 }
