@@ -197,4 +197,9 @@ namespace Weikio.EventFramework.EventGateway
             await _endpoint.Completion;
         }
     }
+
+    public class DataflowContext
+    {
+        public object OriginalObject { get; set; }
+    }
 }
