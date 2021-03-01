@@ -17,7 +17,7 @@ namespace Weikio.EventFramework.EventGateway
         private readonly ICloudEventChannelManager _channelManager;
         private readonly string _targetChannelName;
         private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
-        private IPropagatorBlock<object, object> _startingPoint;
+        private IPropagatorBlock<object, DataflowContext> _startingPoint;
         private List<IDataflowBlock> _adapterLayerBlocks = new List<IDataflowBlock>();
         private List<IDataflowBlock> _splitterBlocks = new List<IDataflowBlock>();
 
@@ -42,56 +42,68 @@ namespace Weikio.EventFramework.EventGateway
             Name = name;
             var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = false };
 
-            _startingPoint = new BufferBlock<object>();
+            _startingPoint = new TransformBlock<object, DataflowContext>(o => new DataflowContext() { Channel = Name, CloudEvent = null, OriginalObject = o });
 
-            var objectToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o =>
+            var objectToCloudEventTransformer = new TransformBlock<DataflowContext, CloudEvent>(o =>
             {
                 var result = CloudEventCreator.Create(o);
 
                 return result;
             });
 
-            var objectSplitter = new TransformManyBlock<object, object>(item =>
+            var objectSplitter = new TransformManyBlock<DataflowContext, DataflowContext>(item =>
             {
-                var items = (IEnumerable) item;
-                return items.Cast<object>();
+                var items = (IEnumerable) item.OriginalObject;
+
+                var result = new List<DataflowContext>();
+                foreach (var o in items)
+                {
+                    result.Add(new DataflowContext()
+                    {
+                        Channel = Name,
+                        Object = o,
+                        OriginalObject = item
+                    });
+                }
+
+                return result;
             });
-            
-            var eventsSplitter = new TransformManyBlock<object, object>(item =>
+
+            var eventsSplitter = new TransformManyBlock<DataflowContext, DataflowContext>(item =>
             {
-                var items = (IEnumerable<CloudEvent>) item;
+                var items = (IEnumerable<DataflowContext>) item.OriginalObject;
 
                 return items;
             });
 
-            var cloudEventToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o => (CloudEvent) o);
+            var cloudEventToCloudEventTransformer = new TransformBlock<DataflowContext, CloudEvent>(o => (CloudEvent) o.OriginalObject);
 
             _startingPoint.LinkTo(cloudEventToCloudEventTransformer, dataflowLinkOptions, o =>
             {
-                return o is CloudEvent;
+                return o.OriginalObject is CloudEvent;
             });
-            
+
             _startingPoint.LinkTo(eventsSplitter, dataflowLinkOptions, o =>
             {
-                return o is IEnumerable<CloudEvent>;
+                return o.OriginalObject is IEnumerable<CloudEvent>;
             });
 
             _startingPoint.LinkTo(objectSplitter, dataflowLinkOptions, o =>
             {
-                return o is IEnumerable;
+                return o.OriginalObject is IEnumerable;
             });
 
             _startingPoint.LinkTo(objectToCloudEventTransformer, dataflowLinkOptions, o =>
             {
-                return o is CloudEvent == false;
+                return o.OriginalObject is CloudEvent == false;
             });
 
             objectSplitter.LinkTo(objectToCloudEventTransformer, dataflowLinkOptions);
             eventsSplitter.LinkTo(cloudEventToCloudEventTransformer, dataflowLinkOptions);
-            
+
             _adapterLayerBlocks.Add(objectToCloudEventTransformer);
             _adapterLayerBlocks.Add(cloudEventToCloudEventTransformer);
-            
+
             _splitterBlocks.Add(objectSplitter);
             _splitterBlocks.Add(eventsSplitter);
 
@@ -152,7 +164,7 @@ namespace Weikio.EventFramework.EventGateway
         public void Dispose()
         {
             _startingPoint.Complete();
-            
+
             _startingPoint.Complete();
             _startingPoint.Completion.Wait();
 
@@ -160,7 +172,7 @@ namespace Weikio.EventFramework.EventGateway
             {
                 splitterBlock.Complete();
             }
-            
+
             Task.WhenAll(_splitterBlocks.Select(x => x.Completion)).Wait();
 
             foreach (var adapterBlock in _adapterLayerBlocks)
@@ -183,7 +195,7 @@ namespace Weikio.EventFramework.EventGateway
             {
                 splitterBlock.Complete();
             }
-            
+
             await Task.WhenAll(_splitterBlocks.Select(x => x.Completion));
 
             foreach (var adapterBlock in _adapterLayerBlocks)
@@ -191,7 +203,17 @@ namespace Weikio.EventFramework.EventGateway
                 adapterBlock.Complete();
             }
 
-            await Task.WhenAll(_adapterLayerBlocks.Select(x => x.Completion));
+            await Task.WhenAny(Task.WhenAll(_adapterLayerBlocks.Select(x => x.Completion)), Task.WhenAll(_endpoint.Completion),
+                Task.Delay(TimeSpan.FromSeconds(3)));
+
+            foreach (var adapterBlock in _adapterLayerBlocks)
+            {
+                var s = adapterBlock.Completion;
+
+                if (s.IsFaulted)
+                {
+                }
+            }
 
             _endpoint.Complete();
             await _endpoint.Completion;
@@ -201,5 +223,8 @@ namespace Weikio.EventFramework.EventGateway
     public class DataflowContext
     {
         public object OriginalObject { get; set; }
+        public object Object { get; set; }
+        public CloudEvent CloudEvent { get; set; }
+        public string Channel { get; set; }
     }
 }

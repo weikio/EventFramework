@@ -242,6 +242,25 @@ namespace Weikio.EventFramework.UnitTests.Channels
 
             Assert.Equal(500, counter);
         }
+        
+        [Fact]
+        public async Task BatchOfObjectsContainSequence()
+        {
+            var currentIndex = 0;
+            var evs = CreateObjects();
+            
+            await using (var channel = new DataflowChannel("name", ev =>
+            {
+                var attributes = ev.GetAttributes();
+                var sequence = int.Parse(attributes["sequence"].ToString() ?? string.Empty);
+                
+                Assert.Equal(currentIndex, sequence);
+                currentIndex += 1;
+            }))
+            {
+                await channel.Send(evs);
+            }
+        }
 
         // Filtteröinti
         // Monien eventtien filtteröinti, vain halutut menevät läpi
