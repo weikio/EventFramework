@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -14,17 +11,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
 
-namespace Weikio.EventFramework.EventGateway
+namespace Weikio.EventFramework.Channels.Dataflow
 {
-    public class DataflowChannelOptions
-    {
-        public string Name { get; set; }
-        public List<Func<CloudEvent, Task>> Endpoints { get; set; } = new List<Func<CloudEvent, Task>>();
-        public Action<CloudEvent> Endpoint { get; set; }
-        public List<Func<CloudEvent, CloudEvent>> Components { get; set; } = new List<Func<CloudEvent, CloudEvent>>();
-        public ILoggerFactory LoggerFactory { get; set; }
-    }
-
     public class DataflowChannel : IOutgoingChannel, IDisposable, IAsyncDisposable
     {
         private readonly DataflowChannelOptions _options;

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Weikio.EventFramework.UnitTests
+namespace Weikio.EventFramework.Tests.Shared
 {
     public class CustomerCreated
     {

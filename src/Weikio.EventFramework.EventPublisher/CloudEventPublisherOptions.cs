@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 

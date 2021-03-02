@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Weikio.EventFramework.EventGateway
+namespace Weikio.EventFramework.Channels
 {
     public interface IIMyChannel 
     {

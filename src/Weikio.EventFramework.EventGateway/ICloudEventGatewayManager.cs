@@ -12,14 +12,4 @@ namespace Weikio.EventFramework.EventGateway
 
         Task Update();
     }
-    
-    public interface ICloudEventChannelManager
-    {
-        IEnumerable<IChannel> Channels { get; }
-        IChannel Get(string channelName);
-
-        void Add(string channelName, IChannel channel);
-
-        Task Update();
-    }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Channels;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels;
 
 namespace Weikio.EventFramework.EventGateway.Gateways.Local
 {

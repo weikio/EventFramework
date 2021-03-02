@@ -1,17 +1,15 @@
 ﻿using System.Threading.Tasks;
-using CloudNative.CloudEvents;
-using Weikio.EventFramework.Channels;
 
-namespace Weikio.EventFramework.EventGateway.Gateways.Null
+namespace Weikio.EventFramework.Channels
 {
-    public class NullOutgoingChannel : IOutgoingChannel
+    public class NullChannel : IChannel
     {
-        public NullOutgoingChannel(string name)
+        public string Name { get; }
+
+        public NullChannel(string name)
         {
             Name = name;
         }
-
-        public string Name { get; }
 
         public Task<bool> Send(object cloudEvent)
         {

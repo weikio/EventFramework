@@ -1,12 +1,11 @@
 ﻿using System;
-using Weikio.EventFramework.EventGateway;
 using Xunit;
 
-namespace Weikio.EventFramework.UnitTests.Channels
+namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 {
-    public class DefaultChannelBuilderTests
+    public class DataflowChannelBuilderTests
     {
-        private IChannelBuilder _builder = new DefaultChannelBuilder();
+        private IChannelBuilder _builder = new DataflowChannelBuilder();
 
         [Fact]
         public void CanCreateChannel()

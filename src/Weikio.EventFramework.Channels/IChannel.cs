@@ -1,8 +1,6 @@
-﻿using System.Threading.Channels;
-using System.Threading.Tasks;
-using CloudNative.CloudEvents;
+﻿using System.Threading.Tasks;
 
-namespace Weikio.EventFramework.EventGateway
+namespace Weikio.EventFramework.Channels
 {
     public interface IChannel
     {

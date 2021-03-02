@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.Channels;
 
 namespace Weikio.EventFramework.EventGateway
 {

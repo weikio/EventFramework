@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Weikio.EventFramework.EventGateway
+namespace Weikio.EventFramework.Channels
 {
     public class UnknownChannelException : Exception
     {

@@ -7,11 +7,11 @@ using CloudNative.CloudEvents;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
-using Weikio.EventFramework.EventGateway;
+using Weikio.EventFramework.Tests.Shared;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Weikio.EventFramework.UnitTests.Channels
+namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 {
     public class DataflowChannelTests
     {
@@ -260,7 +260,7 @@ namespace Weikio.EventFramework.UnitTests.Channels
 
             Assert.Equal(500, counter);
         }
-        
+
         [Fact]
         public async Task SentMassiveAmountsOfObjectsFromMultipleThreadsAreAllHandled()
         {
@@ -936,7 +936,7 @@ namespace Weikio.EventFramework.UnitTests.Channels
 
             return evs;
         }
-        
+
         private static List<InvoiceCreated> CreateManyObjects()
         {
             return CreateObjects(50000);

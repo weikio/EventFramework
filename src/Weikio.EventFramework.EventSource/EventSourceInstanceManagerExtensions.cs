@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;

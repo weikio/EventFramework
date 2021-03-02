@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.EventGateway.Gateways.Local
