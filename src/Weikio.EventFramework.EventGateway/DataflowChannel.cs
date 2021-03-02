@@ -2,10 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.Extensions;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
 
@@ -17,7 +20,7 @@ namespace Weikio.EventFramework.EventGateway
         private readonly ICloudEventChannelManager _channelManager;
         private readonly string _targetChannelName;
         private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
-        private IPropagatorBlock<object, DataflowContext> _startingPoint;
+        private IPropagatorBlock<object, object> _startingPoint;
         private List<IDataflowBlock> _adapterLayerBlocks = new List<IDataflowBlock>();
         private List<IDataflowBlock> _splitterBlocks = new List<IDataflowBlock>();
 
@@ -42,75 +45,109 @@ namespace Weikio.EventFramework.EventGateway
             Name = name;
             var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = false };
 
-            _startingPoint = new TransformBlock<object, DataflowContext>(o => new DataflowContext() { Channel = Name, CloudEvent = null, OriginalObject = o });
+            _startingPoint = new BufferBlock<object>();
 
-            var objectToCloudEventTransformer = new TransformBlock<DataflowContext, CloudEvent>(o =>
+            var objectToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o =>
             {
                 var result = CloudEventCreator.Create(o);
 
                 return result;
             });
 
-            var objectSplitter = new TransformManyBlock<DataflowContext, DataflowContext>(item =>
+            var batchObjectToCloudEventTransformer = new TransformBlock<BatchItem, CloudEvent>(o =>
             {
-                var items = (IEnumerable) item.OriginalObject;
-
-                var result = new List<DataflowContext>();
-                foreach (var o in items)
-                {
-                    result.Add(new DataflowContext()
-                    {
-                        Channel = Name,
-                        Object = o,
-                        OriginalObject = item
-                    });
-                }
+                var result = CloudEventCreator.Create(o.Object, extensions: new ICloudEventExtension[] { new IntegerSequenceExtension(o.Sequence) });
 
                 return result;
             });
 
-            var eventsSplitter = new TransformManyBlock<DataflowContext, DataflowContext>(item =>
+            var batchEventToCloudEventTransformer = new TransformBlock<BatchItem, CloudEvent>(o =>
             {
-                var items = (IEnumerable<DataflowContext>) item.OriginalObject;
+                var ev = (CloudEvent) o.Object;
 
-                return items;
+                var attributes = ev.GetAttributes();
+                var containsSequence = attributes.ContainsKey(SequenceExtension.SequenceAttributeName);
+
+                if (containsSequence)
+                {
+                    return ev;
+                }
+
+                attributes.Add(SequenceExtension.SequenceTypeAttributeName, "Integer");
+                attributes.Add(SequenceExtension.SequenceAttributeName, o.Sequence);
+
+                return ev;
             });
 
-            var cloudEventToCloudEventTransformer = new TransformBlock<DataflowContext, CloudEvent>(o => (CloudEvent) o.OriginalObject);
+            var batchSplitter = new TransformManyBlock<object, BatchItem>(item =>
+            {
+                var items = (IEnumerable) item;
+
+                // Sequence starts from 0, not from 1
+                return items.Cast<object>().Select((x, i) => new BatchItem(x, i+1));
+            });
+
+            var cloudEventToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o => (CloudEvent) o);
 
             _startingPoint.LinkTo(cloudEventToCloudEventTransformer, dataflowLinkOptions, o =>
             {
-                return o.OriginalObject is CloudEvent;
+                return o is CloudEvent;
             });
 
-            _startingPoint.LinkTo(eventsSplitter, dataflowLinkOptions, o =>
+            _startingPoint.LinkTo(batchSplitter, dataflowLinkOptions, o =>
             {
-                return o.OriginalObject is IEnumerable<CloudEvent>;
+                return o is IEnumerable;
             });
 
-            _startingPoint.LinkTo(objectSplitter, dataflowLinkOptions, o =>
+            batchSplitter.LinkTo(batchObjectToCloudEventTransformer, dataflowLinkOptions, item =>
             {
-                return o.OriginalObject is IEnumerable;
+                return (item.Object is CloudEvent) == false;
+            });
+            
+            batchSplitter.LinkTo(batchEventToCloudEventTransformer, dataflowLinkOptions, item =>
+            {
+                return item.Object is CloudEvent;
             });
 
             _startingPoint.LinkTo(objectToCloudEventTransformer, dataflowLinkOptions, o =>
             {
-                return o.OriginalObject is CloudEvent == false;
+                if (o is IEnumerable)
+                {
+                    return false;
+                }
+
+                if (o is CloudEvent)
+                {
+                    return false;
+                }
+
+                return true;
             });
 
-            objectSplitter.LinkTo(objectToCloudEventTransformer, dataflowLinkOptions);
-            eventsSplitter.LinkTo(cloudEventToCloudEventTransformer, dataflowLinkOptions);
 
             _adapterLayerBlocks.Add(objectToCloudEventTransformer);
             _adapterLayerBlocks.Add(cloudEventToCloudEventTransformer);
+            _adapterLayerBlocks.Add(batchEventToCloudEventTransformer);
+            _adapterLayerBlocks.Add(batchObjectToCloudEventTransformer);
 
-            _splitterBlocks.Add(objectSplitter);
-            _splitterBlocks.Add(eventsSplitter);
+            _splitterBlocks.Add(batchSplitter);
 
             cloudEventToCloudEventTransformer.LinkTo(_endpoint);
             objectToCloudEventTransformer.LinkTo(_endpoint);
+            batchObjectToCloudEventTransformer.LinkTo(_endpoint);
+            batchEventToCloudEventTransformer.LinkTo(_endpoint);
+        }
 
-            // _startingPoint = new TransformBlock<CloudEvent, CloudEvent>(ev => ev);
+        private class BatchItem
+        {
+            public object Object { get; set; }
+            public int Sequence { get; set; }
+
+            public BatchItem(object o, int sequence)
+            {
+                Object = o;
+                Sequence = sequence;
+            }
         }
 
         public DataflowChannel(ICloudEventChannelManager channelManager, string name, string targetChannelName)
@@ -206,15 +243,6 @@ namespace Weikio.EventFramework.EventGateway
             await Task.WhenAny(Task.WhenAll(_adapterLayerBlocks.Select(x => x.Completion)), Task.WhenAll(_endpoint.Completion),
                 Task.Delay(TimeSpan.FromSeconds(3)));
 
-            foreach (var adapterBlock in _adapterLayerBlocks)
-            {
-                var s = adapterBlock.Completion;
-
-                if (s.IsFaulted)
-                {
-                }
-            }
-
             _endpoint.Complete();
             await _endpoint.Completion;
         }
@@ -223,8 +251,5 @@ namespace Weikio.EventFramework.EventGateway
     public class DataflowContext
     {
         public object OriginalObject { get; set; }
-        public object Object { get; set; }
-        public CloudEvent CloudEvent { get; set; }
-        public string Channel { get; set; }
     }
 }

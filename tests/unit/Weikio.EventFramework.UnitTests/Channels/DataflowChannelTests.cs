@@ -254,12 +254,52 @@ namespace Weikio.EventFramework.UnitTests.Channels
                 var attributes = ev.GetAttributes();
                 var sequence = int.Parse(attributes["sequence"].ToString() ?? string.Empty);
                 
-                Assert.Equal(currentIndex, sequence);
+                Assert.Equal(currentIndex+1, sequence);
                 currentIndex += 1;
             }))
             {
                 await channel.Send(evs);
             }
+        }
+        
+        [Fact]
+        public async Task BatchOfEventsContainSequence()
+        {
+            var currentIndex = 0;
+            var evs = CreateEvents();
+            
+            await using (var channel = new DataflowChannel("name", ev =>
+            {
+                var attributes = ev.GetAttributes();
+                var sequence = int.Parse(attributes["sequence"].ToString() ?? string.Empty);
+                
+                Assert.Equal(currentIndex+1, sequence);
+                currentIndex += 1;
+            }))
+            {
+                await channel.Send(evs);
+            }
+        }
+        
+        [Fact]
+        public async Task SequenceStartsFromOne()
+        {
+            var evs = CreateObjects();
+            var seqs = new List<int>();
+            
+            await using (var channel = new DataflowChannel("name", ev =>
+            {
+                var attributes = ev.GetAttributes();
+                var sequence = int.Parse(attributes["sequence"].ToString() ?? string.Empty);
+                
+                seqs.Add(sequence);
+            }))
+            {
+                await channel.Send(evs);
+            }
+            
+            Assert.Equal(1, seqs.Min());
+            Assert.Equal(500, seqs.Max());
         }
 
         // Filtteröinti
