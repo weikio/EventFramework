@@ -9,43 +9,88 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventCreator;
 
 namespace Weikio.EventFramework.EventGateway
 {
+    public class DataflowChannelOptions
+    {
+        public string Name { get; set; }
+        public List<Func<CloudEvent, Task>> Endpoints { get; set; } = new List<Func<CloudEvent, Task>>();
+        public Action<CloudEvent> Endpoint { get; set; }
+        public List<Func<CloudEvent, CloudEvent>> Components { get; set; } = new List<Func<CloudEvent, CloudEvent>>();
+        public ILoggerFactory LoggerFactory { get; set; }
+    }
+
     public class DataflowChannel : IOutgoingChannel, IDisposable, IAsyncDisposable
     {
-        private readonly ActionBlock<CloudEvent> _endpoint;
+        private readonly DataflowChannelOptions _options;
         private readonly ICloudEventChannelManager _channelManager;
         private readonly string _targetChannelName;
         private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
-        private IPropagatorBlock<object, object> _startingPoint;
-        private List<IDataflowBlock> _adapterLayerBlocks = new List<IDataflowBlock>();
-        private List<IDataflowBlock> _splitterBlocks = new List<IDataflowBlock>();
-
-        public string Name { get; }
-
-        public DataflowChannel(string name = ChannelName.Default, Action<CloudEvent> endpoint = null)
+        private IPropagatorBlock<object, object> _startingPoint = new BufferBlock<object>(new DataflowBlockOptions()
         {
-            if (name == null)
+            
+            BoundedCapacity = 15000000
+        });
+        private List<IDataflowBlock> _adapterBlocks = new List<IDataflowBlock>();
+        private List<IDataflowBlock> _splitterBlocks = new List<IDataflowBlock>();
+        private List<ITargetBlock<CloudEvent>> _endpointBlocks = new List<ITargetBlock<CloudEvent>>();
+        private List<TransformBlock<CloudEvent, CloudEvent>> _componentBlocks = new List<TransformBlock<CloudEvent, CloudEvent>>();
+        private TransformBlock<CloudEvent, CloudEvent> _firstComponent = null;
+        private TransformBlock<CloudEvent, CloudEvent> _lastComponent = null;
+        private ILogger _logger;
+        private IPropagatorBlock<CloudEvent, CloudEvent> _endpointChannelBlock = new BroadcastBlock<CloudEvent>(null);
+        private Dictionary<string, IDisposable> _subscribers = new Dictionary<string, IDisposable>();
+        private Dictionary<string, IChannel> _subscriberChannels = new Dictionary<string, IChannel>();
+
+        public string Name
+        {
+            get
             {
-                throw new ArgumentNullException(nameof(name));
+                return _options.Name;
+            }
+        }
+
+        public DataflowChannel(DataflowChannelOptions options)
+        {
+            _options = options;
+
+            if (Name == null)
+            {
+                throw new ArgumentNullException(nameof(Name));
             }
 
-            if (endpoint != null)
+            if (_options.LoggerFactory != null)
             {
-                _endpoint = new ActionBlock<CloudEvent>(endpoint, new ExecutionDataflowBlockOptions() { });
+                _logger = _options.LoggerFactory.CreateLogger(typeof(DataflowChannel));
             }
             else
             {
-                _endpoint = new ActionBlock<CloudEvent>(ev => { });
+                _logger = new NullLogger<DataflowChannel>();
             }
 
-            Name = name;
-            var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = false };
+            if (options.Endpoint != null)
+            {
+                _endpointBlocks.Add(new ActionBlock<CloudEvent>(options.Endpoint));
+            }
+            else
+            {
+                _endpointBlocks.Add(new ActionBlock<CloudEvent>(ev => { }));
+            }
 
-            _startingPoint = new BufferBlock<object>();
+            if (options.Endpoints?.Any() == true)
+            {
+                foreach (var endpointAction in options.Endpoints)
+                {
+                    _endpointBlocks.Add(new ActionBlock<CloudEvent>(endpointAction));
+                }
+            }
+
+            var propageteLink = new DataflowLinkOptions() { PropagateCompletion = true };
 
             var objectToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o =>
             {
@@ -84,32 +129,32 @@ namespace Weikio.EventFramework.EventGateway
                 var items = (IEnumerable) item;
 
                 // Sequence starts from 0, not from 1
-                return items.Cast<object>().Select((x, i) => new BatchItem(x, i+1));
+                return items.Cast<object>().Select((x, i) => new BatchItem(x, i + 1));
             });
 
             var cloudEventToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o => (CloudEvent) o);
 
-            _startingPoint.LinkTo(cloudEventToCloudEventTransformer, dataflowLinkOptions, o =>
+            _startingPoint.LinkTo(cloudEventToCloudEventTransformer, propageteLink, o =>
             {
                 return o is CloudEvent;
             });
 
-            _startingPoint.LinkTo(batchSplitter, dataflowLinkOptions, o =>
+            _startingPoint.LinkTo(batchSplitter, propageteLink, o =>
             {
                 return o is IEnumerable;
             });
 
-            batchSplitter.LinkTo(batchObjectToCloudEventTransformer, dataflowLinkOptions, item =>
+            batchSplitter.LinkTo(batchObjectToCloudEventTransformer, propageteLink, item =>
             {
                 return (item.Object is CloudEvent) == false;
             });
-            
-            batchSplitter.LinkTo(batchEventToCloudEventTransformer, dataflowLinkOptions, item =>
+
+            batchSplitter.LinkTo(batchEventToCloudEventTransformer, propageteLink, item =>
             {
                 return item.Object is CloudEvent;
             });
 
-            _startingPoint.LinkTo(objectToCloudEventTransformer, dataflowLinkOptions, o =>
+            _startingPoint.LinkTo(objectToCloudEventTransformer, propageteLink, o =>
             {
                 if (o is IEnumerable)
                 {
@@ -124,18 +169,153 @@ namespace Weikio.EventFramework.EventGateway
                 return true;
             });
 
-
-            _adapterLayerBlocks.Add(objectToCloudEventTransformer);
-            _adapterLayerBlocks.Add(cloudEventToCloudEventTransformer);
-            _adapterLayerBlocks.Add(batchEventToCloudEventTransformer);
-            _adapterLayerBlocks.Add(batchObjectToCloudEventTransformer);
+            _adapterBlocks.Add(objectToCloudEventTransformer);
+            _adapterBlocks.Add(cloudEventToCloudEventTransformer);
+            _adapterBlocks.Add(batchEventToCloudEventTransformer);
+            _adapterBlocks.Add(batchObjectToCloudEventTransformer);
 
             _splitterBlocks.Add(batchSplitter);
 
-            cloudEventToCloudEventTransformer.LinkTo(_endpoint);
-            objectToCloudEventTransformer.LinkTo(_endpoint);
-            batchObjectToCloudEventTransformer.LinkTo(_endpoint);
-            batchEventToCloudEventTransformer.LinkTo(_endpoint);
+            foreach (var optionsComponent in options.Components)
+            {
+                var transformBlock = new TransformBlock<CloudEvent, CloudEvent>(ev =>
+                {
+                    try
+                    {
+                        return optionsComponent.Invoke(ev);
+                    }
+                    catch (Exception e)
+                    {
+                        // ignored
+                    }
+
+                    return null;
+                });
+
+                _componentBlocks.Add(transformBlock);
+            }
+
+            for (var i = 0; i < _componentBlocks.Count; i++)
+            {
+                var block = _componentBlocks[i];
+
+                if (_firstComponent == null)
+                {
+                    _firstComponent = block;
+                }
+
+                _lastComponent = block;
+
+                block.LinkTo(DataflowBlock.NullTarget<CloudEvent>(), propageteLink, ev => ev == null);
+
+                if (i + 1 < _componentBlocks.Count)
+                {
+                    var nextBlock = _componentBlocks[i + 1];
+                    block.LinkTo(nextBlock, propageteLink, ev => ev != null);
+                }
+            }
+
+            if (_firstComponent == null)
+            {
+                _firstComponent = new TransformBlock<CloudEvent, CloudEvent>(ev => ev);
+                _lastComponent = new TransformBlock<CloudEvent, CloudEvent>(ev => ev);
+
+                _firstComponent.LinkTo(_lastComponent, propageteLink);
+                _componentBlocks.Add(_firstComponent);
+                _componentBlocks.Add(_lastComponent);
+            }
+
+            cloudEventToCloudEventTransformer.LinkTo(_firstComponent);
+            objectToCloudEventTransformer.LinkTo(_firstComponent);
+            batchObjectToCloudEventTransformer.LinkTo(_firstComponent);
+            batchEventToCloudEventTransformer.LinkTo(_firstComponent);
+            
+            // var subscriberPublishBlock = new ActionBlock<CloudEvent>(async ev =>
+            // {
+            //     foreach (var subscriber in _subscriberChannels)
+            //     {
+            //         var status = await subscriber.Value.Send(ev);
+            //
+            //         if (status == false)
+            //         {
+            //             _logger.LogError("Failed to send message to subscriber");
+            //         }
+            //     }
+            // });
+            //
+            // _endpointBlocks.Add(subscriberPublishBlock);
+            
+            foreach (var endpointBlock in _endpointBlocks)
+            {
+                _endpointChannelBlock.LinkTo(endpointBlock, propageteLink);
+            }
+
+            _lastComponent.LinkTo(_endpointChannelBlock, ev => ev != null);
+
+            _lastComponent.LinkTo(DataflowBlock.NullTarget<CloudEvent>(), ev => ev == null);
+        }
+
+        private IPropagatorBlock<CloudEvent, CloudEvent> CreateComponentLayer()
+        {
+            //...
+            var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = false };
+
+            foreach (var optionsComponent in _options.Components)
+            {
+                var transformBlock = new TransformBlock<CloudEvent, CloudEvent>(ev =>
+                {
+                    try
+                    {
+                        return optionsComponent.Invoke(ev);
+                    }
+                    catch (Exception e)
+                    {
+                        // ignored
+                    }
+
+                    return null;
+                });
+
+                _componentBlocks.Add(transformBlock);
+            }
+
+            for (var i = 0; i < _componentBlocks.Count; i++)
+            {
+                var block = _componentBlocks[i];
+
+                if (_firstComponent == null)
+                {
+                    _firstComponent = block;
+                }
+
+                _lastComponent = block;
+
+                block.LinkTo(DataflowBlock.NullTarget<CloudEvent>(), dataflowLinkOptions, ev => ev == null);
+
+                if (i + 1 < _componentBlocks.Count)
+                {
+                    var nextBlock = _componentBlocks[i + 1];
+                    block.LinkTo(nextBlock, dataflowLinkOptions, ev => ev != null);
+                }
+            }
+
+            if (_firstComponent == null)
+            {
+                _firstComponent = new TransformBlock<CloudEvent, CloudEvent>(ev => ev);
+                _lastComponent = new TransformBlock<CloudEvent, CloudEvent>(ev => ev);
+
+                _firstComponent.LinkTo(_lastComponent, dataflowLinkOptions);
+
+                _componentBlocks.Add(_firstComponent);
+                _componentBlocks.Add(_lastComponent);
+            }
+
+            return null;
+        }
+
+        public DataflowChannel(string name = ChannelName.Default, Action<CloudEvent> endpoint = null) : this(
+            new DataflowChannelOptions() { Name = name, Endpoint = endpoint })
+        {
         }
 
         private class BatchItem
@@ -152,13 +332,13 @@ namespace Weikio.EventFramework.EventGateway
 
         public DataflowChannel(ICloudEventChannelManager channelManager, string name, string targetChannelName)
         {
-            Name = name;
+            // Name = name;
             _channelManager = channelManager;
             _targetChannelName = targetChannelName;
 
             var logger = new TransformBlock<CloudEvent, CloudEvent>(ev =>
             {
-                Debug.WriteLine(ev.ToJson());
+                Console.WriteLine(ev.ToJson());
 
                 return ev;
             });
@@ -193,63 +373,180 @@ namespace Weikio.EventFramework.EventGateway
             // broadCast.LinkTo(outputAction, linkOptions: dataflowLinkOptions);
         }
 
-        public async Task Send(object cloudEvent)
+        public async Task<bool> Send(object cloudEvent)
         {
-            await _startingPoint.SendAsync(cloudEvent);
+            return await _startingPoint.SendAsync(cloudEvent);
+        }
+
+        public void Subscribe(IChannel channel)
+        {
+            if (channel == null)
+            {
+                throw new ArgumentNullException(nameof(channel));
+            }
+
+            if (channel is DataflowChannel == false)
+            {
+                throw new Exception("Only dataflow channel is supported for subscribe");
+            }
+
+            var dataflowChannel = (DataflowChannel) channel;
+            
+            var link = _endpointChannelBlock.LinkTo(dataflowChannel._startingPoint, new DataflowLinkOptions()
+            {
+            });
+
+            _subscribers.Add(channel.Name, link);
+            // _subscriberChannels.Add(channel.Name, dataflowChannel);
+
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            if (channel == null)
+            {
+                throw new ArgumentNullException(nameof(channel));
+            }
+
+            var link = _subscribers.FirstOrDefault(x => string.Equals(x.Key, channel.Name, StringComparison.InvariantCultureIgnoreCase));
+
+            if (link.Key == null)
+            {
+                // Todo: Should we throw if unsubscribing unknown channel
+                return;
+            }
+
+            link.Value.Dispose();
+
+            _subscribers.Remove(link.Key);
         }
 
         public void Dispose()
         {
+            _logger.LogInformation("Disposing channel {ChannelName}", Name);
             _startingPoint.Complete();
 
-            _startingPoint.Complete();
-            _startingPoint.Completion.Wait();
+            var timeoutInSeconds = 180;
+
+            Task.WhenAny(
+                Task.WhenAll(_startingPoint.Completion),
+                Task.WhenAll(_splitterBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_adapterBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_componentBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_endpointChannelBlock.Completion),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
 
             foreach (var splitterBlock in _splitterBlocks)
             {
                 splitterBlock.Complete();
             }
 
-            Task.WhenAll(_splitterBlocks.Select(x => x.Completion)).Wait();
+            Task.WhenAny(
+                Task.WhenAll(_splitterBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_adapterBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_componentBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_endpointChannelBlock.Completion),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
 
-            foreach (var adapterBlock in _adapterLayerBlocks)
+            foreach (var adapterBlock in _adapterBlocks)
             {
                 adapterBlock.Complete();
             }
 
-            Task.WhenAll(_adapterLayerBlocks.Select(x => x.Completion)).Wait();
+            Task.WhenAny(
+                Task.WhenAll(_adapterBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_componentBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_endpointChannelBlock.Completion),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
 
-            _endpoint.Complete();
-            _endpoint.Completion.Wait();
+            foreach (var componentBlock in _componentBlocks)
+            {
+                componentBlock.Complete();
+
+                Task.WhenAny(
+                    Task.WhenAll(componentBlock.Completion),
+                    Task.WhenAll(_endpointChannelBlock.Completion),
+                    Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
+            }
+
+            _endpointChannelBlock.Complete();
+
+            Task.WhenAny(
+                Task.WhenAll(_endpointChannelBlock.Completion),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
+
+            Task.WhenAny(
+                Task.WhenAll(_endpointBlocks.Select(x => x.Completion)),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
+
+            if (_subscribers?.Any() == true)
+            {
+                foreach (var subscriber in _subscribers)
+                {
+                    subscriber.Value.Dispose();
+                }
+            }
         }
 
         public async ValueTask DisposeAsync()
         {
+            _logger.LogInformation("Disposing channel {ChannelName} asynchronously", Name);
+
             _startingPoint.Complete();
             await _startingPoint.Completion;
+
+            var timeoutInSeconds = 180;
 
             foreach (var splitterBlock in _splitterBlocks)
             {
                 splitterBlock.Complete();
+
+                await Task.WhenAny(
+                    Task.WhenAll(splitterBlock.Completion),
+                    Task.WhenAll(_adapterBlocks.Select(x => x.Completion)),
+                    Task.WhenAll(_componentBlocks.Select(x => x.Completion)),
+                    Task.WhenAll(_endpointChannelBlock.Completion),
+                    Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds)));
             }
 
-            await Task.WhenAll(_splitterBlocks.Select(x => x.Completion));
-
-            foreach (var adapterBlock in _adapterLayerBlocks)
+            foreach (var adapterBlock in _adapterBlocks)
             {
                 adapterBlock.Complete();
             }
 
-            await Task.WhenAny(Task.WhenAll(_adapterLayerBlocks.Select(x => x.Completion)), Task.WhenAll(_endpoint.Completion),
-                Task.Delay(TimeSpan.FromSeconds(3)));
+            await Task.WhenAny(
+                Task.WhenAll(_adapterBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_componentBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_endpointChannelBlock.Completion),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds)));
 
-            _endpoint.Complete();
-            await _endpoint.Completion;
+            foreach (var componentBlock in _componentBlocks)
+            {
+                componentBlock.Complete();
+
+                await Task.WhenAny(
+                    Task.WhenAll(componentBlock.Completion),
+                    Task.WhenAll(_endpointChannelBlock.Completion),
+                    Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds)));
+            }
+
+            _endpointChannelBlock.Complete();
+
+            await Task.WhenAny(
+                Task.WhenAll(_endpointChannelBlock.Completion),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds)));
+
+            await Task.WhenAny(
+                Task.WhenAll(_endpointBlocks.Select(x => x.Completion)),
+                Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds)));
+
+            if (_subscribers?.Any() == true)
+            {
+                foreach (var subscriber in _subscribers)
+                {
+                    subscriber.Value.Dispose();
+                }
+            }
         }
-    }
-
-    public class DataflowContext
-    {
-        public object OriginalObject { get; set; }
     }
 }

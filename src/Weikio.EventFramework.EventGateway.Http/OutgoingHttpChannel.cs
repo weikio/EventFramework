@@ -22,7 +22,7 @@ namespace Weikio.EventFramework.EventGateway.Http
 
         public string Name { get; }
 
-        public async Task Send(object cloudEvents)
+        public async Task<bool> Send(object cloudEvents)
         {
             var cloudEvent = (CloudEvent) cloudEvents;
             var client = _httpClientFactory();
@@ -42,8 +42,10 @@ namespace Weikio.EventFramework.EventGateway.Http
 
                 if (result.IsSuccessStatusCode)
                 {
-                    return;
+                    return true;
                 }
+
+                return false;
             }
             catch (Exception e)
             {
@@ -51,6 +53,16 @@ namespace Weikio.EventFramework.EventGateway.Http
 
                 throw;
             }
+        }
+
+        public void Subscribe(IChannel channel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -12,9 +12,19 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Null
 
         public string Name { get; }
 
-        public Task Send(object cloudEvent)
+        public Task<bool> Send(object cloudEvent)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(true);
+        }
+
+        public void Subscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
         }
     }
     
@@ -27,9 +37,19 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Null
             Name = name;
         }
 
-        public Task Send(object cloudEvent)
+        public Task<bool> Send(object cloudEvent)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(true);
+        }
+
+        public void Subscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

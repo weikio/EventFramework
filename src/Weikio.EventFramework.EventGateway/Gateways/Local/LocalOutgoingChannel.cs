@@ -16,9 +16,21 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Local
 
         public string Name { get; }
 
-        public async Task Send(object cloudEvent)
+        public async Task<bool> Send(object cloudEvent)
         {
             await _writer.WriteAsync((CloudEvent) cloudEvent);
+
+            return true;
+        }
+
+        public void Subscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
