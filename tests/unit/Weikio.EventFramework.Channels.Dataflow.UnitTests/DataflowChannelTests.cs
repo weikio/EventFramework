@@ -261,7 +261,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             Assert.Equal(500, counter);
         }
 
-        [Fact]
+        [Fact(Skip = "Performance")]
         public async Task SentMassiveAmountsOfObjectsFromMultipleThreadsAreAllHandled()
         {
             var counter = 0;
@@ -390,12 +390,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Func<CloudEvent, CloudEvent>(ev =>
             {
                 counter += 1;
 
                 return ev;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -406,25 +406,191 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         }
 
         [Fact]
+        public async Task CanAddComponentWithPredicate()
+        {
+            var counter = 0;
+
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            CloudEvent AddCounter(CloudEvent cloudEvent)
+            {
+                counter += 1;
+
+                return cloudEvent;
+            }
+
+            bool ShouldRunComponent(CloudEvent cloudEvent)
+            {
+                var inv = CloudEvent<InvoiceCreated>.Create(cloudEvent);
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            options.Components.Add((AddCounter, ShouldRunComponent));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 5 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 7 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(2, counter);
+        }
+
+        [Fact]
+        public async Task CanAddComponentWithPredicateIntoBeginning()
+        {
+            var counter = 0;
+
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            CloudEvent AddCounter(CloudEvent cloudEvent)
+            {
+                counter += 1;
+
+                return cloudEvent;
+            }
+
+            bool ShouldRunComponent(CloudEvent cloudEvent)
+            {
+                var inv = CloudEvent<InvoiceCreated>.Create(cloudEvent);
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            options.Components.Add((AddCounter, ShouldRunComponent));
+            options.Components.Add((AddCounter, null));
+            options.Components.Add((AddCounter, null));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 5 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 7 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(12, counter);
+        }
+
+        [Fact]
+        public async Task CanAddComponentWithPredicateIntoMiddle()
+        {
+            var counter = 0;
+
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            CloudEvent AddCounter(CloudEvent cloudEvent)
+            {
+                counter += 1;
+
+                return cloudEvent;
+            }
+
+            bool ShouldRunComponent(CloudEvent cloudEvent)
+            {
+                var inv = CloudEvent<InvoiceCreated>.Create(cloudEvent);
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            options.Components.Add((AddCounter, null));
+            options.Components.Add((AddCounter, ShouldRunComponent));
+            options.Components.Add((AddCounter, null));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 5 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 7 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(12, counter);
+        }
+
+        [Fact]
+        public async Task CanAddComponentWithPredicateIntoEnd()
+        {
+            var counter = 0;
+
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            CloudEvent AddCounter(CloudEvent cloudEvent)
+            {
+                counter += 1;
+
+                return cloudEvent;
+            }
+
+            bool ShouldRunComponent(CloudEvent cloudEvent)
+            {
+                var inv = CloudEvent<InvoiceCreated>.Create(cloudEvent);
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            options.Components.Add((AddCounter, null));
+            options.Components.Add((AddCounter, null));
+            options.Components.Add((AddCounter, ShouldRunComponent));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 5 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 7 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(12, counter);
+        }
+
+        [Fact]
         public async Task CanAddComponents()
         {
             var counter = 0;
 
             var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Func<CloudEvent, CloudEvent>(ev =>
             {
                 counter += 1;
 
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Func<CloudEvent, CloudEvent>(ev =>
             {
                 counter += 5;
 
                 return ev;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -441,26 +607,26 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 counters.Add(1);
 
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 counters.Add(5);
 
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 counters.Add(100);
 
                 return ev;
-            });
+            }));
 
             await using (var channel = new DataflowChannel(options))
             {
@@ -480,14 +646,14 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 counter += 1;
 
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 if (!hasCrashed)
                 {
@@ -499,7 +665,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 counter += 5;
 
                 return ev;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -518,12 +684,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 if (!hasCrashed)
                 {
@@ -533,7 +699,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 }
 
                 return ev;
-            });
+            }));
 
             options.Endpoint = ev =>
             {
@@ -567,7 +733,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(ev => null);
+            options.Components.Add(new Component(ev => null));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -590,12 +756,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 ev.Subject = "transformed";
 
                 return ev;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -616,26 +782,26 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 ev.Subject = (ev.Subject ?? "") + "1";
 
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 ev.Subject = (ev.Subject ?? "") + "1";
 
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 ev.Subject = (ev.Subject ?? "") + "1";
 
                 return ev;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -658,7 +824,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -668,9 +834,9 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 }
 
                 return ev;
-            });
+            }));
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -680,7 +846,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 }
 
                 return ev;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -707,7 +873,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 },
             };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -717,7 +883,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 }
 
                 return ev;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -737,19 +903,19 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var counter = 0;
 
-            options.Endpoints.Add(ev =>
+            options.Endpoints.Add(new Endpoint(ev =>
             {
                 counter += 1;
 
                 return Task.CompletedTask;
-            });
+            }));
 
-            options.Endpoints.Add(ev =>
+            options.Endpoints.Add(new Endpoint(ev =>
             {
                 counter += 1;
 
                 return Task.CompletedTask;
-            });
+            }));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -759,6 +925,160 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             Assert.Equal(2, counter);
         }
 
+        [Fact]
+        public async Task CanAddEndpointWithPredicate()
+        {
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            var counter = 0;
+
+            options.Endpoints.Add(new Endpoint(ev =>
+            {
+                counter += 1;
+
+                return Task.CompletedTask;
+            }, ev =>
+            {
+                var inv = ev.To<InvoiceCreated>();
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 1 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(1, counter);
+        }
+        
+        [Fact]
+        public async Task CanAddEndpointWithPredicateIntoBeginning()
+        {
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            var counter = 0;
+
+            Task Action(CloudEvent ev)
+            {
+                counter += 1;
+
+                return Task.CompletedTask;
+            }
+
+            bool Predicate(CloudEvent ev)
+            {
+                var inv = ev.To<InvoiceCreated>();
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            options.Endpoints.Add((Action, Predicate));
+            options.Endpoints.Add((Action, null));
+            options.Endpoints.Add((Action, null));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 1 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(7, counter);
+        }
+        
+        [Fact]
+        public async Task CanAddEndpointWithPredicateIntoMiddle()
+        {
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            var counter = 0;
+
+            Task Action(CloudEvent ev)
+            {
+                counter += 1;
+
+                return Task.CompletedTask;
+            }
+
+            bool Predicate(CloudEvent ev)
+            {
+                var inv = ev.To<InvoiceCreated>();
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            options.Endpoints.Add((Action, null));
+            options.Endpoints.Add((Action, Predicate));
+            options.Endpoints.Add((Action, null));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 1 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(7, counter);
+        }
+
+        [Fact]
+        public async Task CanAddEndpointWithPredicateIntoEnd()
+        {
+            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            var counter = 0;
+
+            Task Action(CloudEvent ev)
+            {
+                counter += 1;
+
+                return Task.CompletedTask;
+            }
+
+            bool Predicate(CloudEvent ev)
+            {
+                var inv = ev.To<InvoiceCreated>();
+
+                if (inv.Object.Index == 0)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            options.Endpoints.Add((Action, null));
+            options.Endpoints.Add((Action, null));
+            options.Endpoints.Add((Action, Predicate));
+
+            using (var channel = new DataflowChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated() { Index = 1 }));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(7, counter);
+        }
+        
         [Fact]
         public async Task CanAddFilterWhichTargetSomeOfTheMessagesInBatch()
         {
@@ -773,7 +1093,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 },
             };
 
-            options.Components.Add(ev =>
+            options.Components.Add(new Component(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -783,7 +1103,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 }
 
                 return ev;
-            });
+            }));
 
             var objects = CreateObjects();
 
@@ -821,7 +1141,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var count = 1000000;
+            var count = 10;
             var objects = CreateObjects(count);
 
             var channel1 = new DataflowChannel(firstOptions);
@@ -864,7 +1184,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var count = 10000;
+            var count = 10;
             var objects = CreateObjects(count);
 
             var channel1 = new DataflowChannel(firstOptions);
@@ -905,10 +1225,10 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var channel2 = new DataflowChannel(secondOptions);
 
-            firstOptions.Endpoints.Add(async ev =>
+            firstOptions.Endpoints.Add(new Endpoint(async ev =>
             {
                 await channel2.Send(ev);
-            });
+            }));
 
             var objects = CreateManyObjects();
 

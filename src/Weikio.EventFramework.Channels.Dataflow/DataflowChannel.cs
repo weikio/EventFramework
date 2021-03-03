@@ -18,22 +18,18 @@ namespace Weikio.EventFramework.Channels.Dataflow
         private readonly DataflowChannelOptions _options;
         private readonly ICloudEventChannelManager _channelManager;
         private readonly string _targetChannelName;
-        private List<IDataflowBlock> _blocks = new List<IDataflowBlock>();
-        private IPropagatorBlock<object, object> _startingPoint = new BufferBlock<object>(new DataflowBlockOptions()
-        {
-            
-            BoundedCapacity = 15000000
-        });
+        private List<IDataflowBlock> _blocks = new();
+        private IPropagatorBlock<object, object> _startingPoint = new BufferBlock<object>(new DataflowBlockOptions() { BoundedCapacity = 15000000 });
         private List<IDataflowBlock> _adapterBlocks = new List<IDataflowBlock>();
         private List<IDataflowBlock> _splitterBlocks = new List<IDataflowBlock>();
-        private List<ITargetBlock<CloudEvent>> _endpointBlocks = new List<ITargetBlock<CloudEvent>>();
-        private List<TransformBlock<CloudEvent, CloudEvent>> _componentBlocks = new List<TransformBlock<CloudEvent, CloudEvent>>();
+        private List<(ITargetBlock<CloudEvent> Block, Predicate<CloudEvent> Predicate)> _endpointBlocks = new();
+        private List<TransformBlock<CloudEvent, CloudEvent>> _componentBlocks = new();
         private TransformBlock<CloudEvent, CloudEvent> _firstComponent = null;
         private TransformBlock<CloudEvent, CloudEvent> _lastComponent = null;
         private ILogger _logger;
         private IPropagatorBlock<CloudEvent, CloudEvent> _endpointChannelBlock = new BroadcastBlock<CloudEvent>(null);
-        private Dictionary<string, IDisposable> _subscribers = new Dictionary<string, IDisposable>();
-        private Dictionary<string, IChannel> _subscriberChannels = new Dictionary<string, IChannel>();
+        private Dictionary<string, IDisposable> _subscribers = new();
+        private Dictionary<string, IChannel> _subscriberChannels = new();
 
         public string Name
         {
@@ -63,18 +59,18 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
             if (options.Endpoint != null)
             {
-                _endpointBlocks.Add(new ActionBlock<CloudEvent>(options.Endpoint));
+                _endpointBlocks.Add((new ActionBlock<CloudEvent>(options.Endpoint), ev => true));
             }
             else
             {
-                _endpointBlocks.Add(new ActionBlock<CloudEvent>(ev => { }));
+                _endpointBlocks.Add((new ActionBlock<CloudEvent>(ev => { }), ev => true));
             }
 
             if (options.Endpoints?.Any() == true)
             {
                 foreach (var endpointAction in options.Endpoints)
                 {
-                    _endpointBlocks.Add(new ActionBlock<CloudEvent>(endpointAction));
+                    _endpointBlocks.Add((new ActionBlock<CloudEvent>(endpointAction.Func), endpointAction.Predicate));
                 }
             }
 
@@ -170,10 +166,16 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 {
                     try
                     {
-                        return optionsComponent.Invoke(ev);
+                        if (optionsComponent.Predicate(ev))
+                        {
+                            return optionsComponent.Func.Invoke(ev);
+                        }
+
+                        return ev;
                     }
                     catch (Exception e)
                     {
+                        // TODO Component logging
                         // ignored
                     }
 
@@ -217,7 +219,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
             objectToCloudEventTransformer.LinkTo(_firstComponent);
             batchObjectToCloudEventTransformer.LinkTo(_firstComponent);
             batchEventToCloudEventTransformer.LinkTo(_firstComponent);
-            
+
             // var subscriberPublishBlock = new ActionBlock<CloudEvent>(async ev =>
             // {
             //     foreach (var subscriber in _subscriberChannels)
@@ -232,73 +234,15 @@ namespace Weikio.EventFramework.Channels.Dataflow
             // });
             //
             // _endpointBlocks.Add(subscriberPublishBlock);
-            
+
             foreach (var endpointBlock in _endpointBlocks)
             {
-                _endpointChannelBlock.LinkTo(endpointBlock, propageteLink);
+                _endpointChannelBlock.LinkTo(endpointBlock.Block, propageteLink, endpointBlock.Predicate);
             }
 
             _lastComponent.LinkTo(_endpointChannelBlock, ev => ev != null);
 
             _lastComponent.LinkTo(DataflowBlock.NullTarget<CloudEvent>(), ev => ev == null);
-        }
-
-        private IPropagatorBlock<CloudEvent, CloudEvent> CreateComponentLayer()
-        {
-            //...
-            var dataflowLinkOptions = new DataflowLinkOptions() { PropagateCompletion = false };
-
-            foreach (var optionsComponent in _options.Components)
-            {
-                var transformBlock = new TransformBlock<CloudEvent, CloudEvent>(ev =>
-                {
-                    try
-                    {
-                        return optionsComponent.Invoke(ev);
-                    }
-                    catch (Exception e)
-                    {
-                        // ignored
-                    }
-
-                    return null;
-                });
-
-                _componentBlocks.Add(transformBlock);
-            }
-
-            for (var i = 0; i < _componentBlocks.Count; i++)
-            {
-                var block = _componentBlocks[i];
-
-                if (_firstComponent == null)
-                {
-                    _firstComponent = block;
-                }
-
-                _lastComponent = block;
-
-                block.LinkTo(DataflowBlock.NullTarget<CloudEvent>(), dataflowLinkOptions, ev => ev == null);
-
-                if (i + 1 < _componentBlocks.Count)
-                {
-                    var nextBlock = _componentBlocks[i + 1];
-                    block.LinkTo(nextBlock, dataflowLinkOptions, ev => ev != null);
-                }
-            }
-
-            if (_firstComponent == null)
-            {
-                _firstComponent = new TransformBlock<CloudEvent, CloudEvent>(ev => ev);
-                _lastComponent = new TransformBlock<CloudEvent, CloudEvent>(ev => ev);
-
-                _firstComponent.LinkTo(_lastComponent, dataflowLinkOptions);
-
-                _componentBlocks.Add(_firstComponent);
-                _componentBlocks.Add(_lastComponent);
-            }
-
-            return null;
         }
 
         public DataflowChannel(string name = ChannelName.Default, Action<CloudEvent> endpoint = null) : this(
@@ -379,14 +323,12 @@ namespace Weikio.EventFramework.Channels.Dataflow
             }
 
             var dataflowChannel = (DataflowChannel) channel;
-            
-            var link = _endpointChannelBlock.LinkTo(dataflowChannel._startingPoint, new DataflowLinkOptions()
-            {
-            });
+
+            var link = _endpointChannelBlock.LinkTo(dataflowChannel._startingPoint, new DataflowLinkOptions() { });
 
             _subscribers.Add(channel.Name, link);
-            // _subscriberChannels.Add(channel.Name, dataflowChannel);
 
+            // _subscriberChannels.Add(channel.Name, dataflowChannel);
         }
 
         public void Unsubscribe(IChannel channel)
@@ -464,7 +406,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
 
             Task.WhenAny(
-                Task.WhenAll(_endpointBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_endpointBlocks.Select(x => x.Block.Completion)),
                 Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds))).Wait();
 
             if (_subscribers?.Any() == true)
@@ -525,7 +467,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds)));
 
             await Task.WhenAny(
-                Task.WhenAll(_endpointBlocks.Select(x => x.Completion)),
+                Task.WhenAll(_endpointBlocks.Select(x => x.Block.Completion)),
                 Task.Delay(TimeSpan.FromSeconds(timeoutInSeconds)));
 
             if (_subscribers?.Any() == true)
