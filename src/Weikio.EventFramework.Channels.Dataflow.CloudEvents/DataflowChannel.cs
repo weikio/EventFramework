@@ -1,25 +1,14 @@
 ﻿using System;
 using CloudNative.CloudEvents;
 
-namespace Weikio.EventFramework.Channels.Dataflow
+namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 {
     public class DataflowChannel : DataflowChannelBase<object, CloudEvent>
     {
-        public DataflowChannel(CloudEventsDataflowChannelOptions options) : base(new DataflowChannelOptionsBase<object, CloudEvent>()
+        public DataflowChannel(CloudEventsDataflowChannelOptions options) : base(options)
         {
-            Components = options.Components,
-            Endpoint = options.Endpoint,
-            Endpoints = options.Endpoints,
-            Name = options.Name,
-            LoggerFactory = options.LoggerFactory,
-            AdapterLayerBuilder = options.AdapterLayerBuilder,
-            ComponentLayerBuilder = options.ComponentLayerBuilder
-        })
-        {
-        }
-
-        public DataflowChannel(DataflowChannelOptionsBase<object, CloudEvent> options) : base(options)
-        {
+            Layers.Add(new AdapterLayerBuilder().Build());
+            Layers.Add(new ComponentLayerBuilder().Build(options));
         }
 
         public DataflowChannel(string name = ChannelName.Default, Action<CloudEvent> endpoint = null) : this(

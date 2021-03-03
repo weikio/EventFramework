@@ -6,7 +6,5 @@ namespace Weikio.EventFramework.Channels
     {
         string Name { get; }
         Task<bool> Send(object cloudEvent);
-        void Subscribe(IChannel channel);
-        void Unsubscribe(IChannel channel);
     }
 }

@@ -9,7 +9,7 @@ using Weikio.EventFramework.EventCreator;
 
 namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 {
-    public class AdapterLayerBuilder
+    internal class AdapterLayerBuilder
     {
         public DataflowLayerGeneric<object, CloudEvent> Build()
         {

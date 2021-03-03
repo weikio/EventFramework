@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.Tests.Shared;
 using Xunit;
@@ -13,20 +13,10 @@ using Xunit.Abstractions;
 
 namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 {
-    public class DataflowChannelTests
+    public class DataflowChannelTests : TestBase
     {
-        private readonly ITestOutputHelper _output;
-        private ILoggerFactory _loggerFactory;
-
-        public DataflowChannelTests(ITestOutputHelper output)
+        public DataflowChannelTests(ITestOutputHelper output) : base(output)
         {
-            _output = output;
-
-            _loggerFactory = LoggerFactory.Create(builder =>
-            {
-                builder
-                    .AddXUnit(output);
-            });
         }
 
         [Fact]
@@ -607,21 +597,21 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 counters.Add(1);
 
                 return ev;
             }));
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 counters.Add(5);
 
                 return ev;
             }));
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 counters.Add(100);
 
@@ -646,14 +636,14 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 counter += 1;
 
                 return ev;
             }));
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 if (!hasCrashed)
                 {
@@ -684,12 +674,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 return ev;
             }));
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 if (!hasCrashed)
                 {
@@ -733,7 +723,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(new Component(ev => null));
+            options.Components.Add(new CloudEventsComponent(ev => null));
 
             using (var channel = new DataflowChannel(options))
             {
@@ -756,7 +746,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 ev.Subject = "transformed";
 
@@ -782,21 +772,21 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 ev.Subject = (ev.Subject ?? "") + "1";
 
                 return ev;
             }));
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 ev.Subject = (ev.Subject ?? "") + "1";
 
                 return ev;
             }));
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 ev.Subject = (ev.Subject ?? "") + "1";
 
@@ -824,7 +814,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -836,7 +826,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 return ev;
             }));
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -873,7 +863,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 },
             };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -903,14 +893,14 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var counter = 0;
 
-            options.Endpoints.Add(new Endpoint(ev =>
+            options.Endpoints.Add(new CloudEventsEndpoint(ev =>
             {
                 counter += 1;
 
                 return Task.CompletedTask;
             }));
 
-            options.Endpoints.Add(new Endpoint(ev =>
+            options.Endpoints.Add(new CloudEventsEndpoint(ev =>
             {
                 counter += 1;
 
@@ -932,7 +922,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var counter = 0;
 
-            options.Endpoints.Add(new Endpoint(ev =>
+            options.Endpoints.Add(new CloudEventsEndpoint(ev =>
             {
                 counter += 1;
 
@@ -958,7 +948,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             Assert.Equal(1, counter);
         }
-        
+
         [Fact]
         public async Task CanAddEndpointWithPredicateIntoBeginning()
         {
@@ -998,7 +988,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             Assert.Equal(7, counter);
         }
-        
+
         [Fact]
         public async Task CanAddEndpointWithPredicateIntoMiddle()
         {
@@ -1078,7 +1068,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             Assert.Equal(7, counter);
         }
-        
+
         [Fact]
         public async Task CanAddFilterWhichTargetSomeOfTheMessagesInBatch()
         {
@@ -1093,7 +1083,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 },
             };
 
-            options.Components.Add(new Component(ev =>
+            options.Components.Add(new CloudEventsComponent(ev =>
             {
                 var typedEvent = CloudEvent<InvoiceCreated>.Create(ev);
 
@@ -1116,98 +1106,6 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         }
 
         [Fact]
-        public async Task ChannelCanSubscribeToAnotherChannel()
-        {
-            var firstCounter = 0;
-            var secondCounter = 0;
-
-            var firstOptions = new CloudEventsDataflowChannelOptions()
-            {
-                Name = "first",
-                Endpoint = ev =>
-                {
-                    firstCounter += 10;
-                },
-                LoggerFactory = _loggerFactory
-            };
-
-            var secondOptions = new CloudEventsDataflowChannelOptions()
-            {
-                Name = "second",
-                Endpoint = ev =>
-                {
-                    secondCounter += 3;
-                },
-                LoggerFactory = _loggerFactory
-            };
-
-            var count = 10;
-            var objects = CreateObjects(count);
-
-            var channel1 = new DataflowChannel(firstOptions);
-            var channel2 = new DataflowChannel(secondOptions);
-
-            channel1.Subscribe(channel2);
-
-            await channel1.Send(objects);
-
-            await channel1.DisposeAsync();
-            await channel2.DisposeAsync();
-
-            Assert.Equal(count * 10, firstCounter);
-            Assert.Equal(count * 3, secondCounter);
-        }
-
-        [Fact]
-        public async Task ChannelCanUnsubscribeFromAnotherChannel()
-        {
-            var firstCounter = 0;
-            var secondCounter = 0;
-
-            var firstOptions = new CloudEventsDataflowChannelOptions()
-            {
-                Name = "first",
-                Endpoint = ev =>
-                {
-                    firstCounter += 10;
-                },
-                LoggerFactory = _loggerFactory
-            };
-
-            var secondOptions = new CloudEventsDataflowChannelOptions()
-            {
-                Name = "second",
-                Endpoint = ev =>
-                {
-                    secondCounter += 3;
-                },
-                LoggerFactory = _loggerFactory
-            };
-
-            var count = 10;
-            var objects = CreateObjects(count);
-
-            var channel1 = new DataflowChannel(firstOptions);
-            var channel2 = new DataflowChannel(secondOptions);
-
-            channel1.Subscribe(channel2);
-            await channel1.Send(objects);
-
-            await ContinueWhen(() => firstCounter == count * 10, timeout: TimeSpan.FromSeconds(180));
-            await ContinueWhen(() => secondCounter == count * 3, timeout: TimeSpan.FromSeconds(180));
-
-            channel1.Unsubscribe(channel2);
-
-            await channel1.Send(objects);
-
-            await channel1.DisposeAsync();
-            await channel2.DisposeAsync();
-
-            Assert.True(count * 10 * 2 == firstCounter, $"First counter should contain {count * 2 * 10}. Instead contains {firstCounter}");
-            Assert.True(count * 3 * 1 == secondCounter, $"Second counter should contain {count * 1 * 3}. Instead contains {secondCounter}");
-        }
-
-        [Fact]
         public async Task ChannelCanSentToAnotherChannel()
         {
             var counter = 0;
@@ -1225,7 +1123,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             var channel2 = new DataflowChannel(secondOptions);
 
-            firstOptions.Endpoints.Add(new Endpoint(async ev =>
+            firstOptions.Endpoints.Add(new CloudEventsEndpoint(async ev =>
             {
                 await channel2.Send(ev);
             }));
@@ -1240,61 +1138,6 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             await channel2.DisposeAsync();
 
             Assert.Equal(50000, counter);
-        }
-
-        // Pubsub
-        // Pubsub unlink
-
-        private static List<InvoiceCreated> CreateObjects(int count = 500)
-        {
-            var evs = new List<InvoiceCreated>();
-
-            for (var i = 0; i < count; i++)
-            {
-                evs.Add(new InvoiceCreated() { Index = i });
-            }
-
-            return evs;
-        }
-
-        private static List<InvoiceCreated> CreateManyObjects()
-        {
-            return CreateObjects(50000);
-        }
-
-        private static List<CloudEvent> CreateEvents()
-        {
-            return CreateObjects().Select(x => CloudEventCreator.Create(x)).ToList();
-        }
-
-        private async Task ContinueWhen(Func<bool> probe, string assertErrorMessage = null, TimeSpan? timeout = null)
-        {
-            if (timeout == null)
-            {
-                timeout = TimeSpan.FromSeconds(3);
-            }
-
-            var cts = new CancellationTokenSource();
-            cts.CancelAfter(timeout.GetValueOrDefault());
-
-            var success = false;
-
-            while (cts.IsCancellationRequested == false)
-            {
-                success = probe();
-
-                if (success)
-                {
-                    break;
-                }
-
-                if (cts.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
-            }
         }
     }
 }

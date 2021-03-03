@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using CloudNative.CloudEvents;
 
 namespace Weikio.EventFramework.Channels.Dataflow
 {
-    public class DataflowLayer : IDisposable, IAsyncDisposable
+    public class DataflowLayerGeneric<TInput, TOutput>
     {
         private readonly Func<TimeSpan, Task> _completionTask;
-        public IPropagatorBlock<object, CloudEvent> Layer { get; private set; }
+        public IPropagatorBlock<TInput, TOutput> Layer { get; private set; }
 
-        public DataflowLayer(IPropagatorBlock<object, CloudEvent> layer, Func<TimeSpan, Task> completionTask = null)
+        public DataflowLayerGeneric(IPropagatorBlock<TInput, TOutput> layer, Func<TimeSpan, Task> completionTask = null)
         {
             Layer = layer;
 
@@ -40,6 +39,11 @@ namespace Weikio.EventFramework.Channels.Dataflow
         public async ValueTask DisposeAsync()
         {
             await _completionTask.Invoke(TimeSpan.FromSeconds(180));
+        }
+
+        public void LinkTo(ITargetBlock<TOutput> target, DataflowLinkOptions linkOptions)
+        {
+            Layer.LinkTo(target, linkOptions);
         }
     }
 }

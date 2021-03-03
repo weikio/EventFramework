@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,15 +14,13 @@ namespace Weikio.EventFramework.Channels.Dataflow
     public abstract class DataflowChannelBase<TInput, TOutput> : IOutgoingChannel, IDisposable, IAsyncDisposable
     {
         protected readonly DataflowChannelOptionsBase<TInput, TOutput> _options;
+        protected readonly IPropagatorBlock<TInput, TInput> _startingPoint =
+            new BufferBlock<TInput>();
 
-        protected readonly System.Threading.Tasks.Dataflow.IPropagatorBlock<TInput, TInput> _startingPoint =
-            new System.Threading.Tasks.Dataflow.BufferBlock<TInput>();
-
-        protected List<(System.Threading.Tasks.Dataflow.ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)> _endpointBlocks = new();
+        protected List<(ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)> _endpointBlocks = new();
         protected ILogger _logger;
 
-        protected System.Threading.Tasks.Dataflow.IPropagatorBlock<TOutput, TOutput> _endpointChannelBlock =
-            new System.Threading.Tasks.Dataflow.BroadcastBlock<TOutput>(null);
+        protected IPropagatorBlock<TOutput, TOutput> _endpointChannelBlock;
 
         protected DataflowLayerGeneric<TInput, TOutput> _adapterLayer;
         protected DataflowLayerGeneric<TOutput, TOutput> _componentLayer;
@@ -29,6 +28,8 @@ namespace Weikio.EventFramework.Channels.Dataflow
         protected Dictionary<string, IDisposable> _subscribers = new();
 
         public const int TimeoutInSeconds = 180;
+
+        protected ArrayList Layers { get; set; } = new();
 
         public string Name
         {
@@ -47,6 +48,15 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 throw new ArgumentNullException(nameof(Name));
             }
 
+            if (_options.IsPubSub)
+            {
+                _endpointChannelBlock = new BroadcastBlock<TOutput>(null);
+            }
+            else
+            {
+                _endpointChannelBlock = new BufferBlock<TOutput>();
+            }
+
             if (_options.LoggerFactory != null)
             {
                 _logger = _options.LoggerFactory.CreateLogger(typeof(DataflowChannelBase<TInput, TOutput>));
@@ -58,36 +68,36 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
             if (options.Endpoint != null)
             {
-                _endpointBlocks.Add((new System.Threading.Tasks.Dataflow.ActionBlock<TOutput>(options.Endpoint), ev => true));
-            }
-            else
-            {
-                _endpointBlocks.Add((new System.Threading.Tasks.Dataflow.ActionBlock<TOutput>(ev => { }), ev => true));
+                _endpointBlocks.Add((new ActionBlock<TOutput>(options.Endpoint), ev => true));
             }
 
             if (options.Endpoints?.Any() == true)
             {
                 foreach (var endpointAction in options.Endpoints)
                 {
-                    // _endpointBlocks.Add((new System.Threading.Tasks.Dataflow.ActionBlock<TOutput>(endpointAction.Func), endpointAction.Predicate));
+                    _endpointBlocks.Add((new ActionBlock<TOutput>(endpointAction.Func), endpointAction.Predicate));
                 }
             }
-
+            else
+            {
+                _endpointChannelBlock.LinkTo(DataflowBlock.NullTarget<TOutput>(), _ => _subscribers?.Any() != true);
+            }
+            
             var propageteLink = new DataflowLinkOptions() { PropagateCompletion = true };
 
             _adapterLayer = _options.AdapterLayerBuilder.Invoke();
             _componentLayer = _options.ComponentLayerBuilder.Invoke(_options);
-
+            
             _startingPoint.LinkTo(_adapterLayer.Layer, new DataflowLinkOptions() { PropagateCompletion = false });
             _adapterLayer.Layer.LinkTo(_componentLayer.Layer, new DataflowLinkOptions() { PropagateCompletion = false });
-
+            
             foreach (var endpointBlock in _endpointBlocks)
             {
-                DataflowBlock.LinkTo(_endpointChannelBlock, endpointBlock.Block, propageteLink, endpointBlock.Predicate);
+                _endpointChannelBlock.LinkTo(endpointBlock.Block, propageteLink, endpointBlock.Predicate);
             }
-
-            DataflowBlock.LinkTo(_componentLayer.Layer, _endpointChannelBlock, ev => ev != null);
-            DataflowBlock.LinkTo(_componentLayer.Layer, DataflowBlock.NullTarget<TOutput>(), ev => ev == null);
+            
+            _componentLayer.Layer.LinkTo(_endpointChannelBlock, ev => ev != null);
+            _componentLayer.Layer.LinkTo(DataflowBlock.NullTarget<TOutput>(), ev => ev == null);
         }
 
         public DataflowChannelBase(string name = ChannelName.Default, Action<TOutput> endpoint = null) : this(
@@ -102,23 +112,24 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
         public void Subscribe(IChannel channel)
         {
-            // if (channel == null)
-            // {
-            //     throw new ArgumentNullException(nameof(channel));
-            // }
-            //
-            // if (channel is DataflowChannel == false)
-            // {
-            //     throw new Exception("Only dataflow channel is supported for subscribe");
-            // }
-            //
-            // var dataflowChannel = (DataflowChannel) channel;
-            //
-            // var link = _endpointChannelBlock.LinkTo(dataflowChannel._startingPoint, new DataflowLinkOptions() { });
-            //
-            // _subscribers.Add(channel.Name, link);
+            if (channel == null)
+            {
+                throw new ArgumentNullException(nameof(channel));
+            }
 
-            // _subscriberChannels.Add(channel.Name, dataflowChannel);
+            async Task SendToChannel(TOutput msg)
+            {
+                await channel.Send(msg);
+            }
+
+            var block = new ActionBlock<TOutput>(async output =>
+            {
+                await SendToChannel(output);
+            });
+
+            var link = _endpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null);
+            
+            _subscribers.Add(channel.Name, link);
         }
 
         public void Unsubscribe(IChannel channel)
@@ -199,18 +210,6 @@ namespace Weikio.EventFramework.Channels.Dataflow
                     subscriber.Value.Dispose();
                 }
             }
-        }
-    }
-
-    public class BatchItem
-    {
-        public object Object { get; set; }
-        public int Sequence { get; set; }
-
-        public BatchItem(object o, int sequence)
-        {
-            Object = o;
-            Sequence = sequence;
         }
     }
 }

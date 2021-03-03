@@ -3,12 +3,12 @@ using CloudNative.CloudEvents;
 
 namespace Weikio.EventFramework.Channels.Dataflow
 {
-    public class Component
+    public class DataflowChannelComponent<TOutput>
     {
-        public Func<CloudEvent, CloudEvent> Func { get; private set; }
-        public Predicate<CloudEvent> Predicate { get; private set; }
+        public Func<TOutput, TOutput> Func { get; private set; }
+        public Predicate<TOutput> Predicate { get; private set; }
 
-        public Component(Func<CloudEvent, CloudEvent> func, Predicate<CloudEvent> predicate = null)
+        public DataflowChannelComponent(Func<TOutput, TOutput> func, Predicate<TOutput> predicate = null)
         {
             if (func == null)
             {
@@ -19,24 +19,24 @@ namespace Weikio.EventFramework.Channels.Dataflow
             Predicate = predicate ?? (ev => true);
         }
 
-        public static implicit operator Func<CloudEvent, CloudEvent>(Component component)
+        public static implicit operator Func<TOutput, TOutput>(DataflowChannelComponent<TOutput> component)
         {
             return component.Func;
         }
 
-        public static implicit operator Predicate<CloudEvent>(Component component)
+        public static implicit operator Predicate<TOutput>(DataflowChannelComponent<TOutput> component)
         {
             return component.Predicate;
         }
 
-        public static implicit operator Component(Func<CloudEvent, CloudEvent> func)
+        public static implicit operator DataflowChannelComponent<TOutput>(Func<TOutput, TOutput> func)
         {
-            return new Component(func);
+            return new(func);
         }
 
-        public static implicit operator Component((Func<CloudEvent, CloudEvent> Func, Predicate<CloudEvent> Predicate) def)
+        public static implicit operator DataflowChannelComponent<TOutput>((Func<TOutput, TOutput> Func, Predicate<TOutput> Predicate) def)
         {
-            return new Component(def.Func, def.Predicate);
+            return new(def.Func, def.Predicate);
         }
     }
 }

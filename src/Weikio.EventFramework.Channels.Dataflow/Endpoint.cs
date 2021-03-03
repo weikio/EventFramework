@@ -4,12 +4,12 @@ using CloudNative.CloudEvents;
 
 namespace Weikio.EventFramework.Channels.Dataflow
 {
-    public class Endpoint
+    public class Endpoint<TOutput>
     {
-        public Func<CloudEvent, Task> Func { get; private set; }
-        public Predicate<CloudEvent> Predicate { get; private set; }
+        public Func<TOutput, Task> Func { get; private set; }
+        public Predicate<TOutput> Predicate { get; private set; }
 
-        public Endpoint(Func<CloudEvent, Task> func, Predicate<CloudEvent> predicate = null)
+        public Endpoint(Func<TOutput, Task> func, Predicate<TOutput> predicate = null)
         {
             if (func == null)
             {
@@ -20,24 +20,24 @@ namespace Weikio.EventFramework.Channels.Dataflow
             Predicate = predicate ?? (ev => true);
         }
 
-        public static implicit operator Func<CloudEvent, Task>(Endpoint component)
+        public static implicit operator Func<TOutput, Task>(Endpoint<TOutput> component)
         {
             return component.Func;
         }
 
-        public static implicit operator Predicate<CloudEvent>(Endpoint component)
+        public static implicit operator Predicate<TOutput>(Endpoint<TOutput> component)
         {
             return component.Predicate;
         }
 
-        public static implicit operator Endpoint(Func<CloudEvent, Task> func)
+        public static implicit operator Endpoint<TOutput>(Func<TOutput, Task> func)
         {
-            return new Endpoint(func);
+            return new(func);
         }
 
-        public static implicit operator Endpoint((Func<CloudEvent, Task> Func, Predicate<CloudEvent> Predicate) def)
+        public static implicit operator Endpoint<TOutput>((Func<TOutput, Task> Func, Predicate<TOutput> Predicate) def)
         {
-            return new Endpoint(def.Func, def.Predicate);
+            return new(def.Func, def.Predicate);
         }
     }
 }
