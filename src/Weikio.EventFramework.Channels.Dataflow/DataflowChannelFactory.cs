@@ -4,7 +4,8 @@
     {
         public IChannel Create()
         {
-            return new DataflowChannel();
+            return null;
+            // return new DataflowChannel();
         }
     }
 }

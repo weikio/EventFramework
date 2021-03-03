@@ -360,7 +360,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions()
+            var options = new CloudEventsDataflowChannelOptions()
             {
                 Name = "name",
                 Endpoint = ev =>
@@ -388,7 +388,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             options.Components.Add(new Func<CloudEvent, CloudEvent>(ev =>
             {
@@ -410,7 +410,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             CloudEvent AddCounter(CloudEvent cloudEvent)
             {
@@ -450,7 +450,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             CloudEvent AddCounter(CloudEvent cloudEvent)
             {
@@ -492,7 +492,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             CloudEvent AddCounter(CloudEvent cloudEvent)
             {
@@ -534,7 +534,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             CloudEvent AddCounter(CloudEvent cloudEvent)
             {
@@ -576,7 +576,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             options.Components.Add(new Func<CloudEvent, CloudEvent>(ev =>
             {
@@ -605,7 +605,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             List<int> counters = new();
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             options.Components.Add(new Component(ev =>
             {
@@ -644,7 +644,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var counter = 0;
             var hasCrashed = false;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             options.Components.Add(new Component(ev =>
             {
@@ -682,7 +682,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var counter = 0;
             var hasCrashed = false;
 
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             options.Components.Add(new Component(ev =>
             {
@@ -723,7 +723,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions()
+            var options = new CloudEventsDataflowChannelOptions()
             {
                 Name = "name",
                 Endpoint = ev =>
@@ -746,7 +746,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddTransform()
         {
-            var options = new DataflowChannelOptions()
+            var options = new CloudEventsDataflowChannelOptions()
             {
                 Name = "name",
                 Endpoint = ev =>
@@ -772,7 +772,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddMultipleTransforms()
         {
-            var options = new DataflowChannelOptions()
+            var options = new CloudEventsDataflowChannelOptions()
             {
                 Name = "name",
                 Endpoint = ev =>
@@ -814,7 +814,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions()
+            var options = new CloudEventsDataflowChannelOptions()
             {
                 Name = "name",
                 Endpoint = ev =>
@@ -864,7 +864,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions()
+            var options = new CloudEventsDataflowChannelOptions()
             {
                 Name = "name",
                 Endpoint = ev =>
@@ -899,7 +899,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddMultipleEndpoints()
         {
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             var counter = 0;
 
@@ -928,7 +928,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddEndpointWithPredicate()
         {
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             var counter = 0;
 
@@ -962,7 +962,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddEndpointWithPredicateIntoBeginning()
         {
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             var counter = 0;
 
@@ -1002,7 +1002,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddEndpointWithPredicateIntoMiddle()
         {
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             var counter = 0;
 
@@ -1042,7 +1042,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddEndpointWithPredicateIntoEnd()
         {
-            var options = new DataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+            var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 
             var counter = 0;
 
@@ -1084,7 +1084,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var options = new DataflowChannelOptions()
+            var options = new CloudEventsDataflowChannelOptions()
             {
                 Name = "name",
                 Endpoint = ev =>
@@ -1121,7 +1121,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var firstCounter = 0;
             var secondCounter = 0;
 
-            var firstOptions = new DataflowChannelOptions()
+            var firstOptions = new CloudEventsDataflowChannelOptions()
             {
                 Name = "first",
                 Endpoint = ev =>
@@ -1131,7 +1131,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var secondOptions = new DataflowChannelOptions()
+            var secondOptions = new CloudEventsDataflowChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>
@@ -1164,7 +1164,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var firstCounter = 0;
             var secondCounter = 0;
 
-            var firstOptions = new DataflowChannelOptions()
+            var firstOptions = new CloudEventsDataflowChannelOptions()
             {
                 Name = "first",
                 Endpoint = ev =>
@@ -1174,7 +1174,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var secondOptions = new DataflowChannelOptions()
+            var secondOptions = new CloudEventsDataflowChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>
@@ -1212,9 +1212,9 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             var counter = 0;
 
-            var firstOptions = new DataflowChannelOptions() { Name = "first", };
+            var firstOptions = new CloudEventsDataflowChannelOptions() { Name = "first", };
 
-            var secondOptions = new DataflowChannelOptions()
+            var secondOptions = new CloudEventsDataflowChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>

@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.Dataflow.CloudEvents\Weikio.EventFramework.Channels.Dataflow.CloudEvents.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.Dataflow\Weikio.EventFramework.Channels.Dataflow.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventGateway\Weikio.EventFramework.EventGateway.csproj" />

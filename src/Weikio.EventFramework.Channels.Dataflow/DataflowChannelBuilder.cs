@@ -4,7 +4,8 @@
     {
         public IChannel Create(string channelName = ChannelName.Default)
         {
-            return new DataflowChannel(channelName);
+            return null;
+            // return new DataflowChannel(channelName);
         }
     }
 }
