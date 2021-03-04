@@ -3,13 +3,14 @@ using System.Threading.Tasks;
 
 namespace Weikio.EventFramework.Channels
 {
-    public interface ICloudEventChannelManager
+    public interface IChannelManager
     {
         IEnumerable<IChannel> Channels { get; }
         IChannel Get(string channelName);
 
-        void Add(string channelName, IChannel channel);
+        void Add(IChannel channel);
 
         Task Update();
+        IChannel GetDefaultChannel();
     }
 }

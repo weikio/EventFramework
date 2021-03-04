@@ -97,7 +97,124 @@ namespace Weikio.EventFramework.Channels.Dataflow
         {
         }
 
-        private IPropagatorBlock<TInput, TInput> CreateInput()
+        public async Task<bool> Send(object cloudEvent)
+        {
+            return await Input.SendAsync((TInput)cloudEvent);
+        }
+
+        public void AddInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
+        {
+            Interceptors.Add((interceptor.InterceptorType, interceptor.Interceptor));
+        }
+
+        public void RemoveInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
+        {
+            Interceptors.Remove((interceptor.InterceptorType, interceptor.Interceptor));
+        }
+        
+        public void Subscribe(IChannel channel)
+        {
+            if (channel == null)
+            {
+                throw new ArgumentNullException(nameof(channel));
+            }
+
+            async Task SendToChannel(TOutput msg)
+            {
+                await channel.Send(msg);
+            }
+
+            var block = new ActionBlock<TOutput>(async output =>
+            {
+                await SendToChannel(output);
+            });
+
+            var link = EndpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null);
+            
+            Subscribers.Add(channel.Name, link);
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            if (channel == null)
+            {
+                throw new ArgumentNullException(nameof(channel));
+            }
+
+            var link = Subscribers.FirstOrDefault(x => string.Equals(x.Key, channel.Name, StringComparison.InvariantCultureIgnoreCase));
+
+            if (link.Key == null)
+            {
+                // Todo: Should we throw if unsubscribing unknown channel
+                return;
+            }
+
+            link.Value.Dispose();
+
+            Subscribers.Remove(link.Key);
+        }
+
+        public void Dispose()
+        {
+            Logger.LogInformation("Disposing channel {ChannelName}", Name);
+            Input.Complete();
+
+            Task.WhenAny(
+                Task.WhenAll(Input.Completion),
+                Task.Delay(Options.Timeout)).Wait();
+
+            AdapterLayer.Dispose();
+            ComponentLayer.Dispose();
+
+            EndpointChannelBlock.Complete();
+
+            Task.WhenAny(
+                Task.WhenAll(EndpointChannelBlock.Completion),
+                Task.Delay(Options.Timeout)).Wait();
+
+            Task.WhenAny(
+                Task.WhenAll(EndpointBlocks.Select(x => x.Block.Completion)),
+                Task.Delay(Options.Timeout)).Wait();
+
+            if (Subscribers?.Any() == true)
+            {
+                foreach (var subscriber in Subscribers)
+                {
+                    subscriber.Value.Dispose();
+                }
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            Logger.LogInformation("Disposing channel {ChannelName} asynchronously", Name);
+
+            Input.Complete();
+            await Input.Completion;
+
+            await AdapterLayer.DisposeAsync();
+            await ComponentLayer.DisposeAsync();
+
+            EndpointChannelBlock.Complete();
+
+            await Task.WhenAny(
+                Task.WhenAll(EndpointChannelBlock.Completion),
+                Task.Delay(Options.Timeout));
+
+            await Task.WhenAny(
+                Task.WhenAll(EndpointBlocks.Select(x => x.Block.Completion)),
+                Task.Delay(Options.Timeout));
+
+            if (Subscribers?.Any() == true)
+            {
+                foreach (var subscriber in Subscribers)
+                {
+                    subscriber.Value.Dispose();
+                }
+            }
+        }
+        
+                private IPropagatorBlock<TInput, TInput> CreateInput()
         {
             var input = new BufferBlock<TInput>();
             var output = new BufferBlock<TInput>();
@@ -227,123 +344,6 @@ namespace Weikio.EventFramework.Channels.Dataflow
             var result = DataflowBlock.Encapsulate(input, output);
 
             return result;
-        }
-
-        public async Task<bool> Send(object cloudEvent)
-        {
-            return await Input.SendAsync((TInput)cloudEvent);
-        }
-
-        public void AddInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
-        {
-            Interceptors.Add((interceptor.InterceptorType, interceptor.Interceptor));
-        }
-
-        public void RemoveInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
-        {
-            Interceptors.Remove((interceptor.InterceptorType, interceptor.Interceptor));
-        }
-        
-        public void Subscribe(IChannel channel)
-        {
-            if (channel == null)
-            {
-                throw new ArgumentNullException(nameof(channel));
-            }
-
-            async Task SendToChannel(TOutput msg)
-            {
-                await channel.Send(msg);
-            }
-
-            var block = new ActionBlock<TOutput>(async output =>
-            {
-                await SendToChannel(output);
-            });
-
-            var link = EndpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null);
-            
-            Subscribers.Add(channel.Name, link);
-        }
-
-        public void Unsubscribe(IChannel channel)
-        {
-            if (channel == null)
-            {
-                throw new ArgumentNullException(nameof(channel));
-            }
-
-            var link = Subscribers.FirstOrDefault(x => string.Equals(x.Key, channel.Name, StringComparison.InvariantCultureIgnoreCase));
-
-            if (link.Key == null)
-            {
-                // Todo: Should we throw if unsubscribing unknown channel
-                return;
-            }
-
-            link.Value.Dispose();
-
-            Subscribers.Remove(link.Key);
-        }
-
-        public void Dispose()
-        {
-            Logger.LogInformation("Disposing channel {ChannelName}", Name);
-            Input.Complete();
-
-            Task.WhenAny(
-                Task.WhenAll(Input.Completion),
-                Task.Delay(Options.Timeout)).Wait();
-
-            AdapterLayer.Dispose();
-            ComponentLayer.Dispose();
-
-            EndpointChannelBlock.Complete();
-
-            Task.WhenAny(
-                Task.WhenAll(EndpointChannelBlock.Completion),
-                Task.Delay(Options.Timeout)).Wait();
-
-            Task.WhenAny(
-                Task.WhenAll(EndpointBlocks.Select(x => x.Block.Completion)),
-                Task.Delay(Options.Timeout)).Wait();
-
-            if (Subscribers?.Any() == true)
-            {
-                foreach (var subscriber in Subscribers)
-                {
-                    subscriber.Value.Dispose();
-                }
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            Logger.LogInformation("Disposing channel {ChannelName} asynchronously", Name);
-
-            Input.Complete();
-            await Input.Completion;
-
-            await AdapterLayer.DisposeAsync();
-            await ComponentLayer.DisposeAsync();
-
-            EndpointChannelBlock.Complete();
-
-            await Task.WhenAny(
-                Task.WhenAll(EndpointChannelBlock.Completion),
-                Task.Delay(Options.Timeout));
-
-            await Task.WhenAny(
-                Task.WhenAll(EndpointBlocks.Select(x => x.Block.Completion)),
-                Task.Delay(Options.Timeout));
-
-            if (Subscribers?.Any() == true)
-            {
-                foreach (var subscriber in Subscribers)
-                {
-                    subscriber.Value.Dispose();
-                }
-            }
         }
     }
 }

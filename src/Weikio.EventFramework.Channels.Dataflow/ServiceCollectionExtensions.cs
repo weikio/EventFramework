@@ -16,7 +16,6 @@ namespace Weikio.EventFramework.Channels.Dataflow
         public static IServiceCollection AddDataflowChannels(this IServiceCollection services)
         {
             services.AddChannels();
-            services.TryAddSingleton<IChannelBuilder, DataflowChannelBuilder>();
 
             return services;
         }

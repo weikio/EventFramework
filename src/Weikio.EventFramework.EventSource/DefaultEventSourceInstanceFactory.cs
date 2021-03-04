@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventSource.Abstractions;
@@ -29,14 +30,14 @@ namespace Weikio.EventFramework.EventSource
         private readonly IOptionsMonitor<CloudEventPublisherFactoryOptions> _optionsMonitor;
         private readonly ICloudEventPublisherFactory _publisherFactory;
         private readonly IEventSourceDefinitionConfigurationTypeProvider _configurationTypeProvider;
-        private readonly ICloudEventChannelManager _channelManager;
+        private readonly IChannelManager _channelManager;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
             PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier, 
             IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, 
             IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudEventPublisherFactory publisherFactory, 
             IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider,
-            ICloudEventChannelManager channelManager)
+            IChannelManager channelManager)
         {
             _serviceProvider = serviceProvider;
             _optionsCache = optionsCache;
@@ -246,14 +247,30 @@ namespace Weikio.EventFramework.EventSource
                 options.ConfigureDefaultCloudEventCreationOptions += addEventSourceIdConfigurator;
             });
             
-            // var channelName = $"es_{id.ToString()}";
-            // var esChannel = new DataflowChannel(_channelManager, channelName, instanceOptions.TargetChannelName);
-            // _channelManager.Add(channelName, esChannel);
-            //
-            // publisherFactoryOptions.ConfigureOptions.Add(options =>
-            // {
-            //     options.DefaultChannelName = channelName;
-            // });
+            var channelName = $"es_{id.ToString()}";
+            
+            var esChannel = new CloudEventsDataflowChannel(channelName, async ev =>
+            {
+                IChannel channel;
+
+                if (string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName) == false)
+                {
+                    channel = _channelManager.Get(instanceOptions.TargetChannelName);
+                }
+                else
+                {
+                    channel = _channelManager.GetDefaultChannel();
+                }
+
+                await channel.Send(ev);
+            });
+            
+            _channelManager.Add(esChannel);
+            
+            publisherFactoryOptions.ConfigureOptions.Add(options =>
+            {
+                options.DefaultChannelName = channelName;
+            });
             
             _optionsMonitorCache.TryAdd(id.ToString(), publisherFactoryOptions);
 

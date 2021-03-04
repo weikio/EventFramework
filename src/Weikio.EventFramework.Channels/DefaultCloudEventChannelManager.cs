@@ -2,17 +2,37 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
-namespace Weikio.EventFramework.Channels.Dataflow
+namespace Weikio.EventFramework.Channels
 {
-    public class DefaultCloudEventChannelManager : List<IChannel>, ICloudEventChannelManager, IDisposable
+    public class DefaultChannelManager : List<IChannel>, IChannelManager, IDisposable
     {
+        private DefaultChannelOptions _defaultChannelOptions;
         public IEnumerable<IChannel> Channels => this;
 
-        public DefaultCloudEventChannelManager()
+        public DefaultChannelManager(IOptions<DefaultChannelOptions> defaultChannelOptions)
         {
             var discardChannel = new NullChannel("_discard");
             Add(discardChannel);
+            _defaultChannelOptions = defaultChannelOptions.Value;
+        }
+
+        public IChannel GetDefaultChannel()
+        {
+            var result = this.FirstOrDefault(x => string.Equals(_defaultChannelOptions.DefaultChannelName, x.Name, StringComparison.InvariantCultureIgnoreCase));
+
+            if (result != null)
+            {
+                return result;
+            }
+
+            if (Count == 1)
+            {
+                return this.Single();
+            }
+
+            throw new NoDefaultChannelFoundException();
         }
 
         public IChannel Get(string channelName)
@@ -37,11 +57,6 @@ namespace Weikio.EventFramework.Channels.Dataflow
             return result;
         }
 
-        public void Add(string channelName, IChannel channel)
-        {
-            Add(channel);
-        }
-
         public Task Update()
         {
             throw new NotImplementedException();
@@ -57,5 +72,10 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 }
             }
         }
+    }
+
+    public class DefaultChannelOptions
+    {
+        public string DefaultChannelName { get; set; } = ChannelName.Default;
     }
 }

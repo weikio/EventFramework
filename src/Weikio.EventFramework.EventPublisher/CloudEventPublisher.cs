@@ -20,17 +20,17 @@ namespace Weikio.EventFramework.EventPublisher
         private readonly ICloudEventCreator _cloudEventCreator;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CloudEventPublisher> _logger;
-        private readonly ICloudEventChannelManager _cloudEventChannelManager;
+        private readonly IChannelManager _channelManager;
         private readonly CloudEventPublisherOptions _options;
 
         public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
-            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger, ICloudEventChannelManager cloudEventChannelManager)
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger, IChannelManager channelManager)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _cloudEventChannelManager = cloudEventChannelManager;
+            _channelManager = channelManager;
             _options = options.Value;
         }
 
@@ -155,7 +155,7 @@ namespace Weikio.EventFramework.EventPublisher
 
             if (!string.IsNullOrWhiteSpace(_options.DefaultChannelName))
             {
-                outgoingChannel = _cloudEventChannelManager.Get(_options.DefaultChannelName);
+                outgoingChannel = _channelManager.Get(_options.DefaultChannelName);
             }
 
             if (outgoingChannel == null)

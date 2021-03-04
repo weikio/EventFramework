@@ -16,6 +16,7 @@ using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.Channels.Dataflow;
+using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
 using Weikio.EventFramework.EventAggregator.AspNetCore;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
@@ -37,7 +38,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.AddCloudEventAggregator();
             builder.AddCloudEventGateway();
             builder.AddCloudEventSources();
-            builder.AddDataflowChannels();
+            builder.AddCloudEventDataflowChannels();
 
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
 

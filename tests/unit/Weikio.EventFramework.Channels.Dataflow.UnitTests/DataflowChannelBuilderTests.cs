@@ -1,16 +1,26 @@
 ﻿using System;
+using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
 using Xunit;
 
 namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 {
     public class DataflowChannelBuilderTests
     {
-        private IChannelBuilder _builder = new DataflowChannelBuilder();
+        private readonly CloudEventsDataflowChannelBuilder _builder = new CloudEventsDataflowChannelBuilder();
 
         [Fact]
         public void CanCreateChannel()
         {
             var channel = _builder.Create();
+            Assert.NotNull(channel);
+        }
+        
+        [Fact]
+        public void CanCreateChannelWithOptions()
+        {
+            var options = new CloudEventsDataflowChannelOptions() { Name = "test" };
+            
+            var channel = _builder.Create(options);
             Assert.NotNull(channel);
         }
         
@@ -33,23 +43,9 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public void CanNotCreateChannelWithNullName()
         {
-            Assert.Throws<ArgumentNullException>(() => _builder.Create(null));
+            var options = new CloudEventsDataflowChannelOptions() { Name = null };
+
+            Assert.Throws<ArgumentNullException>(() => _builder.Create(options));
         }
     }
 }
-
-// [Fact]
-// public async Task DataflowsWork()
-// {
-//     var provider = Init(services =>
-//     {
-//         services.AddLocal();
-//     });
-//
-//     var gwManager = provider.GetRequiredService<ICloudEventChannelManager>();
-//     var gw = new CloudEventGateway("test", null, new DataflowChannel(gwManager, "test", "local"));
-//
-//     var c = gw.OutgoingChannel;
-//     await c.Send(CloudEventCreator.Create(new CustomerCreatedEvent()));
-//     await Task.Delay(TimeSpan.FromSeconds(5));
-// }

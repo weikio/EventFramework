@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
-using Weikio.EventFramework.Channels.Dataflow;
 
 namespace Weikio.EventFramework.Channels
 {
@@ -16,7 +15,7 @@ namespace Weikio.EventFramework.Channels
 
         public static IServiceCollection AddChannels(this IServiceCollection services)
         {
-            services.TryAddSingleton<ICloudEventChannelManager, DefaultCloudEventChannelManager>();
+            services.TryAddSingleton<IChannelManager, DefaultChannelManager>();
 
             return services;
         }

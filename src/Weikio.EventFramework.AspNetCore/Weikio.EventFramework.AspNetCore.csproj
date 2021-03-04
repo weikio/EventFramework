@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Channels.Dataflow.CloudEvents\Weikio.EventFramework.Channels.Dataflow.CloudEvents.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Channels.Dataflow\Weikio.EventFramework.Channels.Dataflow.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventAggregator.AspNetCore\Weikio.EventFramework.EventAggregator.AspNetCore.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />

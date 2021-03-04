@@ -57,7 +57,7 @@ namespace Weikio.EventFramework.EventSource
                 EventSourceDefinition = eventSourceDefinition,
                 PollingFrequency = pollingFrequency,
                 Configuration = configuration,
-                TargetChannelName = channelName ?? ChannelName.Default
+                TargetChannelName = channelName
             };
 
             return manager.Create(options);
