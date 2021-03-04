@@ -14,6 +14,27 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         public DataflowLayerGeneric<object, CloudEvent> Build(CloudEventsDataflowChannelOptions options)
         {
             var inputBlock = new BufferBlock<object>();
+            
+            // // Todo: Interceptors should be created on DataflowChannelBuilder
+            // var preInterceptorBlock = new TransformBlock<object, object>(async obj =>
+            // {
+            //     foreach (var interceptor in options.Interceptors.Where(x => x.Item1 == InterceptorTypeEnum.PreAdapters))
+            //     {
+            //         obj =  await interceptor.Interceptor.Intercept(obj);
+            //     }
+            //
+            //     return obj;
+            // });
+            //
+            // var postInterceptorBlock = new TransformBlock<CloudEvent, CloudEvent>(async obj =>
+            // {
+            //     foreach (var interceptor in options.Interceptors.Where(x => x.Item1 == InterceptorTypeEnum.PostAdapters))
+            //     {
+            //         obj = (CloudEvent) await interceptor.Interceptor.Intercept(obj);
+            //     }
+            //
+            //     return obj;
+            // });
 
             var batchSplitter = new TransformManyBlock<object, BatchItem>(item =>
             {
@@ -67,6 +88,8 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
                 return item.Object is CloudEvent;
             });
 
+            // preInterceptorBlock.LinkTo(inputBlock, new DataflowLinkOptions() { PropagateCompletion = true });
+            
             inputBlock.LinkTo(cloudEventToCloudEventTransformer, o =>
             {
                 return o is CloudEvent;
@@ -93,6 +116,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
             });
 
             var outputBlock = new BufferBlock<CloudEvent>();
+            // outputBlock.LinkTo(postInterceptorBlock, new DataflowLinkOptions() { PropagateCompletion = true });
 
             cloudEventToCloudEventTransformer.LinkTo(outputBlock);
             objectToCloudEventTransformer.LinkTo(outputBlock);
@@ -101,6 +125,11 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 
             async Task Complete(TimeSpan timeout)
             {
+                // preInterceptorBlock.Complete();
+                // await Task.WhenAny(
+                //     Task.WhenAll(preInterceptorBlock.Completion),
+                //     Task.Delay(timeout));
+                
                 inputBlock.Complete();
 
                 await Task.WhenAny(
@@ -128,6 +157,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
                 await Task.WhenAny(
                     Task.WhenAll(outputBlock.Completion),
                     Task.Delay(timeout));
+
+                // postInterceptorBlock.Complete();
+                //
+                // await Task.WhenAny(
+                //     Task.WhenAll(postInterceptorBlock.Completion),
+                //     Task.Delay(timeout));
             }
 
             var block = DataflowBlock.Encapsulate(inputBlock, outputBlock);

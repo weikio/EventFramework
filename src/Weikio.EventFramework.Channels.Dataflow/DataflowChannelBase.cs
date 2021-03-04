@@ -10,17 +10,22 @@ using DataflowLinkOptions = System.Threading.Tasks.Dataflow.DataflowLinkOptions;
 
 namespace Weikio.EventFramework.Channels.Dataflow
 {
-    public abstract class DataflowChannelBase<TInput, TOutput> : IOutgoingChannel, IDisposable, IAsyncDisposable
+    public abstract class DataflowChannelBase<TInput, TOutput> : IOutgoingChannel, IDisposable, IAsyncDisposable where TInput : class where TOutput : class
     {
         protected readonly DataflowChannelOptionsBase<TInput, TOutput> Options;
         protected readonly ILogger Logger;
-        protected readonly IPropagatorBlock<TInput, TInput> Input = new BufferBlock<TInput>();
+        protected readonly IPropagatorBlock<TInput, TInput> Input;
         protected readonly DataflowLayerGeneric<TInput, TOutput> AdapterLayer;
         protected readonly DataflowLayerGeneric<TOutput, TOutput> ComponentLayer;
         protected readonly IPropagatorBlock<TOutput, TOutput> EndpointChannelBlock;
         protected readonly List<(ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)> EndpointBlocks = new();
         protected readonly Dictionary<string, IDisposable> Subscribers = new();
-        
+
+        public List<(InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor)> Interceptors
+        {
+            get => Options.Interceptors;
+        }
+
         public string Name
         {
             get
@@ -38,14 +43,8 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 throw new ArgumentNullException(nameof(Name));
             }
 
-            if (Options.IsPubSub)
-            {
-                EndpointChannelBlock = new BroadcastBlock<TOutput>(null);
-            }
-            else
-            {
-                EndpointChannelBlock = new BufferBlock<TOutput>();
-            }
+            Input = CreateInput();
+            EndpointChannelBlock = CreateEndpointChannel();
 
             if (Options.LoggerFactory != null)
             {
@@ -75,9 +74,12 @@ namespace Weikio.EventFramework.Channels.Dataflow
             
             var propageteLink = new DataflowLinkOptions() { PropagateCompletion = true };
 
-            AdapterLayer = Options.AdapterLayerBuilder.Invoke(Options);
-            ComponentLayer = Options.ComponentLayerBuilder.Invoke(Options);
+            var builtAdapterLayer = Options.AdapterLayerBuilder.Invoke(Options);
+            AdapterLayer = InterceptLayout(builtAdapterLayer, InterceptorTypeEnum.PreAdapters, InterceptorTypeEnum.PostAdapters); 
             
+            var builtComponentLayer = Options.ComponentLayerBuilder.Invoke(Options);
+            ComponentLayer = InterceptLayout(builtComponentLayer, InterceptorTypeEnum.PreComponents, InterceptorTypeEnum.PostComponent); 
+
             Input.LinkTo(AdapterLayer.Input, new DataflowLinkOptions() { PropagateCompletion = false });
             AdapterLayer.Output.LinkTo(ComponentLayer.Input, new DataflowLinkOptions() { PropagateCompletion = false });
             
@@ -85,7 +87,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
             {
                 EndpointChannelBlock.LinkTo(endpointBlock.Block, propageteLink, endpointBlock.Predicate);
             }
-            
+
             ComponentLayer.Output.LinkTo(EndpointChannelBlock, predicate:ev => ev != null);
             ComponentLayer.Output.LinkTo(DataflowBlock.NullTarget<TOutput>(), predicate: ev => ev == null);
         }
@@ -95,11 +97,153 @@ namespace Weikio.EventFramework.Channels.Dataflow
         {
         }
 
+        private IPropagatorBlock<TInput, TInput> CreateInput()
+        {
+            var input = new BufferBlock<TInput>();
+            var output = new BufferBlock<TInput>();
+
+            var preInterceptorBlock = new TransformBlock<TInput, TInput>(async obj =>
+            {
+                foreach (var interceptor in Interceptors.Where(x => x.Item1 == InterceptorTypeEnum.PreReceive))
+                {
+                    obj = (TInput) await interceptor.Interceptor.Intercept(obj);
+                }
+
+                return obj;
+            });
+
+            input.LinkTo(preInterceptorBlock, new DataflowLinkOptions() { PropagateCompletion = true });
+            preInterceptorBlock.LinkTo(output, new DataflowLinkOptions() { PropagateCompletion = true });
+
+            var postInterceptorBlock = new TransformBlock<TInput, TInput>(async obj =>
+            {
+                foreach (var interceptor in Interceptors.Where(x => x.Item1 == InterceptorTypeEnum.PostReceive))
+                {
+                    obj = (TInput) await interceptor.Interceptor.Intercept(obj);
+                }
+
+                return obj;
+            });
+            
+            output.LinkTo(postInterceptorBlock, new DataflowLinkOptions() { PropagateCompletion = true });
+
+            var result = DataflowBlock.Encapsulate(input, postInterceptorBlock);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Wraps the provided layer with pre and optionally post interceptors
+        /// </summary>
+        /// <param name="layer"></param>
+        /// <param name="preType"></param>
+        /// <param name="postType"></param>
+        /// <typeparam name="T1"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <returns></returns>
+        private DataflowLayerGeneric<T1, T2> InterceptLayout<T1, T2>(DataflowLayerGeneric<T1, T2> layer, InterceptorTypeEnum preType, InterceptorTypeEnum? postType = null)
+        {
+            var preInterceptorBlock = new TransformBlock<T1, T1>(async obj =>
+            {
+                foreach (var interceptor in Interceptors.Where(x => x.Item1 == preType))
+                {
+                    obj = (T1) await interceptor.Interceptor.Intercept(obj);
+                }
+        
+                return obj;
+            });
+
+            TransformBlock<T2, T2> postInterceptorBlock;
+
+            if (postType != null)
+            {
+                postInterceptorBlock = new TransformBlock<T2, T2>(async obj =>
+                {
+                    foreach (var interceptor in Interceptors.Where(x => x.Item1 == postType.GetValueOrDefault()))
+                    {
+                        obj = (T2) await interceptor.Interceptor.Intercept(obj);
+                    }
+        
+                    return obj;
+                });
+            }
+            else
+            {
+                postInterceptorBlock = new TransformBlock<T2, T2>(arg => arg);
+            }
+
+            preInterceptorBlock.LinkTo(layer.Input, new DataflowLinkOptions() { PropagateCompletion = false });
+            layer.Output.LinkTo(postInterceptorBlock, new DataflowLinkOptions() { PropagateCompletion = false });
+
+            var wrapped = DataflowBlock.Encapsulate(preInterceptorBlock, postInterceptorBlock);
+            
+            async Task Complete(TimeSpan timeout)
+            {
+                preInterceptorBlock.Complete();
+                await Task.WhenAny(
+                    Task.WhenAll(preInterceptorBlock.Completion),
+                    Task.Delay(timeout));
+
+                await layer.DisposeAsync();
+                
+                postInterceptorBlock.Complete();
+                await Task.WhenAny(
+                    Task.WhenAll(postInterceptorBlock.Completion),
+                    Task.Delay(timeout));
+            }
+
+            var result = new DataflowLayerGeneric<T1, T2>(wrapped, Complete);
+
+            return result;
+        }
+        
+        private IPropagatorBlock<TOutput, TOutput> CreateEndpointChannel()
+        {
+            var input = new BufferBlock<TOutput>();
+            IPropagatorBlock<TOutput, TOutput> output = null;
+            
+            if (Options.IsPubSub)
+            {
+                output = new BroadcastBlock<TOutput>(null);
+            }
+            else
+            {
+                output = new BufferBlock<TOutput>();
+            }
+            
+            var preInterceptorBlock = new TransformBlock<TOutput, TOutput>(async obj =>
+            {
+                foreach (var interceptor in Interceptors.Where(x => x.Item1 == InterceptorTypeEnum.PreEndpoints))
+                {
+                    obj = (TOutput) await interceptor.Interceptor.Intercept(obj);
+                }
+
+                return obj;
+            });
+
+            input.LinkTo(preInterceptorBlock, new DataflowLinkOptions() { PropagateCompletion = true });
+            preInterceptorBlock.LinkTo(output, new DataflowLinkOptions() { PropagateCompletion = true });
+
+            var result = DataflowBlock.Encapsulate(input, output);
+
+            return result;
+        }
+
         public async Task<bool> Send(object cloudEvent)
         {
             return await Input.SendAsync((TInput)cloudEvent);
         }
 
+        public void AddInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
+        {
+            Interceptors.Add((interceptor.InterceptorType, interceptor.Interceptor));
+        }
+
+        public void RemoveInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
+        {
+            Interceptors.Remove((interceptor.InterceptorType, interceptor.Interceptor));
+        }
+        
         public void Subscribe(IChannel channel)
         {
             if (channel == null)

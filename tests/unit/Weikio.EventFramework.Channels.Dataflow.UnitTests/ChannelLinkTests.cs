@@ -39,7 +39,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var count = 10;
+            var count = 100;
             var objects = CreateObjects(count);
 
             var channel1 = new CloudEventsDataflowChannel(firstOptions);

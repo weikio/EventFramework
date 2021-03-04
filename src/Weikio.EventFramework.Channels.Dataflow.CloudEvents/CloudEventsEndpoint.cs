@@ -37,7 +37,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         {
         }
         
-        public static implicit operator Func<CloudEvent, CloudEvent>(CloudEventsComponent component)
+        public static implicit operator Func<CloudEvent, Task<CloudEvent>>(CloudEventsComponent component)
         {
             return component.Func;
         }

@@ -15,5 +15,6 @@ namespace Weikio.EventFramework.Channels.Dataflow
         public Func<DataflowChannelOptionsBase<TInput, TOutput>, DataflowLayerGeneric<TOutput, TOutput>> ComponentLayerBuilder { get; set; }
         public bool IsPubSub { get; set; } = true;
         public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(180);
+        public List<(InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor)> Interceptors { get; set; } = new();
     }
 }

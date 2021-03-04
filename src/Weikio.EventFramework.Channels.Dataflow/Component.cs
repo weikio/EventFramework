@@ -1,14 +1,19 @@
 ﻿using System;
+using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 
 namespace Weikio.EventFramework.Channels.Dataflow
 {
     public class DataflowChannelComponent<TOutput>
     {
-        public Func<TOutput, TOutput> Func { get; private set; }
+        public Func<TOutput, Task<TOutput>> Func { get; private set; }
         public Predicate<TOutput> Predicate { get; private set; }
 
-        public DataflowChannelComponent(Func<TOutput, TOutput> func, Predicate<TOutput> predicate = null)
+        public DataflowChannelComponent(Func<TOutput, TOutput> func, Predicate<TOutput> predicate = null) : this(output => Task.FromResult(func(output)), predicate)
+        {
+        }
+        
+        public DataflowChannelComponent(Func<TOutput, Task<TOutput>> func, Predicate<TOutput> predicate = null)
         {
             if (func == null)
             {
@@ -19,7 +24,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
             Predicate = predicate ?? (ev => true);
         }
 
-        public static implicit operator Func<TOutput, TOutput>(DataflowChannelComponent<TOutput> component)
+        public static implicit operator Func<TOutput, Task<TOutput>>(DataflowChannelComponent<TOutput> component)
         {
             return component.Func;
         }

@@ -15,13 +15,13 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
             List<TransformBlock<TOutput, TOutput>> componentBlocks = new();
 
-            TOutput Execute(DataflowChannelComponent<TOutput> component, TOutput ev)
+            async Task<TOutput> Execute(DataflowChannelComponent<TOutput> component, TOutput ev)
             {
                 try
                 {
                     if (component.Predicate(ev))
                     {
-                        return component.Func.Invoke(ev);
+                        return await component.Func.Invoke(ev);
                     }
 
                     return ev;
