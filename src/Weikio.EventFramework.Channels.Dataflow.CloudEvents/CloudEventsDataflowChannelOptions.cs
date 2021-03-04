@@ -1,4 +1,5 @@
 ﻿using CloudNative.CloudEvents;
+using Weikio.EventFramework.EventCreator;
 
 namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 {
@@ -6,19 +7,21 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
     {
         public CloudEventsDataflowChannelOptions()
         {
-            AdapterLayerBuilder = () =>
+            AdapterLayerBuilder = options =>
             {
                 var b = new AdapterLayerBuilder();
         
-                return b.Build();
+                return b.Build(this);
             };
             
             ComponentLayerBuilder = options =>
             {
                 var b = new ComponentLayerBuilder();
         
-                return b.Build(options);
+                return b.Build(this);
             };
         }
+
+        public CloudEventCreationOptions CloudEventCreationOptions { get; set; } = new CloudEventCreationOptions();
     }
 }

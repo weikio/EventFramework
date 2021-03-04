@@ -42,8 +42,8 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var count = 10;
             var objects = CreateObjects(count);
 
-            var channel1 = new DataflowChannel(firstOptions);
-            var channel2 = new DataflowChannel(secondOptions);
+            var channel1 = new CloudEventsDataflowChannel(firstOptions);
+            var channel2 = new CloudEventsDataflowChannel(secondOptions);
 
             channel1.Subscribe(channel2);
 
@@ -89,9 +89,9 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             };
 
             
-            var channel1 = new DataflowChannel(firstOptions);
-            var channel2 = new DataflowChannel(secondOptions);
-            var channel3 = new DataflowChannel(thirdOptions);
+            var channel1 = new CloudEventsDataflowChannel(firstOptions);
+            var channel2 = new CloudEventsDataflowChannel(secondOptions);
+            var channel3 = new CloudEventsDataflowChannel(thirdOptions);
 
             channel1.Subscribe(channel2);
             channel1.Subscribe(channel3);
@@ -140,9 +140,9 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             };
 
             
-            var channel1 = new DataflowChannel(firstOptions);
-            var channel2 = new DataflowChannel(secondOptions);
-            var channel3 = new DataflowChannel(thirdOptions);
+            var channel1 = new CloudEventsDataflowChannel(firstOptions);
+            var channel2 = new CloudEventsDataflowChannel(secondOptions);
+            var channel3 = new CloudEventsDataflowChannel(thirdOptions);
 
             channel1.Subscribe(channel2);
             channel1.Subscribe(channel3);
@@ -186,8 +186,8 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var count = 10;
             var objects = CreateObjects(count);
 
-            var channel1 = new DataflowChannel(firstOptions);
-            var channel2 = new DataflowChannel(secondOptions);
+            var channel1 = new CloudEventsDataflowChannel(firstOptions);
+            var channel2 = new CloudEventsDataflowChannel(secondOptions);
 
             channel1.Subscribe(channel2);
             await channel1.Send(objects);
@@ -209,7 +209,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanLinkAnyTypeOfChannel()
         {
-            var channel1 = new DataflowChannel("first");
+            var channel1 = new CloudEventsDataflowChannel("first");
             var channel2 = new CustomChannel();
 
             channel1.Subscribe(channel2);

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,91 +12,82 @@ namespace Weikio.EventFramework.Channels.Dataflow
 {
     public abstract class DataflowChannelBase<TInput, TOutput> : IOutgoingChannel, IDisposable, IAsyncDisposable
     {
-        protected readonly DataflowChannelOptionsBase<TInput, TOutput> _options;
-        protected readonly IPropagatorBlock<TInput, TInput> _startingPoint =
-            new BufferBlock<TInput>();
-
-        protected List<(ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)> _endpointBlocks = new();
-        protected ILogger _logger;
-
-        protected IPropagatorBlock<TOutput, TOutput> _endpointChannelBlock;
-
-        protected DataflowLayerGeneric<TInput, TOutput> _adapterLayer;
-        protected DataflowLayerGeneric<TOutput, TOutput> _componentLayer;
-
-        protected Dictionary<string, IDisposable> _subscribers = new();
-
-        public const int TimeoutInSeconds = 180;
-
-        protected ArrayList Layers { get; set; } = new();
-
+        protected readonly DataflowChannelOptionsBase<TInput, TOutput> Options;
+        protected readonly ILogger Logger;
+        protected readonly IPropagatorBlock<TInput, TInput> Input = new BufferBlock<TInput>();
+        protected readonly DataflowLayerGeneric<TInput, TOutput> AdapterLayer;
+        protected readonly DataflowLayerGeneric<TOutput, TOutput> ComponentLayer;
+        protected readonly IPropagatorBlock<TOutput, TOutput> EndpointChannelBlock;
+        protected readonly List<(ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)> EndpointBlocks = new();
+        protected readonly Dictionary<string, IDisposable> Subscribers = new();
+        
         public string Name
         {
             get
             {
-                return _options.Name;
+                return Options.Name;
             }
         }
 
         public DataflowChannelBase(DataflowChannelOptionsBase<TInput, TOutput> options)
         {
-            _options = options;
+            Options = options;
 
             if (Name == null)
             {
                 throw new ArgumentNullException(nameof(Name));
             }
 
-            if (_options.IsPubSub)
+            if (Options.IsPubSub)
             {
-                _endpointChannelBlock = new BroadcastBlock<TOutput>(null);
+                EndpointChannelBlock = new BroadcastBlock<TOutput>(null);
             }
             else
             {
-                _endpointChannelBlock = new BufferBlock<TOutput>();
+                EndpointChannelBlock = new BufferBlock<TOutput>();
             }
 
-            if (_options.LoggerFactory != null)
+            if (Options.LoggerFactory != null)
             {
-                _logger = _options.LoggerFactory.CreateLogger(typeof(DataflowChannelBase<TInput, TOutput>));
+                Logger = Options.LoggerFactory.CreateLogger(typeof(DataflowChannelBase<TInput, TOutput>));
             }
             else
             {
-                _logger = new NullLogger<DataflowChannelBase<TInput, TOutput>>();
+                Logger = new NullLogger<DataflowChannelBase<TInput, TOutput>>();
             }
 
             if (options.Endpoint != null)
             {
-                _endpointBlocks.Add((new ActionBlock<TOutput>(options.Endpoint), ev => true));
+                EndpointBlocks.Add((new ActionBlock<TOutput>(options.Endpoint), ev => true));
             }
 
             if (options.Endpoints?.Any() == true)
             {
                 foreach (var endpointAction in options.Endpoints)
                 {
-                    _endpointBlocks.Add((new ActionBlock<TOutput>(endpointAction.Func), endpointAction.Predicate));
+                    EndpointBlocks.Add((new ActionBlock<TOutput>(endpointAction.Func), endpointAction.Predicate));
                 }
             }
             else
             {
-                _endpointChannelBlock.LinkTo(DataflowBlock.NullTarget<TOutput>(), _ => _subscribers?.Any() != true);
+                EndpointChannelBlock.LinkTo(DataflowBlock.NullTarget<TOutput>(), _ => Subscribers?.Any() != true);
             }
             
             var propageteLink = new DataflowLinkOptions() { PropagateCompletion = true };
 
-            _adapterLayer = _options.AdapterLayerBuilder.Invoke();
-            _componentLayer = _options.ComponentLayerBuilder.Invoke(_options);
+            AdapterLayer = Options.AdapterLayerBuilder.Invoke(Options);
+            ComponentLayer = Options.ComponentLayerBuilder.Invoke(Options);
             
-            _startingPoint.LinkTo(_adapterLayer.Layer, new DataflowLinkOptions() { PropagateCompletion = false });
-            _adapterLayer.Layer.LinkTo(_componentLayer.Layer, new DataflowLinkOptions() { PropagateCompletion = false });
+            Input.LinkTo(AdapterLayer.Input, new DataflowLinkOptions() { PropagateCompletion = false });
+            AdapterLayer.Output.LinkTo(ComponentLayer.Input, new DataflowLinkOptions() { PropagateCompletion = false });
             
-            foreach (var endpointBlock in _endpointBlocks)
+            foreach (var endpointBlock in EndpointBlocks)
             {
-                _endpointChannelBlock.LinkTo(endpointBlock.Block, propageteLink, endpointBlock.Predicate);
+                EndpointChannelBlock.LinkTo(endpointBlock.Block, propageteLink, endpointBlock.Predicate);
             }
             
-            _componentLayer.Layer.LinkTo(_endpointChannelBlock, ev => ev != null);
-            _componentLayer.Layer.LinkTo(DataflowBlock.NullTarget<TOutput>(), ev => ev == null);
+            ComponentLayer.Output.LinkTo(EndpointChannelBlock, predicate:ev => ev != null);
+            ComponentLayer.Output.LinkTo(DataflowBlock.NullTarget<TOutput>(), predicate: ev => ev == null);
         }
 
         public DataflowChannelBase(string name = ChannelName.Default, Action<TOutput> endpoint = null) : this(
@@ -107,7 +97,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
         public async Task<bool> Send(object cloudEvent)
         {
-            return await _startingPoint.SendAsync((TInput)cloudEvent);
+            return await Input.SendAsync((TInput)cloudEvent);
         }
 
         public void Subscribe(IChannel channel)
@@ -127,9 +117,9 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 await SendToChannel(output);
             });
 
-            var link = _endpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null);
+            var link = EndpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null);
             
-            _subscribers.Add(channel.Name, link);
+            Subscribers.Add(channel.Name, link);
         }
 
         public void Unsubscribe(IChannel channel)
@@ -139,7 +129,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 throw new ArgumentNullException(nameof(channel));
             }
 
-            var link = _subscribers.FirstOrDefault(x => string.Equals(x.Key, channel.Name, StringComparison.InvariantCultureIgnoreCase));
+            var link = Subscribers.FirstOrDefault(x => string.Equals(x.Key, channel.Name, StringComparison.InvariantCultureIgnoreCase));
 
             if (link.Key == null)
             {
@@ -149,34 +139,34 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
             link.Value.Dispose();
 
-            _subscribers.Remove(link.Key);
+            Subscribers.Remove(link.Key);
         }
 
         public void Dispose()
         {
-            _logger.LogInformation("Disposing channel {ChannelName}", Name);
-            _startingPoint.Complete();
+            Logger.LogInformation("Disposing channel {ChannelName}", Name);
+            Input.Complete();
 
             Task.WhenAny(
-                Task.WhenAll(_startingPoint.Completion),
-                Task.Delay(TimeSpan.FromSeconds(TimeoutInSeconds))).Wait();
+                Task.WhenAll(Input.Completion),
+                Task.Delay(Options.Timeout)).Wait();
 
-            _adapterLayer.Dispose();
-            _componentLayer.Dispose();
+            AdapterLayer.Dispose();
+            ComponentLayer.Dispose();
 
-            _endpointChannelBlock.Complete();
-
-            Task.WhenAny(
-                Task.WhenAll(_endpointChannelBlock.Completion),
-                Task.Delay(TimeSpan.FromSeconds(TimeoutInSeconds))).Wait();
+            EndpointChannelBlock.Complete();
 
             Task.WhenAny(
-                Task.WhenAll(_endpointBlocks.Select(x => x.Block.Completion)),
-                Task.Delay(TimeSpan.FromSeconds(TimeoutInSeconds))).Wait();
+                Task.WhenAll(EndpointChannelBlock.Completion),
+                Task.Delay(Options.Timeout)).Wait();
 
-            if (_subscribers?.Any() == true)
+            Task.WhenAny(
+                Task.WhenAll(EndpointBlocks.Select(x => x.Block.Completion)),
+                Task.Delay(Options.Timeout)).Wait();
+
+            if (Subscribers?.Any() == true)
             {
-                foreach (var subscriber in _subscribers)
+                foreach (var subscriber in Subscribers)
                 {
                     subscriber.Value.Dispose();
                 }
@@ -185,27 +175,27 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
         public async ValueTask DisposeAsync()
         {
-            _logger.LogInformation("Disposing channel {ChannelName} asynchronously", Name);
+            Logger.LogInformation("Disposing channel {ChannelName} asynchronously", Name);
 
-            _startingPoint.Complete();
-            await _startingPoint.Completion;
+            Input.Complete();
+            await Input.Completion;
 
-            await _adapterLayer.DisposeAsync();
-            await _componentLayer.DisposeAsync();
+            await AdapterLayer.DisposeAsync();
+            await ComponentLayer.DisposeAsync();
 
-            _endpointChannelBlock.Complete();
-
-            await Task.WhenAny(
-                Task.WhenAll(_endpointChannelBlock.Completion),
-                Task.Delay(TimeSpan.FromSeconds(TimeoutInSeconds)));
+            EndpointChannelBlock.Complete();
 
             await Task.WhenAny(
-                Task.WhenAll(_endpointBlocks.Select(x => x.Block.Completion)),
-                Task.Delay(TimeSpan.FromSeconds(TimeoutInSeconds)));
+                Task.WhenAll(EndpointChannelBlock.Completion),
+                Task.Delay(Options.Timeout));
 
-            if (_subscribers?.Any() == true)
+            await Task.WhenAny(
+                Task.WhenAll(EndpointBlocks.Select(x => x.Block.Completion)),
+                Task.Delay(Options.Timeout));
+
+            if (Subscribers?.Any() == true)
             {
-                foreach (var subscriber in _subscribers)
+                foreach (var subscriber in Subscribers)
                 {
                     subscriber.Value.Dispose();
                 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using CloudNative.CloudEvents;
+﻿using CloudNative.CloudEvents;
 
 namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 {

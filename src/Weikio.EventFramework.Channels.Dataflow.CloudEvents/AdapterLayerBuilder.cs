@@ -11,27 +11,30 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 {
     internal class AdapterLayerBuilder
     {
-        public DataflowLayerGeneric<object, CloudEvent> Build()
-        {
-            var result = CreateAdapterLayer();
-
-            return result;
-        }
-
-        private DataflowLayerGeneric<object, CloudEvent> CreateAdapterLayer()
+        public DataflowLayerGeneric<object, CloudEvent> Build(CloudEventsDataflowChannelOptions options)
         {
             var inputBlock = new BufferBlock<object>();
 
+            var batchSplitter = new TransformManyBlock<object, BatchItem>(item =>
+            {
+                var items = (IEnumerable) item;
+
+                // Sequence starts from 0, not from 1
+                return items.Cast<object>().Select((x, i) => new BatchItem(x, i + 1));
+            });
+
+            var cloudEventToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o => (CloudEvent) o);
+            
             var objectToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o =>
             {
-                var result = CloudEventCreator.Create(o);
+                var result = CloudEventCreator.Create(o, options.CloudEventCreationOptions);
 
                 return result;
             });
 
             var batchObjectToCloudEventTransformer = new TransformBlock<BatchItem, CloudEvent>(o =>
             {
-                var result = CloudEventCreator.Create(o.Object, extensions: new ICloudEventExtension[] { new IntegerSequenceExtension(o.Sequence) });
+                var result = CloudEventCreator.Create(o.Object, extensions: new ICloudEventExtension[] { new IntegerSequenceExtension(o.Sequence) }, options: options.CloudEventCreationOptions);
 
                 return result;
             });
@@ -53,16 +56,6 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 
                 return ev;
             });
-
-            var batchSplitter = new TransformManyBlock<object, BatchItem>(item =>
-            {
-                var items = (IEnumerable) item;
-
-                // Sequence starts from 0, not from 1
-                return items.Cast<object>().Select((x, i) => new BatchItem(x, i + 1));
-            });
-
-            var cloudEventToCloudEventTransformer = new TransformBlock<object, CloudEvent>(o => (CloudEvent) o);
 
             batchSplitter.LinkTo(batchObjectToCloudEventTransformer, item =>
             {
