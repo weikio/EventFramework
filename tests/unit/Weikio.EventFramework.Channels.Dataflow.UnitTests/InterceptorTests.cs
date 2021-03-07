@@ -27,7 +27,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var interceptor = new MyInterceptor();
             options.Interceptors.Add((InterceptorTypeEnum.PreReceive, interceptor));
 
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
             }
@@ -53,7 +53,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var interceptor = new ModifierInterceptor();
             options.Interceptors.Add((InterceptorTypeEnum.PreReceive, interceptor));
 
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
             }
@@ -72,7 +72,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             options.Interceptors.Add((InterceptorTypeEnum.PreAdapters, interceptor));
             options.Interceptors.Add((InterceptorTypeEnum.PostAdapters, interceptor2));
 
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
             }
@@ -104,7 +104,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 received = ev;
             };
             
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
             }
@@ -129,7 +129,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             
             options.Interceptors.Add((InterceptorTypeEnum.PreComponents, interceptor));
 
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
             }
@@ -145,7 +145,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var interceptor = new MyInterceptor();
             options.Interceptors.Add((InterceptorTypeEnum.PreEndpoints, interceptor));
 
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
             }
@@ -166,7 +166,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             
             var interceptor = new MyInterceptor();
 
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
                 await ContinueWhen(() => counter == 1);
@@ -192,7 +192,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             
             var interceptor = new MyInterceptor();
 
-            await using (var channel = new CloudEventsDataflowChannel(options))
+            await using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(new InvoiceCreated());
                 await ContinueWhen(() => counter == 1);

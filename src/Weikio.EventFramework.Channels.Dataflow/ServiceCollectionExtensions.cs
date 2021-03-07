@@ -20,4 +20,10 @@ namespace Weikio.EventFramework.Channels.Dataflow
             return services;
         }
     }
+
+    public interface IDataflowChannelManager : IChannelManager
+    {
+        void Subsribe(string subsriberChannel, string publisherChannel);
+        void UnSubsribe(string subsriberChannel, string publisherChannel);
+    }
 }

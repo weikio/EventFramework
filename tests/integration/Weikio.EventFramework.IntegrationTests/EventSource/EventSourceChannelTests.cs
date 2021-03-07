@@ -46,7 +46,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             var received = false;
 
-            var channel = new CloudEventsDataflowChannel("customChannel", ev =>
+            var channel = new CloudEventsChannel("customChannel", ev =>
             {
                 received = true;
             });

@@ -209,8 +209,6 @@ namespace Weikio.EventFramework.EventSource
                         var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, esInstance);
                         _scheduleService.Add(schedule);
 
-                        // eventSourceInstance.Status.UpdateStatus(EventSourceStatusEnum.Initialized, "Initialized");
-
                         return Task.FromResult(true);
                     };
 
@@ -249,7 +247,7 @@ namespace Weikio.EventFramework.EventSource
             
             var channelName = $"es_{id.ToString()}";
             
-            var esChannel = new CloudEventsDataflowChannel(channelName, async ev =>
+            var esChannel = new CloudEventsChannel(channelName, async ev =>
             {
                 IChannel channel;
 

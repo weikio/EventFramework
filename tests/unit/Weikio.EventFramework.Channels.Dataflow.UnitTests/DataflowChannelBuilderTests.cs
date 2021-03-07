@@ -6,7 +6,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 {
     public class DataflowChannelBuilderTests
     {
-        private readonly CloudEventsDataflowChannelBuilder _builder = new CloudEventsDataflowChannelBuilder();
+        private readonly CloudEventsChannelBuilder _builder = new CloudEventsChannelBuilder();
 
         [Fact]
         public void CanCreateChannel()

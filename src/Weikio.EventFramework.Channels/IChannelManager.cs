@@ -7,10 +7,7 @@ namespace Weikio.EventFramework.Channels
     {
         IEnumerable<IChannel> Channels { get; }
         IChannel Get(string channelName);
-
         void Add(IChannel channel);
-
-        Task Update();
         IChannel GetDefaultChannel();
     }
 }
