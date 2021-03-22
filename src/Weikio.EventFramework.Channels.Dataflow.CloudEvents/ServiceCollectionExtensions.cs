@@ -29,11 +29,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
             services.TryAddSingleton<IChannelBuilder, CloudEventsChannelBuilder>();
             services.TryAddSingleton<ICloudEventsChannelManager, DefaultCloudEventsChannelManager>();
             services.AddHostedService<CloudEventsChannelStartupHandler>();
+            services.TryAddSingleton<ICloudEventsChannelBuilder, DefaultCloudEventsChannelBuilder>();
 
             services.AddSingleton(new ChannelInstanceOptions()
             {
                 Name = "system/discard",
-                Configure = options =>
+                Configure = (_, options) =>
                 {
                     options.Endpoint = ev =>
                     {
@@ -46,7 +47,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         }
 
         public static IEventFrameworkBuilder AddChannel(this IEventFrameworkBuilder builder, string name,
-            Action<CloudEventsDataflowChannelOptions> configure = null)
+            Action<IServiceProvider, CloudEventsDataflowChannelOptions> configure = null)
         {
             builder.Services.AddCloudEventDataflowChannels();
             builder.Services.AddChannel(name, configure);
@@ -54,7 +55,8 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
             return builder;
         }
 
-        public static IServiceCollection AddChannel(this IServiceCollection services, string name, Action<CloudEventsDataflowChannelOptions> configure = null)
+        public static IServiceCollection AddChannel(this IServiceCollection services, string name,
+            Action<IServiceProvider, CloudEventsDataflowChannelOptions> configure = null)
         {
             services.AddSingleton(new ChannelInstanceOptions() { Configure = configure, Name = name });
 
@@ -67,10 +69,18 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         CloudEventsChannel Create(CloudEventsDataflowChannelOptions options);
     }
 
+    public class DefaultCloudEventsChannelBuilder : ICloudEventsChannelBuilder
+    {
+        public CloudEventsChannel Create(CloudEventsDataflowChannelOptions options)
+        {
+            return new CloudEventsChannel(options);
+        }
+    }
+
     public class ChannelInstanceOptions
     {
         public string Name { get; set; }
-        public Action<CloudEventsDataflowChannelOptions> Configure { get; set; }
+        public Action<IServiceProvider, CloudEventsDataflowChannelOptions> Configure { get; set; }
     }
 
     public class CloudEventsChannelStartupHandler : IHostedService
@@ -116,7 +126,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 
                     if (channelInstance.Configure != null)
                     {
-                        channelInstance.Configure(options);
+                        channelInstance.Configure(_serviceProvider, options);
                     }
 
                     options.Name = channelInstance.Name;

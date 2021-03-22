@@ -38,6 +38,11 @@ namespace Weikio.EventFramework.Channels
 
         public IChannel Get(string channelName)
         {
+            if (ContainsKey(channelName))
+            {
+                return this[channelName];
+            }
+            
             if (ContainsKey(_defaultChannelOptions.DefaultChannelName))
             {
                 return this[_defaultChannelOptions.DefaultChannelName];

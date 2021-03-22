@@ -146,7 +146,7 @@ namespace Weikio.EventFramework.EventPublisher
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to get gateway with name {GatewayName}", gatewayName);
+                // _logger.LogError(e, "Failed to get gateway with name {GatewayName}", gatewayName);
 
                 //throw;
             }

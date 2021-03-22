@@ -1,6 +1,6 @@
-﻿namespace Weikio.EventFramework.EventGateway.AzureServiceBus
+﻿namespace Weikio.EventFramework.Plugins.AzureServiceBus
 {
-    public class AzureServiceBusOptions
+    public class AzureServiceBusConfiguration
     {
         public string ConnectionString { get; set; }
         public string QueueName { get; set; }

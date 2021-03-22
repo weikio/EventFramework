@@ -32,4 +32,30 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
             return server.Services.GetService<ICloudEventCreator>();
         }
     }
+    
+    public abstract class EventDefinitionTestBase : IClassFixture<WebApplicationFactory<Startup>>
+    {
+        private readonly WebApplicationFactory<Startup> _factory;
+  
+        protected EventDefinitionTestBase(WebApplicationFactory<Startup> factory)
+        {
+            _factory = factory;
+        }
+        
+        protected IServiceProvider Init(Action<IServiceCollection> action = null)
+        {
+            var server = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    action?.Invoke(services);
+                    
+                    services.AddCloudEventCreator();
+                });
+                
+            });
+
+            return server.Services;
+        }
+    }
 }

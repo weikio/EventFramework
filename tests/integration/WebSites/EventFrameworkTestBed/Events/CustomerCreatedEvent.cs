@@ -2,8 +2,8 @@ namespace EventFrameworkTestBed.Events
 {
     public class CustomerCreatedEvent
     {
-        public string Name { get; set; }
-        public int Age { get; set; }
+        public string Name { get; set; } = "test name";
+        public int Age { get; set; } = 30;
     }
     
     public class CustomerDeletedEvent

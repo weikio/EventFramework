@@ -57,6 +57,52 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         }
         
         [Fact]
+        public async Task ChannelCanSubscribeToAnotherChannelWithPredicate()
+        {
+            var firstCounter = 0;
+            var secondCounter = 0;
+
+            var firstOptions = new CloudEventsDataflowChannelOptions()
+            {
+                Name = "first",
+                Endpoint = ev =>
+                {
+                    firstCounter += 1;
+                },
+                LoggerFactory = _loggerFactory
+            };
+
+            var secondOptions = new CloudEventsDataflowChannelOptions()
+            {
+                Name = "second",
+                Endpoint = ev =>
+                {
+                    secondCounter += 1;
+                },
+                LoggerFactory = _loggerFactory
+            };
+
+            var channel1 = new CloudEventsChannel(firstOptions);
+            var channel2 = new CloudEventsChannel(secondOptions);
+
+            channel1.Subscribe(channel2, ev => string.Equals(ev.Type, "InvoiceCreated", StringComparison.InvariantCultureIgnoreCase));
+
+            await channel1.Send(new InvoiceCreated());
+            await channel1.Send(new InvoiceCreated());
+            await channel1.Send(new CustomerCreated(Guid.NewGuid(), "test", "test"));
+            await channel1.Send(new CustomerCreated(Guid.NewGuid(), "test", "test"));
+            await channel1.Send(new CustomerCreated(Guid.NewGuid(), "test", "test"));
+            await channel1.Send(new InvoiceCreated());
+            await channel1.Send(new InvoiceCreated());
+
+            await channel1.DisposeAsync();
+            await channel2.DisposeAsync();
+
+            Assert.Equal(7, firstCounter);
+            Assert.Equal(4, secondCounter);
+        }
+        
+        [Fact]
         public async Task ChannelIsByDefaultPubSub()
         {
             var secondReceivedMessage = false;

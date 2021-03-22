@@ -112,7 +112,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
             Interceptors.Remove((interceptor.InterceptorType, interceptor.Interceptor));
         }
         
-        public void Subscribe(IChannel channel)
+        public void Subscribe(IChannel channel, Predicate<TOutput> filter = null)
         {
             if (channel == null)
             {
@@ -129,7 +129,16 @@ namespace Weikio.EventFramework.Channels.Dataflow
                 await SendToChannel(output);
             });
 
-            var link = EndpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null);
+            IDisposable link;
+
+            if (filter == null)
+            {
+                link = EndpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null);
+            }
+            else
+            {
+                link = EndpointChannelBlock.LinkTo(block, new DataflowLinkOptions {PropagateCompletion = true}, obj => obj != null && filter(obj));
+            }
             
             Subscribers.Add(channel.Name, link);
         }
