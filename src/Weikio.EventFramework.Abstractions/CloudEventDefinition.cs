@@ -5,14 +5,19 @@ namespace Weikio.EventFramework.Abstractions
 {
     public class CloudEventDefinition
     {
-        public string Type { get; }
-        public string Source { get; }
-        public string SpecVersion { get; } 
+        public string Type { get; set; }
+        public string Source { get; set; }
+        public string SpecVersion { get; set; }
         public string DataContentType { get; set; }
         public Uri DataSchemaUri { get; set; }
         public string DataSchema { get; set; }
 
-        public CloudEventDefinition(string type, string source, Uri dataSchemaUri = null, string dataSchema = null, string specVersion = null, string contentType = null )
+        public CloudEventDefinition()
+        {
+        }
+
+        public CloudEventDefinition(string type, string source, Uri dataSchemaUri = null, string dataSchema = null, string specVersion = null,
+            string contentType = null)
         {
             Type = type;
             Source = source;
