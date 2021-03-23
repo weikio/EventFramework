@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Mime;
 
 namespace Weikio.EventFramework.Abstractions
@@ -7,17 +8,18 @@ namespace Weikio.EventFramework.Abstractions
     {
         public string Type { get; set; }
         public string Source { get; set; }
-        public string SpecVersion { get; set; }
-        public string DataContentType { get; set; }
+        public string SpecVersion { get; set; } = "1.0";
+        public string DataContentType { get; set; } = "application/json";
         public Uri DataSchemaUri { get; set; }
         public string DataSchema { get; set; }
+        public List<string> Tags { get; set; } = new List<string>();
 
         public CloudEventDefinition()
         {
         }
 
         public CloudEventDefinition(string type, string source, Uri dataSchemaUri = null, string dataSchema = null, string specVersion = null,
-            string contentType = null)
+            string contentType = null, List<string> tags = null)
         {
             Type = type;
             Source = source;
@@ -25,6 +27,7 @@ namespace Weikio.EventFramework.Abstractions
             DataSchemaUri = dataSchemaUri;
             DataSchema = dataSchema;
             DataContentType = contentType ?? "application/json";
+            Tags = tags ?? new List<string>();
         }
 
         protected bool Equals(CloudEventDefinition other)
