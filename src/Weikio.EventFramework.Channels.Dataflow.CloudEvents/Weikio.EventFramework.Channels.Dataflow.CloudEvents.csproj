@@ -10,7 +10,7 @@
     <Product>Weikio.EventFramework.Channels.Dataflow.CloudEvents</Product>
     <PackageTags>cloudevents;event channels;dataflow</PackageTags>
     <Title>CloudEvents Dataflow Channels for Event Framework for .NET.</Title>
-    <LangVersion>preview</LangVersion>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
 
 
