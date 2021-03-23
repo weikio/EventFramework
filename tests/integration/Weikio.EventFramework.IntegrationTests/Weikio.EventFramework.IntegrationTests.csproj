@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.Dataflow.CloudEvents\Weikio.EventFramework.Channels.Dataflow.CloudEvents.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.Dataflow\Weikio.EventFramework.Channels.Dataflow.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventDefinition\Weikio.EventFramework.EventDefinition.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Router\Weikio.EventFramework.Router.csproj" />

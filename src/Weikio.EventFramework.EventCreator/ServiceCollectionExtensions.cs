@@ -26,7 +26,6 @@ namespace Weikio.EventFramework.EventCreator
             });
             
             services.TryAddSingleton<ICloudEventCreatorOptionsProvider, DefaultCloudEventCreatorOptionsProvider>();
-            services.TryAddSingleton<ICloudEventDefinitionManager, DefaultCloudEventDefinitionManager>();
 
             if (setupAction != null)
             {
