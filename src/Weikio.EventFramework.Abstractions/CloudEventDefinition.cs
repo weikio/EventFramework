@@ -8,18 +8,18 @@ namespace Weikio.EventFramework.Abstractions
         public string Type { get; }
         public string Source { get; }
         public string SpecVersion { get; } 
-        public ContentType DataContentType { get; set; }
+        public string DataContentType { get; set; }
         public Uri DataSchemaUri { get; set; }
         public string DataSchema { get; set; }
 
-        public CloudEventDefinition(string type, string source, Uri dataSchemaUri = null, string dataSchema = null, string specVersion = null, ContentType contentType = null )
+        public CloudEventDefinition(string type, string source, Uri dataSchemaUri = null, string dataSchema = null, string specVersion = null, string contentType = null )
         {
             Type = type;
             Source = source;
             SpecVersion = specVersion ?? "1.0";
             DataSchemaUri = dataSchemaUri;
             DataSchema = dataSchema;
-            DataContentType = contentType ?? new ContentType("application/json");
+            DataContentType = contentType ?? "application/json";
         }
 
         protected bool Equals(CloudEventDefinition other)

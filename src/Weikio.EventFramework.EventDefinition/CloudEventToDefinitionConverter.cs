@@ -20,7 +20,7 @@ namespace Weikio.EventFramework.EventDefinition
 
         public async Task<CloudEventDefinition> Convert(CloudEvent ev)
         {
-            var result = new CloudEventDefinition(ev.Source.ToString(), ev.Type, contentType: ev.DataContentType);
+            var result = new CloudEventDefinition( ev.Type, ev.Source.ToString(), contentType: ev.DataContentType?.MediaType);
 
             JsonSchema schema;
             if (ev.DataSchema != null)
