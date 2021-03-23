@@ -18,8 +18,11 @@ namespace Weikio.EventFramework.Channels.Dataflow
         protected readonly DataflowLayerGeneric<TInput, TOutput> AdapterLayer;
         protected readonly DataflowLayerGeneric<TOutput, TOutput> ComponentLayer;
         protected readonly IPropagatorBlock<TOutput, TOutput> EndpointChannelBlock;
-        protected readonly List<(ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)> EndpointBlocks = new();
-        protected readonly Dictionary<string, IDisposable> Subscribers = new();
+
+        protected readonly List<(ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)> EndpointBlocks =
+            new List<(ITargetBlock<TOutput> Block, Predicate<TOutput> Predicate)>();
+        
+        protected readonly Dictionary<string, IDisposable> Subscribers = new Dictionary<string, IDisposable>();
 
         public List<(InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor)> Interceptors
         {

@@ -32,12 +32,12 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
         public static implicit operator Endpoint<TOutput>(Func<TOutput, Task> func)
         {
-            return new(func);
+            return new Endpoint<TOutput>(func);
         }
 
         public static implicit operator Endpoint<TOutput>((Func<TOutput, Task> Func, Predicate<TOutput> Predicate) def)
         {
-            return new(def.Func, def.Predicate);
+            return new Endpoint<TOutput>(def.Func, def.Predicate);
         }
     }
 }

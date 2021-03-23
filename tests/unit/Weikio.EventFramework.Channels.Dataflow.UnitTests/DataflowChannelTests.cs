@@ -654,7 +654,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task ComponentsAreRunInOrder()
         {
-            List<int> counters = new();
+            var counters = new List<int>();
 
             var options = new CloudEventsDataflowChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
 

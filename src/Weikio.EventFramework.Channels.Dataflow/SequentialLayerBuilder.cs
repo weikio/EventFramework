@@ -13,7 +13,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
             var outputBlock = new BufferBlock<TOutput>();
             var propageteLink = new DataflowLinkOptions() { PropagateCompletion = true };
 
-            List<TransformBlock<TOutput, TOutput>> componentBlocks = new();
+            var componentBlocks = new List<TransformBlock<TOutput, TOutput>>();
 
             async Task<TOutput> Execute(DataflowChannelComponent<TOutput> component, TOutput ev)
             {

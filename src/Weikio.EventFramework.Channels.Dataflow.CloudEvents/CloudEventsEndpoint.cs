@@ -22,12 +22,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
     
         public static implicit operator CloudEventsEndpoint(Func<CloudEvent, Task> func)
         {
-            return new(func);
+            return new CloudEventsEndpoint(func);
         }
     
         public static implicit operator CloudEventsEndpoint((Func<CloudEvent, Task> Func, Predicate<CloudEvent> Predicate) def)
         {
-            return new(def.Func, def.Predicate);
+            return new CloudEventsEndpoint(def.Func, def.Predicate);
         }
     }
     
@@ -49,12 +49,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 
         public static implicit operator CloudEventsComponent(Func<CloudEvent, CloudEvent> func)
         {
-            return new(func);
+            return new CloudEventsComponent(func);
         }
 
         public static implicit operator CloudEventsComponent((Func<CloudEvent, CloudEvent> Func, Predicate<CloudEvent> Predicate) def)
         {
-            return new(def.Func, def.Predicate);
+            return new CloudEventsComponent(def.Func, def.Predicate);
         }
     }
 }

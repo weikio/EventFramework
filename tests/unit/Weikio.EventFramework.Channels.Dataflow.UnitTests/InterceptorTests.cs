@@ -211,7 +211,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
         public class MyInterceptor : IDataflowChannelInterceptor
         {
-            public List<object> Objs { get; set; } = new();
+            public List<object> Objs { get; set; } = new List<object>();
             public object Received = null;
 
             public Task<object> Intercept(object obj)
@@ -250,7 +250,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
         public class BeforeReceiveInterceptor : IDataflowChannelInterceptor<object, CloudEvent>
         {
-            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new();
+            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new List<object>();
 
             public Task OnPreReceive(object obj)
             {
@@ -262,7 +262,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
         public class BeforeAdaptersInterceptor : IDataflowChannelInterceptor<object, CloudEvent>
         {
-            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new();
+            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new List<object>();
 
             public Task OnPreReceive(object obj)
             {
@@ -274,7 +274,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
         public class BeforeComponentsInterceptor : IDataflowChannelInterceptor<object, CloudEvent>
         {
-            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new();
+            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new List<object>();
 
             public Task OnPreReceive(object obj)
             {
@@ -286,7 +286,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
         public class BeforeEndspointsInterceptor : IDataflowChannelInterceptor<object, CloudEvent>
         {
-            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new();
+            public List<object> InterceptedObjectsBeforeReceive { get; set; } = new List<object>();
 
             public Task OnPreReceive(object obj)
             {

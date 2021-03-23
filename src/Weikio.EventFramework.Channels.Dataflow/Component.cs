@@ -36,12 +36,12 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
         public static implicit operator DataflowChannelComponent<TOutput>(Func<TOutput, TOutput> func)
         {
-            return new(func);
+            return new DataflowChannelComponent<TOutput>(func);
         }
 
         public static implicit operator DataflowChannelComponent<TOutput>((Func<TOutput, TOutput> Func, Predicate<TOutput> Predicate) def)
         {
-            return new(def.Func, def.Predicate);
+            return new DataflowChannelComponent<TOutput>(def.Func, def.Predicate);
         }
     }
 }
