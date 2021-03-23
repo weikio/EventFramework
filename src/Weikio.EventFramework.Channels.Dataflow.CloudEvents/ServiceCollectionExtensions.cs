@@ -31,18 +31,6 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
             services.AddHostedService<CloudEventsChannelStartupHandler>();
             services.TryAddSingleton<ICloudEventsChannelBuilder, DefaultCloudEventsChannelBuilder>();
 
-            services.AddSingleton(new ChannelInstanceOptions()
-            {
-                Name = "system/discard",
-                Configure = (_, options) =>
-                {
-                    options.Endpoint = ev =>
-                    {
-                        DataflowBlock.NullTarget<CloudEvent>();
-                    };
-                }
-            });
-
             return services;
         }
 
