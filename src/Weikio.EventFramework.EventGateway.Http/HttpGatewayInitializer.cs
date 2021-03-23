@@ -14,7 +14,8 @@ namespace Weikio.EventFramework.EventGateway.Http
         private readonly CustomEndpointConfigurationProvider _customEndpointConfigurationProvider;
         private readonly ILogger<HttpGatewayInitializer> _logger;
 
-        public HttpGatewayInitializer(EndpointManager endpointManager, IApiProvider apiProvider, CustomEndpointConfigurationProvider customEndpointConfigurationProvider, ILogger<HttpGatewayInitializer> logger)
+        public HttpGatewayInitializer(EndpointManager endpointManager, IApiProvider apiProvider, 
+            CustomEndpointConfigurationProvider customEndpointConfigurationProvider, ILogger<HttpGatewayInitializer> logger)
         {
             _endpointManager = endpointManager;
             _apiProvider = apiProvider;

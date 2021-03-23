@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -22,6 +23,9 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
     {
         private readonly WebApplicationFactory<Startup> _factory;
         private IServiceProvider _serviceProvider;
+        
+        protected HttpClient Client { get; set; }
+        
         public ITestOutputHelper Output { get; set; }
 
         protected PollingEventSourceTestBase(WebApplicationFactory<Startup> factory, ITestOutputHelper output)
@@ -53,7 +57,8 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             MyTestCloudEventPublisher.PublishedEvents = new List<CloudEvent>();
 
             _serviceProvider = server.Services;
-
+            Client = server.CreateClient();
+            
             return _serviceProvider;
         }
         

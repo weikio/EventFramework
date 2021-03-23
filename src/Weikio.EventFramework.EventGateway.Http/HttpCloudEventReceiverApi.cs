@@ -77,14 +77,16 @@ namespace Weikio.EventFramework.EventGateway.Http
                     return new UnauthorizedResult();
                 }
             }
-            
-            var gateway = _cloudEventGatewayManager.Get(Configuration.GatewayName);
-            var channel = gateway.IncomingChannel;
 
-            foreach (var receivedEvent in receivedEvents)
-            {
-                await channel.Writer.WriteAsync(receivedEvent);
-            }
+            await Configuration.CloudEventPublisher.Publish(receivedEvents);
+            //
+            // var gateway = _cloudEventGatewayManager.Get(Configuration.GatewayName);
+            // var channel = gateway.IncomingChannel;
+            //
+            // foreach (var receivedEvent in receivedEvents)
+            // {
+            //     await channel.Writer.WriteAsync(receivedEvent);
+            // }
             
             return new OkResult();
         }

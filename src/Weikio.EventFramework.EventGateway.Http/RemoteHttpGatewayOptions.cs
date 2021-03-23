@@ -12,6 +12,5 @@ namespace Weikio.EventFramework.EventGateway.Http
         public Func<HttpClient, Task> ConfigureClient { get; set; } = client => Task.CompletedTask;
 
         public Func<HttpClient> ClientFactory { get; set; } 
-
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Channels;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Weikio.ApiFramework.Core.HealthChecks;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
 
@@ -16,6 +17,7 @@ namespace Weikio.EventFramework.EventGateway.Http
         }
 
         public string Name { get; }
+
         public Task<bool> Send(object cloudEvent)
         {
             throw new System.NotImplementedException();
@@ -34,5 +36,11 @@ namespace Weikio.EventFramework.EventGateway.Http
         public ChannelWriter<CloudEvent> Writer { get; }
         public ChannelReader<CloudEvent> Reader { get; }
         public int ReaderCount { get; set; }
+    }
+
+    public class HttpEventSourceConfiguration
+    {
+        public string Endpoint { get; set; } = "/events";
+        public string PolicyName { get; set; }
     }
 }
