@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Weikio.EventFramework.UnitTests
+namespace Weikio.EventFramework.Tests.Shared
 {
     public class CustomerCreated
     {
@@ -14,5 +14,10 @@ namespace Weikio.EventFramework.UnitTests
             FirstName = firstName;
             LastName = lastName;
         }
+    }
+
+    public class InvoiceCreated
+    {
+        public int Index { get; set; } = 0;
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.Tests.Shared;
 using Xunit;
 
 namespace Weikio.EventFramework.UnitTests

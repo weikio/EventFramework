@@ -15,7 +15,7 @@ namespace Weikio.EventFramework.EventGateway
         }
 
         public IEnumerable<ICloudEventGateway> Gateways => this;
-        
+
         public ICloudEventGateway Get(string gatewayName)
         {
             var result = this.FirstOrDefault(x => string.Equals(gatewayName, x.Name, StringComparison.InvariantCultureIgnoreCase));
@@ -31,7 +31,7 @@ namespace Weikio.EventFramework.EventGateway
                 {
                     throw new NoGatewaysConfiguredException();
                 }
-                
+
                 throw new UnknownGatewayException(gatewayName);
             }
 
@@ -46,19 +46,18 @@ namespace Weikio.EventFramework.EventGateway
             {
                 throw new DuplicateGatewayException(gatewayName);
             }
-            
+
             Add(gateway);
         }
 
         public async Task Update()
         {
             var removed = new List<ICloudEventGateway>();
-            
+
             foreach (var cloudEventGateway in Gateways)
             {
                 if (cloudEventGateway.Status == CloudEventGatewayStatus.Changed)
                 {
-                    
                 }
                 else if (cloudEventGateway.Status == CloudEventGatewayStatus.New)
                 {

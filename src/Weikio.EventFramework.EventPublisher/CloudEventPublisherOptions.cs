@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 
@@ -11,6 +12,7 @@ namespace Weikio.EventFramework.EventPublisher
     public class CloudEventPublisherOptions
     {
         public string DefaultGatewayName { get; set; } = GatewayName.Default;
+        public string DefaultChannelName { get; set; } = ChannelName.Default;
 
         public Dictionary<string, Action<CloudEventCreationOptions>> TypedCloudEventCreationOptions { get; set; } =
             new Dictionary<string, Action<CloudEventCreationOptions>>();

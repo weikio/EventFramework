@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Weikio.EventFramework.EventGateway
+namespace Weikio.EventFramework.Channels
 {
     public class ChannelCollection : List<IChannel>, IChannelCollection
     {

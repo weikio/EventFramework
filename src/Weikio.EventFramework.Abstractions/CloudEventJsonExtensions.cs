@@ -13,6 +13,11 @@ namespace Weikio.EventFramework.Abstractions
 {
     public static class CloudEventJsonExtensions
     {
+        public static CloudEvent<T> To<T>(this CloudEvent cloudEvent)
+        {
+            return CloudEvent<T>.Create(cloudEvent);
+        }
+        
         public static string ToJson(this CloudEvent cloudEvent)
         {
             var jobject = ToJObject(cloudEvent);
@@ -38,6 +43,16 @@ namespace Weikio.EventFramework.Abstractions
             }
 
             var result = arr.ToString(Formatting.Indented);
+
+            return result;
+        }
+
+        public static CloudEvent ToCloudEvent(this string eventString)
+        {
+            var formatter = new JsonEventFormatter();
+            var jObject = JObject.Parse(eventString);
+
+            var result = formatter.DecodeJObject(jObject);
 
             return result;
         }

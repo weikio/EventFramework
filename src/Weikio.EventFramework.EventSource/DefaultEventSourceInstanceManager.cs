@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource
@@ -21,7 +22,6 @@ namespace Weikio.EventFramework.EventSource
             _eventSourceProvider = eventSourceProvider;
             _instanceFactory = instanceFactory;
             _logger = logger;
-
         }
 
         public List<EventSourceInstance> GetAll()

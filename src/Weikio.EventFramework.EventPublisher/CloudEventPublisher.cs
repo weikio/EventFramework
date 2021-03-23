@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 
@@ -19,15 +20,17 @@ namespace Weikio.EventFramework.EventPublisher
         private readonly ICloudEventCreator _cloudEventCreator;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CloudEventPublisher> _logger;
+        private readonly IChannelManager _channelManager;
         private readonly CloudEventPublisherOptions _options;
 
         public CloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, 
-            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger)
+            ICloudEventCreator cloudEventCreator, IServiceProvider serviceProvider, ILogger<CloudEventPublisher> logger, IChannelManager channelManager)
         {
             _gatewayManager = gatewayManager;
             _cloudEventCreator = cloudEventCreator;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _channelManager = channelManager;
             _options = options.Value;
         }
 
@@ -130,7 +133,7 @@ namespace Weikio.EventFramework.EventPublisher
                 cloudEvent.Id = Guid.NewGuid().ToString();
             }
 
-            ICloudEventGateway gateway;
+            ICloudEventGateway gateway = null;
 
             try
             {
@@ -143,12 +146,17 @@ namespace Weikio.EventFramework.EventPublisher
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to get gateway with name {GatewayName}", gatewayName);
+                // _logger.LogError(e, "Failed to get gateway with name {GatewayName}", gatewayName);
 
-                throw;
+                //throw;
             }
 
-            var outgoingChannel = gateway.OutgoingChannel;
+            IChannel outgoingChannel = gateway?.OutgoingChannel;
+
+            if (!string.IsNullOrWhiteSpace(_options.DefaultChannelName))
+            {
+                outgoingChannel = _channelManager.Get(_options.DefaultChannelName);
+            }
 
             if (outgoingChannel == null)
             {

@@ -5,6 +5,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Channels;
 
 namespace Weikio.EventFramework.EventGateway.Http
 {

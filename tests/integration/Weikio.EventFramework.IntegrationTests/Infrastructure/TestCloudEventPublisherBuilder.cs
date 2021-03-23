@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
@@ -22,8 +23,9 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
         {
             var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
             var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
+            var channelManager = _serviceProvider.GetRequiredService<IChannelManager>();
 
-            var result = new MyTestCloudEventPublisher(gatewayManager, options, cloudEventCreator, _serviceProvider);
+            var result = new MyTestCloudEventPublisher(gatewayManager, options, cloudEventCreator, _serviceProvider, channelManager);
 
             return result;
         }

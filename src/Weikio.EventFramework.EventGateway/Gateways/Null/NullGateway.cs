@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Weikio.EventFramework.Channels;
 
 namespace Weikio.EventFramework.EventGateway.Gateways.Null
 {

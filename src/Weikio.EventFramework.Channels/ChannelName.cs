@@ -1,4 +1,4 @@
-﻿namespace Weikio.EventFramework.EventGateway
+﻿namespace Weikio.EventFramework.Channels
 {
     public static class ChannelName
     {

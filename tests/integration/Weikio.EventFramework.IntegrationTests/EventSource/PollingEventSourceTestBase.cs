@@ -131,4 +131,5 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             MyTestCloudEventPublisher.PublishedEvents = new List<CloudEvent>();
         }
     }
+    
 }

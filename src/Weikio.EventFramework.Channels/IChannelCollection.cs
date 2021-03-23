@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Weikio.EventFramework.EventGateway
+namespace Weikio.EventFramework.Channels
 {
     public interface IChannelCollection
     {

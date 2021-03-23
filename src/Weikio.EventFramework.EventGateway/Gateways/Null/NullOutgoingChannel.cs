@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels;
 
 namespace Weikio.EventFramework.EventGateway.Gateways.Null
 {
@@ -12,9 +13,19 @@ namespace Weikio.EventFramework.EventGateway.Gateways.Null
 
         public string Name { get; }
 
-        public Task Send(CloudEvent cloudEvent)
+        public Task<bool> Send(object cloudEvent)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(true);
+        }
+
+        public void Subscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

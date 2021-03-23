@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Channels;
 
 namespace Weikio.EventFramework.EventGateway.Http
 {
@@ -22,8 +23,9 @@ namespace Weikio.EventFramework.EventGateway.Http
 
         public string Name { get; }
 
-        public async Task Send(CloudEvent cloudEvent)
+        public async Task<bool> Send(object cloudEvents)
         {
+            var cloudEvent = (CloudEvent) cloudEvents;
             var client = _httpClientFactory();
 
             if (_configureClient != null)
@@ -41,8 +43,10 @@ namespace Weikio.EventFramework.EventGateway.Http
 
                 if (result.IsSuccessStatusCode)
                 {
-                    return;
+                    return true;
                 }
+
+                return false;
             }
             catch (Exception e)
             {
@@ -50,6 +54,16 @@ namespace Weikio.EventFramework.EventGateway.Http
 
                 throw;
             }
+        }
+
+        public void Subscribe(IChannel channel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Unsubscribe(IChannel channel)
+        {
+            throw new NotImplementedException();
         }
     }
 }

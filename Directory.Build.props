@@ -4,8 +4,8 @@
     <Authors>Weik.io</Authors>
     <Company>Weik.io</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/weikio/PluginFramework</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/weikio/PluginFramework</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/weikio/EventFramework</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/weikio/EventFramework</PackageProjectUrl>
     <Copyright>©2021 Weik.io</Copyright>
     <LangVersion>8.0</LangVersion>
     <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
@@ -13,7 +13,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="MinVer" Version="2.0.0" />
+    <PackageReference Include="MinVer" Version="2.0.0" PrivateAssets="All"/>
   </ItemGroup>
   
   <ItemGroup>

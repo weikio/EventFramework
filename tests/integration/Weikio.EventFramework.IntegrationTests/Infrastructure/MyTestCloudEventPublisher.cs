@@ -5,6 +5,7 @@ using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
@@ -24,7 +25,7 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
         }
 
         public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, 
-            IServiceProvider serviceProvider) : base(gatewayManager, options, cloudEventCreator, serviceProvider, serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>())
+            IServiceProvider serviceProvider, IChannelManager channelManager) : base(gatewayManager, options, cloudEventCreator, serviceProvider, serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>(), channelManager)
         {
         }
     }

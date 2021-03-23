@@ -1,7 +1,7 @@
 ﻿using System.Threading.Channels;
 using CloudNative.CloudEvents;
 
-namespace Weikio.EventFramework.EventGateway
+namespace Weikio.EventFramework.Channels
 {
     public interface IIncomingChannel : IChannel
     {

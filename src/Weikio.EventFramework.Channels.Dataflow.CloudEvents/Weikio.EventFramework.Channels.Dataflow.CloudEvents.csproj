@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>CloudEvents Dataflow Channels for Event Framework for .NET.</Description>
+    <PackageDescription>CloudEvents Dataflow Channels for Event Framework for .NET.</PackageDescription>
+    <PackageId>Weikio.EventFramework.Channels.Dataflow.CloudEvents</PackageId>
+    <Product>Weikio.EventFramework.Channels.Dataflow.CloudEvents</Product>
+    <PackageTags>cloudevents;event channels;dataflow</PackageTags>
+    <Title>CloudEvents Dataflow Channels for Event Framework for .NET.</Title>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Channels.Dataflow\Weikio.EventFramework.Channels.Dataflow.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.2" />
+  </ItemGroup>
+  
+</Project>
