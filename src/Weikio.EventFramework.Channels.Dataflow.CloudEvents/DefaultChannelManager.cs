@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Net.Security;
 
 namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 {
@@ -8,6 +9,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         public void Add(CloudEventsChannel channel);
         public new CloudEventsChannel GetDefaultChannel();
         public new CloudEventsChannel Get(string channelName);
+        public void Remove(CloudEventsChannel channel);
     }
     
     public class DefaultCloudEventsChannelManager : ICloudEventsChannelManager
@@ -32,6 +34,11 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         public CloudEventsChannel Get(string channelName)
         {
             return (CloudEventsChannel) _channelManager.Get(channelName);
+        }
+
+        public void Remove(CloudEventsChannel channel)
+        {
+            _channelManager.Remove(channel);
         }
 
         public IEnumerable<IChannel> Channels

@@ -36,6 +36,11 @@ namespace Weikio.EventFramework.Channels
             throw new NoDefaultChannelFoundException();
         }
 
+        public void Remove(IChannel channel)
+        {
+            Remove(channel.Name);
+        }
+
         public IChannel Get(string channelName)
         {
             if (ContainsKey(channelName))

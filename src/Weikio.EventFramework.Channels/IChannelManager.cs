@@ -9,5 +9,6 @@ namespace Weikio.EventFramework.Channels
         IChannel Get(string channelName);
         void Add(IChannel channel);
         IChannel GetDefaultChannel();
+        void Remove(IChannel channel);
     }
 }
