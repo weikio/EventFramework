@@ -251,13 +251,13 @@ namespace Weikio.EventFramework.EventSource
             {
                 IChannel channel;
 
-                if (string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName) == false)
+                if (string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName))
                 {
-                    channel = _channelManager.Get(instanceOptions.TargetChannelName);
+                    channel = _channelManager.GetDefaultChannel();
                 }
                 else
                 {
-                    channel = _channelManager.GetDefaultChannel();
+                    channel = _channelManager.Get(instanceOptions.TargetChannelName);
                 }
 
                 await channel.Send(ev);

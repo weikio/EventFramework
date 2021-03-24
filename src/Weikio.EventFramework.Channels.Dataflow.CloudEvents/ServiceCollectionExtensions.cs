@@ -110,8 +110,16 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 
                 foreach (var channelInstance in channelInstances)
                 {
-                    var options = _serviceProvider.GetService<IOptions<CloudEventsDataflowChannelOptions>>().Value;
+                    CloudEventsDataflowChannelOptions options;
 
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var provider = scope.ServiceProvider;
+
+                        var optionsAccessor = provider.GetService<IOptionsSnapshot<CloudEventsDataflowChannelOptions>>();
+                        options = optionsAccessor.Value;
+                    }
+                    
                     if (channelInstance.Configure != null)
                     {
                         channelInstance.Configure(_serviceProvider, options);

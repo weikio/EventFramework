@@ -1,7 +1,9 @@
-﻿using EventFrameworkTestBed;
+﻿using System;
+using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.IntegrationTests.EventSource;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;
 using Xunit;
 
