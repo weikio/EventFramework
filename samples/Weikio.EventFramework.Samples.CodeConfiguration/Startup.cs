@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -9,7 +11,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
@@ -88,6 +92,25 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
                 return Task.CompletedTask;
             }
         }
+        
+        [DisplayName("StatelessTestEventSource")]
+        public class StatelessTestEventSource
+        {
+            public Task<NewFileEvent> Run()
+            {
+                return Task.FromResult(new NewFileEvent("single.txt"));
+            }
+        }
+        
+        public class NewFileEvent
+        {
+            public string FileName { get; }
+
+            public NewFileEvent(string fileName)
+            {
+                FileName = fileName;
+            }
+        }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -102,12 +125,33 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration
 
             services.AddEventFramework()
                 .AddLocal()
-                // .AddFileEventSource()
-                // .AddEventSource<FileEventSource>()
-                .AddHandler(ev =>
+                .AddEventSource<StatelessTestEventSource>(options =>
                 {
-                    IndexModel.ReceivedEvents.Add(ev);
+                    options.Autostart = true;
+                    options.TargetChannelName = "bus";
+                    options.PollingFrequency = TimeSpan.FromSeconds(30);
+                })
+                .AddChannel("bus", (provider, options) =>
+                {
+                    options.Endpoints.Add((ev =>
+                    {
+                        Debug.WriteLine(ev.ToJson());
+                        return Task.CompletedTask;
+                    }, null));
+                })
+                .AddChannel("bus2", (provider, options) =>
+                {
+                    options.Endpoints.Add((ev =>
+                    {
+                        Debug.WriteLine(ev.ToJson());
+                        return Task.CompletedTask;
+                    }, null));
                 });
+
+            services.Configure<CloudEventPublisherOptions>(options =>
+            {
+                options.DefaultChannelName = "bus2";
+            });
 
             // services.AddSource<FileEventSource>(configure: source =>
             // {

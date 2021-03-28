@@ -53,7 +53,7 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 
         public async Task<IActionResult> OnPost()
         {
-            var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent("hello_world", new Uri("http://localhost")), "web");
+            var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent("hello_world", new Uri("http://localhost")));
 
             TempData["el"] = JsonSerializer.Serialize(CloudEvent);
 
