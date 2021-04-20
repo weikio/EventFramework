@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactories
@@ -13,7 +14,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
     {
         public int Priority { get; } = 0;
 
-        public (List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>, Func<MethodInfo, CloudEvent, List<object>>) GetHandlerMethods(Type handlerType)
+        public (List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard, Func<CloudEvent, Task<bool>> CanHandle)>, Func<MethodInfo, CloudEvent, List<object>>) GetHandlerMethods(Type handlerType, Func<CloudEvent, Task<bool>> canHandle)
         {
             var methods = handlerType.GetTypeInfo().DeclaredMethods.ToList();
 
@@ -23,11 +24,48 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
             
             var guardMethods = methods.Where(x => x.Name.StartsWith("Can")).ToList();
 
-            var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>();
+            var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard, Func<CloudEvent, Task<bool>> CanHandle)>();
 
             foreach (var handlerMethod in handlerMethods)
             {
-                var methodCriteria = MethodToCriteriaParser.MethodToCriteria(handlerMethod, guardMethods);
+                var methodCriteria = MethodToCriteriaParser.MethodToCriteria(handlerMethod, guardMethods, canHandle);
+
+                // If developer doesn't add any criteria to handler, automatically add the handler's first parameter as a EventType filter
+                if (methodCriteria.Criteria.Equals(CloudEventCriteria.Empty))
+                {
+                    
+                    var methodParameters = handlerMethod.GetParameters();
+
+                    if (methodParameters.Any())
+                    {
+                        var methodParameter = methodParameters.First();
+
+                        methodCriteria.CanHandle = async ev =>
+                        {
+                            if (canHandle != null)
+                            {
+                                var canHandleResult = await canHandle(ev);
+
+                                if (canHandleResult == false)
+                                {
+                                    return false;
+                                }
+                            }
+                            
+                            if (ev.Data.GetType() != methodParameter.ParameterType)
+                            {
+                                return false;
+                            }
+
+                            return true;
+                        };
+
+                        // Now we need a way to convert this method parameter to event type. 
+                        // By default the conversion is easy: Type: CustomerCreatedEvent, EventType: CustomerCreatedEvent
+                        // But the developer can configure how the event names 
+                    }
+                }
+                
                 supportedCloudEventTypes.Add(methodCriteria);
             }
 
@@ -98,10 +136,13 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
             {
                 return cloudEvent.Data;
             }
-            
-            var result = JsonConvert.DeserializeObject(cloudEvent.Data.ToString(), parameterType);
 
-            return result;
+            if (cloudEvent.Data is JToken)
+            {
+                return JsonConvert.DeserializeObject(cloudEvent.Data.ToString(), parameterType);
+            }
+
+            return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(cloudEvent.Data), parameterType);
         }
     }
 }

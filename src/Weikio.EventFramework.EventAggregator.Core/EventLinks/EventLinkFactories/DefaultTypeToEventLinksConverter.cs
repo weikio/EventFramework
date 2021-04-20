@@ -21,7 +21,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
         {
             var result = new List<EventLink>();
 
-            var handlerMethods = _typeToHandlers.OrderBy(x => x.Priority).Select(x => x.GetHandlerMethods(handlerType)).ToList();
+            var handlerMethods = _typeToHandlers.OrderBy(x => x.Priority).Select(x => x.GetHandlerMethods(handlerType, canHandle)).ToList();
             
             var addedMethods = new List<MethodInfo>();
 
@@ -41,7 +41,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
                     var runner = provider.GetRequiredService<IEventLinkRunner>();
 
                     runner.Initialize(handler, supportedHandler.Handler, suppotedHandler.Item2,
-                        supportedHandler.Criteria, canHandle, supportedHandler.Guard);
+                        supportedHandler.Criteria, supportedHandler.CanHandle, supportedHandler.Guard);
 
                     var link = new EventLink(runner.CanHandle, runner.Handle);
 

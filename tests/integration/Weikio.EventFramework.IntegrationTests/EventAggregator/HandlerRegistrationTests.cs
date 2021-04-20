@@ -236,6 +236,71 @@ namespace Weikio.EventFramework.IntegrationTests.EventAggregator
         }
         
         [Fact]
+        public async Task CanRegisterClassWithTypeArgumentAndFilter()
+        {
+            var publisher = Init(services =>
+            {
+                services.AddHandler<TestHandlerWithTypeArgument>(eventType: "CustomerCreatedEvent");
+            });
+            
+            // Act
+            await publisher.Publish(new CustomerCreatedEvent(){Name = "Test Customer"});
+            await publisher.Publish(new CustomerDeletedEvent(){Name = "Test Customer"});
+
+            // Assert
+            Assert.Equal("Test Customer", TestHandlerWithTypeArgument.CreatedCustomer);
+        }
+        
+        [Fact]
+        public async Task ShouldNotCrashIfUnknownEventType()
+        {
+            var publisher = Init(services =>
+            {
+                services.AddHandler<TestHandlerWithTypeArgument>(); // Can only handle CustomerCreatedEvent
+            });
+            
+            // Act
+            await publisher.Publish(new CustomerDeletedEvent(){Name = "Test Customer"});
+        }
+        
+        [Fact]
+        public async Task ShouldNotHandleUnknownEventType()
+        {
+            var publisher = Init(services =>
+            {
+                services.AddHandler<AnotherTestHandlerWithTypeArgument>(); // Can only handle CustomerCreatedEvent
+            });
+            
+            // Act
+            await publisher.Publish(new CustomerDeletedEvent(){Name = "Test Customer"});
+            await publisher.Publish(new CustomerCreatedEvent(){Name = "Test Customer"});
+            await publisher.Publish(new CustomerCreatedEvent(){Name = "Test Customer"});
+            
+            // Assert
+            Assert.Equal(2, AnotherTestHandlerWithTypeArgument.HandledCount);
+        }
+        
+        [Fact]
+        public async Task ShouldNotHandleUnknownEventTypeInMultiHandler()
+        {
+            var publisher = Init(services =>
+            {
+                services.AddHandler<MultiTestHandlerWithTypeArgument>(); 
+            });
+            
+            // Act
+            await publisher.Publish(new CustomerDeletedEvent(){Name = "Test Customer"});
+            await publisher.Publish(new CustomerCreatedEvent(){Name = "Test Customer"});
+            await publisher.Publish(new CustomerCreatedEvent(){Name = "Test Customer"});
+            await publisher.Publish(new CustomerDeletedEvent(){Name = "Test Customer"});
+            await publisher.Publish(new CustomerDeletedEvent(){Name = "Test Customer"});
+   
+            // Assert
+            Assert.Equal(3, MultiTestHandlerWithTypeArgument.HandledDeleteCount);
+            Assert.Equal(2, MultiTestHandlerWithTypeArgument.HandledCreateCount);
+        }
+        
+        [Fact]
         public async Task CanRegisterClassWithGuard()
         {
             var publisher = Init(services =>

@@ -111,5 +111,10 @@ namespace Weikio.EventFramework.EventAggregator.Core
 
             return true;
         }
+
+        public static CloudEventCriteria Empty { get; } = new CloudEventCriteria()
+        {
+            Type = string.Empty, DataContentType = null, Source = string.Empty, Subject = string.Empty
+        };
     }
 }

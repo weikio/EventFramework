@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 
 namespace Weikio.EventFramework.EventAggregator.Core.EventLinks
 {
     public class MethodToCriteriaParser
     {
-        public static (CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard) MethodToCriteria(MethodInfo handlerMethod,
-            List<MethodInfo> guardMethods)
+        public static (CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard, Func<CloudEvent, Task<bool>> CanHandle) MethodToCriteria(MethodInfo handlerMethod,
+            List<MethodInfo> guardMethods, Func<CloudEvent, Task<bool>> canHandle)
         {
             var supportedEventType = string.Empty;
             var supportedSource = string.Empty;
@@ -45,7 +47,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks
             var guardMethod = guardMethods.FirstOrDefault(x =>
                 string.Equals(x.Name, "Can" + handlerMethod.Name, StringComparison.InvariantCultureIgnoreCase));
 
-            return (criteria, handlerMethod, guardMethod);
+            return (criteria, handlerMethod, guardMethod, canHandle);
         }
     }
 }

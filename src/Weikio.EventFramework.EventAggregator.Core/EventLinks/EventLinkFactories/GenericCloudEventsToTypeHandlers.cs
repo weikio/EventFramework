@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Newtonsoft.Json;
 using Weikio.EventFramework.Abstractions;
@@ -12,8 +13,8 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
     {
         public int Priority { get; } = 0;
 
-        public (List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>, Func<MethodInfo, CloudEvent, List<object>>)
-            GetHandlerMethods(Type handlerType)
+        public (List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard, Func<CloudEvent, Task<bool>> CanHandle)>, Func<MethodInfo, CloudEvent, List<object>>)
+            GetHandlerMethods(Type handlerType, Func<CloudEvent, Task<bool>> canHandle)
         {
             var methods = handlerType.GetTypeInfo().DeclaredMethods.ToList();
 
@@ -26,11 +27,11 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
                 x.Name.StartsWith("Can") && x.GetParameters()
                     .Any(p => p.ParameterType.IsGenericType && p.ParameterType.GetGenericTypeDefinition() == typeof(CloudEvent<>))).ToList());
 
-            var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard)>();
+            var supportedCloudEventTypes = new List<(CloudEventCriteria Criteria, MethodInfo Handler, MethodInfo Guard, Func<CloudEvent, Task<bool>> CanHandle)>();
 
             foreach (var handlerMethod in handlerMethods)
             {
-                var methodCriteria = MethodToCriteriaParser.MethodToCriteria(handlerMethod, guardMethods);
+                var methodCriteria = MethodToCriteriaParser.MethodToCriteria(handlerMethod, guardMethods, canHandle);
                 supportedCloudEventTypes.Add(methodCriteria);
             }
 
