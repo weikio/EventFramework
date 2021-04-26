@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource.Abstractions
@@ -13,6 +13,7 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         public bool RunOnce { get; set; }
         public object Configuration { get; set; }
         public string TargetChannelName { get; set; }
+        public Guid? Id { get; set; }
 
         public Action<CloudEventPublisherOptions> ConfigurePublisherOptions = options =>
         {
