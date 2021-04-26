@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventCreator;
@@ -12,23 +12,24 @@ namespace Weikio.EventFramework.EventSource
     {
         public static Task<Guid> Create(this IEventSourceInstanceManager manager, string name, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null,
-            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null)
+            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, Guid? id = null)
         {
             return Create(manager, name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure, configurePublisherOptions,
-                configureDefaultCloudEventCreationOptions, configuration);
+                configureDefaultCloudEventCreationOptions, configuration, null, id);
         }
 
         public static Task<Guid> Create(this IEventSourceInstanceManager manager, Abstractions.EventSource eventSource, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null,
-            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null)
+            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, Guid? id = null)
         {
             return Create(manager, eventSource.EventSourceDefinition.Name, eventSource.EventSourceDefinition.Version, pollingFrequency, cronExpression,
-                configure, configurePublisherOptions, configureDefaultCloudEventCreationOptions, configuration);
+                configure, configurePublisherOptions, configureDefaultCloudEventCreationOptions, configuration, null, id);
         }
 
         public static Task<Guid> Create(this IEventSourceInstanceManager manager, string name, Version version, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null,
-            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, string channelName = null)
+            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, string channelName = null,
+            Guid? id = null)
         {
             var eventSourceDefinition = new EventSourceDefinition(name, version);
 
@@ -57,7 +58,8 @@ namespace Weikio.EventFramework.EventSource
                 EventSourceDefinition = eventSourceDefinition,
                 PollingFrequency = pollingFrequency,
                 Configuration = configuration,
-                TargetChannelName = channelName
+                TargetChannelName = channelName,
+                Id = id
             };
 
             return manager.Create(options);

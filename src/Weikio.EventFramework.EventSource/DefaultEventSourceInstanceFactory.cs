@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -60,7 +60,7 @@ namespace Weikio.EventFramework.EventSource
 
             var eventSourceType = eventSource.EventSourceType;
             var instance = eventSource.Instance;
-            var id = Guid.NewGuid();
+            var id = instanceOptions.Id ?? Guid.NewGuid();
             var action = eventSource.Action;
             Func<IServiceProvider, EventSourceInstance, Task<bool>> start = null;
             Func<IServiceProvider, EventSourceInstance, Task<bool>> stop = null;
