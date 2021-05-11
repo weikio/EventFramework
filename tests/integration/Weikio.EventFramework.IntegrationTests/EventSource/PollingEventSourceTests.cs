@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
@@ -49,8 +51,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
         }
-        
-        
+
         [Fact]
         public async Task CanUseConfiguration()
         {
@@ -100,7 +101,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
         }
-        
+
         [Fact]
         public async Task CanAutostart()
         {
@@ -125,7 +126,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
         }
-        
+
         [Fact]
         public async Task CanSetInitialStateOnFirstRun()
         {
@@ -143,7 +144,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             });
 
             await Task.Delay(TimeSpan.FromSeconds(3));
-            
+
             Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
 
             for (var i = 0; i < MyTestCloudEventPublisher.PublishedEvents.Count - 1; i++)
@@ -161,6 +162,15 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                 services.AddCloudEventPublisher();
                 services.AddLocal();
                 services.AddEventSource<TestEventSource>();
+
+                services.AddChannel("bus", (provider, options) =>
+                {
+                });
+
+                services.Configure<DefaultChannelOptions>(options =>
+                {
+                    options.DefaultChannelName = "bus";
+                });
             });
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
@@ -214,7 +224,6 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                 .FirstOrDefault(x => x.Object.FileName == "first.test");
             Assert.NotNull(instanceFile);
         }
-
 
         [Fact]
         public async Task StatelessIsNotAutoStartedByDefault()
@@ -337,7 +346,6 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                 {
                     Autostart = true, PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource"
                 });
-
             });
 
             await ContinueWhen(MyTestCloudEventPublisher.PublishedEvents.Any);
@@ -640,7 +648,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             var eventSourceId = firstEvent.EventSourceId();
 
             Assert.NotNull(eventSourceId);
-            Assert.NotEqual(Guid.Empty, eventSourceId);
+            Assert.NotEqual(string.Empty, eventSourceId);
 
             Assert.Equal(id, eventSourceId);
         }
@@ -673,7 +681,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             var eventSourceId = firstEvent.EventSourceId();
 
             Assert.NotNull(eventSourceId);
-            Assert.NotEqual(Guid.Empty, eventSourceId);
+            Assert.NotEqual(string.Empty, eventSourceId);
 
             Assert.Equal(id, eventSourceId);
         }
@@ -716,7 +724,6 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             Assert.Equal(anotherSourceId, anotherFileEvent.EventSourceId());
         }
 
-        
         [Fact]
         public async Task DoesNotThrowIfNoEvents()
         {
@@ -739,7 +746,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             {
                 return MyTestCloudEventPublisher.PublishedEvents.Any(x => x.Type == "NewFileEvent");
             });
-            
+
             await ContinueWhen(() =>
             {
                 return MyTestCloudEventPublisher.PublishedEvents.Any(x => x.Type == "DeletedFileEvent");
@@ -765,7 +772,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             Assert.Equal(typeof(EventSourceWithConfigurationTypeTheConfigurationType), configurationType);
         }
-        
+
         [Fact]
         public void CanGetConfigurationTypeByConstructorParameterName()
         {
@@ -785,7 +792,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             Assert.Equal(typeof(EventSourceWithConfigurationTypeTheConfigurationType), configurationType);
         }
-        
+
         [Fact]
         public async Task CanInitializeConfigurationWithDefault()
         {
@@ -801,7 +808,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             var manager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
             await manager.Create("EventSourceWithConfigurationType", pollingFrequency: TimeSpan.FromSeconds(1));
             await manager.StartAll();
-            
+
             await ContinueWhen(() => MyTestCloudEventPublisher.PublishedEvents.Any());
         }
 
@@ -816,12 +823,13 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
                 services.AddEventSource<EventSourceWithConfigurationType>();
             });
-            
+
             var manager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
 
-            await Assert.ThrowsAsync<UnknownEventSourceException>(async () => await manager.Create("UnknownEventSource", pollingFrequency: TimeSpan.FromSeconds(1)));
+            await Assert.ThrowsAsync<UnknownEventSourceException>(async () =>
+                await manager.Create("UnknownEventSource", pollingFrequency: TimeSpan.FromSeconds(1)));
         }
-        
+
         [Fact]
         public void CanGetIfPollingIsRequired()
         {
@@ -833,11 +841,58 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
                 services.AddEventSource<EventSourceWithConfigurationType>();
             });
-            
+
             var configurationTypeProvider = serviceProvider.GetRequiredService<IEventSourceDefinitionConfigurationTypeProvider>();
             var confType = configurationTypeProvider.Get("EventSourceWithConfigurationType");
-            
+
             Assert.True(confType.RequiresPolling);
+        }
+
+        [Fact]
+        public void CanSetInstanceId()
+        {
+            var id = Guid.NewGuid().ToString();
+
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+
+                services.AddSingleton(new EventSourceInstanceOptions()
+                {
+                    Autostart = false, PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource", Id = id
+                });
+            });
+
+            var instance = serviceProvider.GetRequiredService<IEventSourceInstanceManager>().GetAll().Single();
+
+            Assert.Equal(id, instance.Id);
+        }
+
+        [Fact]
+        public async Task CanNotSetDuplicateId()
+        {
+            var id = Guid.NewGuid().ToString();
+
+            var serviceProvider = Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+            });
+
+            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            var options = new EventSourceInstanceOptions() { PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource", Id = id };
+
+            await eventSourceInstanceManager.Create(options);
+
+            await Assert.ThrowsAsync<DuplicateEventSourceInstanceException>(async () =>
+            {
+                await eventSourceInstanceManager.Create(options);
+            });
         }
 
         public void Dispose()

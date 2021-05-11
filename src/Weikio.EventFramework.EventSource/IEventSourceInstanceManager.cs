@@ -7,14 +7,14 @@ namespace Weikio.EventFramework.EventSource
 {
     public interface IEventSourceInstanceManager
     {
-        List<EventSourceInstance> GetAll();
-        EventSourceInstance Get(Guid id);
-        Task<Guid> Create(EventSourceInstanceOptions options);
-        Task Start(Guid eventSourceInstanceId);
+        IEnumerable<EventSourceInstance> GetAll();
+        EventSourceInstance Get(string eventSourceInstanceId);
+        Task<string> Create(EventSourceInstanceOptions options);
+        Task Start(string eventSourceInstanceId);
         Task StartAll();
-        Task Stop(Guid eventSourceId);
+        Task Stop(string eventSourceInstanceId);
         Task StopAll();
-        Task Remove(Guid eventSourceId);
+        Task Remove(string eventSourceInstanceId);
         Task RemoveAll();
     }
 }

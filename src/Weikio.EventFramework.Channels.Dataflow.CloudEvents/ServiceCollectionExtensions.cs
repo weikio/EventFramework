@@ -37,7 +37,6 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         public static IEventFrameworkBuilder AddChannel(this IEventFrameworkBuilder builder, string name,
             Action<IServiceProvider, CloudEventsDataflowChannelOptions> configure = null)
         {
-            builder.Services.AddCloudEventDataflowChannels();
             builder.Services.AddChannel(name, configure);
 
             return builder;
@@ -46,6 +45,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
         public static IServiceCollection AddChannel(this IServiceCollection services, string name,
             Action<IServiceProvider, CloudEventsDataflowChannelOptions> configure = null)
         {
+            services.AddCloudEventDataflowChannels();
             services.AddSingleton(new ChannelInstanceOptions() { Configure = configure, Name = name });
 
             return services;

@@ -65,7 +65,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventCreation
             var server = Init();
         
             // Act 
-            var eventSourceId = Guid.NewGuid();
+            var eventSourceId = Guid.NewGuid().ToString();
 
             var result = server.CreateCloudEvents(_objects, creationOptions: new CloudEventCreationOptions()
             {

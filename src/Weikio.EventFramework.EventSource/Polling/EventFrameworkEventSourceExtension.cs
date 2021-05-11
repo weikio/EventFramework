@@ -10,13 +10,13 @@ namespace Weikio.EventFramework.EventSource.Polling
 
         IDictionary<string, object> _attributes = new Dictionary<string, object>();
 
-        public Guid EventSourceValue
+        public string EventSourceValue
         {
-            get => (Guid) _attributes[EventFrameworkEventSourceAttributeName];
+            get => (string) _attributes[EventFrameworkEventSourceAttributeName];
             set => _attributes[EventFrameworkEventSourceAttributeName] = value;
         }
 
-        public EventFrameworkEventSourceExtension(Guid eventSourceId)
+        public EventFrameworkEventSourceExtension(string eventSourceId)
         {
             EventSourceValue = eventSourceId;
         }
@@ -46,7 +46,7 @@ namespace Weikio.EventFramework.EventSource.Polling
         {
             if (string.Equals(key, EventFrameworkEventSourceAttributeName))
             {
-                if (value is Guid)
+                if (value is string)
                 {
                     return true;
                 }
@@ -61,7 +61,7 @@ namespace Weikio.EventFramework.EventSource.Polling
         {
             if (string.Equals(name, EventFrameworkEventSourceAttributeName))
             {
-                return typeof(Guid);
+                return typeof(string);
             }
 
             return null;

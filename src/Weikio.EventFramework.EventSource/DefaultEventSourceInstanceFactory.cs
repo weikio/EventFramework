@@ -60,7 +60,7 @@ namespace Weikio.EventFramework.EventSource
 
             var eventSourceType = eventSource.EventSourceType;
             var instance = eventSource.Instance;
-            var id = instanceOptions.Id ?? Guid.NewGuid();
+            var id = instanceOptions.Id ?? Guid.NewGuid().ToString();
             var action = eventSource.Action;
             Func<IServiceProvider, EventSourceInstance, Task<bool>> start = null;
             Func<IServiceProvider, EventSourceInstance, Task<bool>> stop = null;
@@ -204,7 +204,7 @@ namespace Weikio.EventFramework.EventSource
 
                         var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState, EventSource = esInstance };
 
-                        _optionsCache.TryAdd(id.ToString(), jobOptions);
+                        _optionsCache.TryAdd(id, jobOptions);
 
                         var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, esInstance);
                         _scheduleService.Add(schedule);
@@ -245,7 +245,7 @@ namespace Weikio.EventFramework.EventSource
                 options.ConfigureDefaultCloudEventCreationOptions += addEventSourceIdConfigurator;
             });
             
-            var channelName = $"es_{id.ToString()}";
+            var channelName = $"es_{id}";
             
             var esChannel = new CloudEventsChannel(channelName, async ev =>
             {
@@ -270,7 +270,7 @@ namespace Weikio.EventFramework.EventSource
                 options.DefaultChannelName = channelName;
             });
             
-            _optionsMonitorCache.TryAdd(id.ToString(), publisherFactoryOptions);
+            _optionsMonitorCache.TryAdd(id, publisherFactoryOptions);
 
             var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop);
 

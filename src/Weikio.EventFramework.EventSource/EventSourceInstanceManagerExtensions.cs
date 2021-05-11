@@ -10,26 +10,26 @@ namespace Weikio.EventFramework.EventSource
 {
     public static class EventSourceInstanceManagerExtensions
     {
-        public static Task<Guid> Create(this IEventSourceInstanceManager manager, string name, TimeSpan? pollingFrequency = null,
+        public static Task<string> Create(this IEventSourceInstanceManager manager, string name, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null,
-            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, Guid? id = null)
+            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, string id = null)
         {
             return Create(manager, name, Version.Parse("1.0.0.0"), pollingFrequency, cronExpression, configure, configurePublisherOptions,
                 configureDefaultCloudEventCreationOptions, configuration, null, id);
         }
 
-        public static Task<Guid> Create(this IEventSourceInstanceManager manager, Abstractions.EventSource eventSource, TimeSpan? pollingFrequency = null,
+        public static Task<string> Create(this IEventSourceInstanceManager manager, Abstractions.EventSource eventSource, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null,
-            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, Guid? id = null)
+            Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, string id = null)
         {
             return Create(manager, eventSource.EventSourceDefinition.Name, eventSource.EventSourceDefinition.Version, pollingFrequency, cronExpression,
                 configure, configurePublisherOptions, configureDefaultCloudEventCreationOptions, configuration, null, id);
         }
 
-        public static Task<Guid> Create(this IEventSourceInstanceManager manager, string name, Version version, TimeSpan? pollingFrequency = null,
+        public static Task<string> Create(this IEventSourceInstanceManager manager, string name, Version version, TimeSpan? pollingFrequency = null,
             string cronExpression = null, MulticastDelegate configure = null, Action<CloudEventPublisherOptions> configurePublisherOptions = null,
             Action<CloudEventCreationOptions> configureDefaultCloudEventCreationOptions = null, object configuration = null, string channelName = null,
-            Guid? id = null)
+            string id = null)
         {
             var eventSourceDefinition = new EventSourceDefinition(name, version);
 

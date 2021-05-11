@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource
 {
-    public class DefaultEventSourceInstanceManager : List<EventSourceInstance>, IEventSourceInstanceManager
+    public class DefaultEventSourceInstanceManager : HashSet<EventSourceInstance>, IEventSourceInstanceManager
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IEventSourceProvider _eventSourceProvider;
@@ -24,24 +23,29 @@ namespace Weikio.EventFramework.EventSource
             _logger = logger;
         }
 
-        public List<EventSourceInstance> GetAll()
+        public IEnumerable<EventSourceInstance> GetAll()
         {
             return this;
         }
 
-        public EventSourceInstance Get(Guid id)
+        public EventSourceInstance Get(string id)
         {
             return this.FirstOrDefault(x => x.Id == id);
         }
 
-        public async Task<Guid> Create(EventSourceInstanceOptions options)
+        public async Task<string> Create(EventSourceInstanceOptions options)
         {
             _logger.LogInformation("Creating new event source instance from options {Options}", options);
-            
+
             var eventSource = _eventSourceProvider.Get(options.EventSourceDefinition);
             var instance = _instanceFactory.Create(eventSource, options);
 
-            Add(instance);
+            var added = Add(instance);
+
+            if (added == false)
+            {
+                throw new DuplicateEventSourceInstanceException($"Event source instance with {instance.Id} already exists");
+            }
 
             var result = instance.Id;
 
@@ -60,7 +64,7 @@ namespace Weikio.EventFramework.EventSource
         public async Task StartAll()
         {
             _logger.LogDebug("Starting all event source instances");
-            
+
             foreach (var eventSourceInstance in this)
             {
                 if (eventSourceInstance.Status.Status != EventSourceStatusEnum.Started && eventSourceInstance.Status.Status != EventSourceStatusEnum.Starting)
@@ -70,7 +74,7 @@ namespace Weikio.EventFramework.EventSource
             }
         }
 
-        public async Task Start(Guid eventSourceInstanceId)
+        public async Task Start(string eventSourceInstanceId)
         {
             _logger.LogDebug("Starting event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
 
@@ -84,21 +88,21 @@ namespace Weikio.EventFramework.EventSource
             inst.Status.UpdateStatus(EventSourceStatusEnum.Starting);
 
             await inst.Start(_serviceProvider);
-            
+
             _logger.LogInformation("Started event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
         }
 
         public async Task StopAll()
         {
             _logger.LogDebug("Stopping all event source instances");
-            
+
             foreach (var eventSourceInstance in this)
             {
                 await Stop(eventSourceInstance.Id);
             }
         }
 
-        public async Task Stop(Guid eventSourceInstanceId)
+        public async Task Stop(string eventSourceInstanceId)
         {
             _logger.LogDebug("Stopping event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
 
@@ -111,7 +115,8 @@ namespace Weikio.EventFramework.EventSource
 
             if (inst.Status != EventSourceStatusEnum.Starting && inst.Status != EventSourceStatusEnum.Started)
             {
-                _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, no need to stop", eventSourceInstanceId, inst.Status.Status);
+                _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, no need to stop", eventSourceInstanceId,
+                    inst.Status.Status);
 
                 return;
             }
@@ -119,11 +124,11 @@ namespace Weikio.EventFramework.EventSource
             inst.Status.UpdateStatus(EventSourceStatusEnum.Stopping);
 
             await inst.Stop(_serviceProvider);
-            
+
             _logger.LogInformation("Stopped event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
         }
 
-        public async Task Remove(Guid eventSourceInstanceId)
+        public async Task Remove(string eventSourceInstanceId)
         {
             _logger.LogInformation("Removing event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
 
@@ -136,11 +141,12 @@ namespace Weikio.EventFramework.EventSource
 
             if (inst.Status == EventSourceStatusEnum.Starting && inst.Status == EventSourceStatusEnum.Started)
             {
-                _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, stop before removing", eventSourceInstanceId, inst.Status.Status);
+                _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, stop before removing", eventSourceInstanceId,
+                    inst.Status.Status);
 
                 await inst.Stop(_serviceProvider);
             }
-            
+
             inst.Status.UpdateStatus(EventSourceStatusEnum.Removed);
         }
 

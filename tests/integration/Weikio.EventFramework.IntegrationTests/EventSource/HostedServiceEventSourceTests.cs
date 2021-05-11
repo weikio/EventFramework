@@ -85,7 +85,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             var eventSourceId = firstEvent.EventSourceId();
 
             Assert.NotNull(eventSourceId);
-            Assert.NotEqual(Guid.Empty, eventSourceId);
+            Assert.NotEqual(string.Empty, eventSourceId);
 
             Assert.Equal(id, eventSourceId);
         }
