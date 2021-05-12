@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
-using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.IntegrationTests.Infrastructure
@@ -13,37 +8,11 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
     {
         public List<object> PublishedEvents = new List<object>();
 
-        public TestCloudEventPublisher()
-        {
-        }
-
-        public Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName = GatewayName.Default)
-        {
-            PublishedEvents.Add(cloudEvent);
-
-            return Task.FromResult<CloudEvent>(cloudEvent);
-        }
-
-        public Task<List<CloudEvent>> Publish(IList<object> objects, string eventTypeName = "", string id = "", Uri source = null,
-            string gatewayName = GatewayName.Default)
-        {
-            PublishedEvents.AddRange(objects);
-
-            return Task.FromResult(new List<CloudEvent>());
-        }
-
-        public Task<List<CloudEvent>> Publish(IEnumerable objects, string eventTypeName = "", string id = "", Uri source = null, string gatewayName = GatewayName.Default)
-        {
-            PublishedEvents.AddRange(objects.Cast<object>());
-
-            return Task.FromResult(new List<CloudEvent>());
-        }
-
-        public Task<CloudEvent> Publish(object obj, string eventTypeName = "", string id = "", Uri source = null, string gatewayName = GatewayName.Default)
+        public Task Publish(object obj, string channelName = null)
         {
             PublishedEvents.Add(obj);
 
-            return Task.FromResult(new CloudEvent("test", new Uri("http://localhost", UriKind.Absolute), Guid.NewGuid().ToString()));
+            return Task.CompletedTask;
         }
     }
 }

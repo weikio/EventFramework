@@ -27,7 +27,7 @@ namespace Weikio.EventFramework.EventSource
 
         public CloudEventPublisher Build(IOptions<CloudEventPublisherOptions> options)
         {
-            var result = new CloudEventPublisher(_gatewayManager, options, _cloudEventCreator, _serviceProvider, _serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>(), _channelManager);
+            var result = new CloudEventPublisher(options, _serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>(), _channelManager);
 
             return result;
         }

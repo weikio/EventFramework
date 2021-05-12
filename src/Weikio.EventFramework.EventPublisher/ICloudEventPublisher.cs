@@ -9,12 +9,6 @@ namespace Weikio.EventFramework.EventPublisher
 {
     public interface ICloudEventPublisher
     {
-        Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName = GatewayName.Default);
-
-        Task<CloudEvent> Publish(object obj, string eventTypeName = "", string id = "", Uri source = null,
-            string gatewayName = GatewayName.Default);
-        
-        Task<List<CloudEvent>> Publish(IEnumerable objects, string eventTypeName = "", string id = "", Uri source = null,
-            string gatewayName = GatewayName.Default);
+        Task Publish(object obj, string channelName = null);
     }
 }

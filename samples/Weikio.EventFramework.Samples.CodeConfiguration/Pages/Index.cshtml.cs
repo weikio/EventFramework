@@ -53,9 +53,10 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
 
         public async Task<IActionResult> OnPost()
         {
-            var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent("hello_world", new Uri("http://localhost")));
+            var cloudEvent = new CloudEvent("hello_world", new Uri("http://localhost"));
+            await _cloudEventPublisher.Publish(cloudEvent);
 
-            TempData["el"] = JsonSerializer.Serialize(CloudEvent);
+            TempData["el"] = JsonSerializer.Serialize(cloudEvent);
 
             return RedirectToPage();
         }
@@ -63,18 +64,20 @@ namespace Weikio.EventFramework.Samples.CodeConfiguration.Pages
         public async Task<IActionResult> OnPostCustomer()
         {
             var customerCreated = new CustomerCreated(){FirstName = "Mikael", LastName = "Koskinen"};
-            var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent<CustomerCreated>(customerCreated, new Uri("http://localhost")), "local");
+            var cloudEvent = new CloudEvent<CustomerCreated>(customerCreated, new Uri("http://localhost"));
+            await _cloudEventPublisher.Publish(cloudEvent, "local");
 
-            TempData["el"] = JsonSerializer.Serialize(publishedEvent);
+            TempData["el"] = JsonSerializer.Serialize(cloudEvent);
 
             return RedirectToPage();
         }
         
         public async Task<IActionResult> OnPostSecond()
         {
-            var publishedEvent = await _cloudEventPublisher.Publish(new CloudEvent("hello_world", new Uri("http://localhost")), "local2");
+            var cloudEvent = new CloudEvent("hello_world", new Uri("http://localhost"));
+            await _cloudEventPublisher.Publish(cloudEvent, "local2");
 
-            TempData["el"] = JsonSerializer.Serialize(CloudEvent);
+            TempData["el"] = JsonSerializer.Serialize(cloudEvent);
 
             return RedirectToPage();
         }

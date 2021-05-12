@@ -6,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Channels;
-using Weikio.EventFramework.EventCreator;
-using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.IntegrationTests.Infrastructure
@@ -16,16 +14,22 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
     {
         public static List<CloudEvent> PublishedEvents = new List<CloudEvent>();
 
-        public override async Task<CloudEvent> Publish(CloudEvent cloudEvent, string gatewayName)
+        public override async Task Publish(object obj, string channelName = null)
         {
-            await base.Publish(cloudEvent, gatewayName);
-            PublishedEvents.Add(cloudEvent);
+            await base.Publish(obj, channelName);
 
-            return cloudEvent;
+            if (obj is CloudEvent ev)
+            {
+                PublishedEvents.Add(ev);
+            }
+            else
+            {
+                
+            }
         }
 
-        public MyTestCloudEventPublisher(ICloudEventGatewayManager gatewayManager, IOptions<CloudEventPublisherOptions> options, ICloudEventCreator cloudEventCreator, 
-            IServiceProvider serviceProvider, IChannelManager channelManager) : base(gatewayManager, options, cloudEventCreator, serviceProvider, serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>(), channelManager)
+        public MyTestCloudEventPublisher(IOptions<CloudEventPublisherOptions> options, 
+            IServiceProvider serviceProvider, IChannelManager channelManager) : base(options, serviceProvider.GetRequiredService<ILogger<CloudEventPublisher>>(), channelManager)
         {
         }
     }

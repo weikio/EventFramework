@@ -17,23 +17,16 @@ namespace Weikio.EventFramework.EventGateway.Http
         private readonly ILogger<HttpEventSource> _logger;
         private readonly EndpointManager _endpointManager;
         private readonly IApiProvider _apiProvider;
-        private readonly CustomEndpointConfigurationProvider _customEndpointConfigurationProvider;
         private readonly ICloudEventPublisher _cloudEventPublisher;
-        private readonly EventSourceInstanceOptions _instanceOptions;
-        private readonly string _channelName;
         private readonly HttpEventSourceConfiguration _configuration;
 
         public HttpEventSource(ILogger<HttpEventSource> logger, EndpointManager endpointManager, IApiProvider apiProvider,
-            CustomEndpointConfigurationProvider customEndpointConfigurationProvider, ICloudEventPublisher cloudEventPublisher,
-            EventSourceInstanceOptions instanceOptions, string channelName, HttpEventSourceConfiguration configuration = null)
+            ICloudEventPublisher cloudEventPublisher, HttpEventSourceConfiguration configuration = null)
         {
             _logger = logger;
             _endpointManager = endpointManager;
             _apiProvider = apiProvider;
-            _customEndpointConfigurationProvider = customEndpointConfigurationProvider;
             _cloudEventPublisher = cloudEventPublisher;
-            _instanceOptions = instanceOptions;
-            _channelName = channelName;
 
             if (configuration == null)
             {
@@ -53,7 +46,7 @@ namespace Weikio.EventFramework.EventGateway.Http
             var endpoint = new Endpoint(_configuration.Endpoint, api,
                 new HttpCloudEventReceiverApiConfiguration()
                 {
-                    PolicyName = _configuration.PolicyName, CloudEventPublisher = _cloudEventPublisher, TargetChannelName = _channelName
+                    PolicyName = _configuration.PolicyName, CloudEventPublisher = _cloudEventPublisher, 
                 });
 
             _endpointManager.AddEndpoint(endpoint);

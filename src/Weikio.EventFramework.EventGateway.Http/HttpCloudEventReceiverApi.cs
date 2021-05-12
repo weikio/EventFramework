@@ -15,17 +15,14 @@ namespace Weikio.EventFramework.EventGateway.Http
 {
     public class HttpCloudEventReceiverApi
     {
-        private readonly ICloudEventGatewayManager _cloudEventGatewayManager;
         private readonly IAuthorizationService _authorizationService;
         private readonly IHttpContextAccessor _contextAccessor;
-        private readonly IChannelManager _channelManager;
 
-        public HttpCloudEventReceiverApi(ICloudEventGatewayManager cloudEventGatewayManager, IAuthorizationService authorizationService, IHttpContextAccessor contextAccessor, IChannelManager channelManager)
+        public HttpCloudEventReceiverApi(IAuthorizationService authorizationService, 
+            IHttpContextAccessor contextAccessor)
         {
-            _cloudEventGatewayManager = cloudEventGatewayManager;
             _authorizationService = authorizationService;
             _contextAccessor = contextAccessor;
-            _channelManager = channelManager;
         }
 
         public HttpCloudEventReceiverApiConfiguration Configuration { get; set; }
@@ -81,8 +78,7 @@ namespace Weikio.EventFramework.EventGateway.Http
                 }
             }
 
-            var channel = _channelManager.Get(Configuration.TargetChannelName);
-            await channel.Send(receivedEvents);
+            await Configuration.CloudEventPublisher.Publish(receivedEvents);
             
             return new OkResult();
         }

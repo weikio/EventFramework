@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.IntegrationTests.EventSource.Sources
 {

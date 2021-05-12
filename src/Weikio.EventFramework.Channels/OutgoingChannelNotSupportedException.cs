@@ -2,7 +2,7 @@
 
 namespace Weikio.EventFramework.Channels
 {
-    public class OutgoingChannelNotSupportedException : Exception
+    public class ChannelMissingException : Exception
     {
     }
 }

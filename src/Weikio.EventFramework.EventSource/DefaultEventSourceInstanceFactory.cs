@@ -33,9 +33,9 @@ namespace Weikio.EventFramework.EventSource
         private readonly IChannelManager _channelManager;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
-            PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier, 
-            IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, 
-            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudEventPublisherFactory publisherFactory, 
+            PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier,
+            IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache,
+            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudEventPublisherFactory publisherFactory,
             IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider,
             IChannelManager channelManager)
         {
@@ -67,7 +67,6 @@ namespace Weikio.EventFramework.EventSource
 
             var pollingFrequency = instanceOptions.PollingFrequency;
             var cronExpression = instanceOptions.CronExpression;
-            var configurePublisherOptions = instanceOptions.ConfigurePublisherOptions;
             var configure = instanceOptions.Configure;
             var channelName = $"es_{id}";
 
@@ -80,8 +79,8 @@ namespace Weikio.EventFramework.EventSource
                     eventSourceType = instance.GetType();
                 }
 
-
                 var configurationType = _configurationTypeProvider.Get(eventSourceType);
+
                 if (configurationType.RequiresPolling)
                 {
                     if (pollingFrequency == null && cronExpression == null)
@@ -95,31 +94,32 @@ namespace Weikio.EventFramework.EventSource
                 }
 
                 var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
+
                 if (isHostedService)
                 {
                     var cancellationToken = new CancellationTokenSource();
 
                     IHostedService inst = null;
+
                     start = (provider, esInstance) =>
                     {
                         var extraParams = new List<object>();
+
                         if (instanceOptions.Configuration != null)
                         {
                             extraParams.Add(instanceOptions.Configuration);
                         }
-                        
+
                         var publisher = _publisherFactory.CreatePublisher(id);
                         extraParams.Add(publisher);
-                        extraParams.Add(instanceOptions);
-                        extraParams.Add(channelName);
-                        
+
                         inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
 
                         if (configure != null)
                         {
                             configure.DynamicInvoke(inst);
                         }
-                        
+
                         _logger.LogDebug("Starting hosted service based event source {EventSourceType} with id {Id}", eventSourceType, id);
 
                         inst.StartAsync(cancellationToken.Token);
@@ -155,12 +155,16 @@ namespace Weikio.EventFramework.EventSource
                             var childId = eventSourceActionWrapper.Id;
 
                             var childEventSource = eventSourceActionWrapper.EventSource;
-                            var opts = new JobOptions { Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSource = esInstance};
+
+                            var opts = new JobOptions
+                            {
+                                Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSource = esInstance
+                            };
                             _optionsCache.TryAdd(childId, opts);
 
                             var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, esInstance);
                             _scheduleService.Add(schedule);
-                            
+
                             esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Started polling");
                         }
 
@@ -188,7 +192,7 @@ namespace Weikio.EventFramework.EventSource
                         {
                             _scheduleService.Remove(currentPollingSchedule);
                         }
-                        
+
                         cancellationToken.Cancel();
 
                         _changeNotifier.Notify();
@@ -226,29 +230,28 @@ namespace Weikio.EventFramework.EventSource
                 _logger.LogError(e, "Failed to create event source instance from event source {EventSource}", eventSource);
             }
 
-            var publisherFactoryOptions = new CloudEventPublisherFactoryOptions();
+            var esChannel = CreateEventSourceInstanceChannel(instanceOptions, channelName, id);
 
-            if (configurePublisherOptions != null)
-            {
-                publisherFactoryOptions.ConfigureOptions.Add(configurePublisherOptions);
-            }
-            
-            Action<CloudEventCreationOptions> addEventSourceIdConfigurator = creationOptions =>
-            {
-                creationOptions.AdditionalExtensions = creationOptions.AdditionalExtensions != null
-                    ? creationOptions.AdditionalExtensions.Concat(new ICloudEventExtension[]
-                    {
-                        new EventFrameworkEventSourceExtension(id)
-                    }).ToArray()
-                    : new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) };
-            };
-            
+            _channelManager.Add(esChannel);
+         
+            var publisherFactoryOptions = new CloudEventPublisherFactoryOptions();
             publisherFactoryOptions.ConfigureOptions.Add(options =>
             {
-                options.ConfigureDefaultCloudEventCreationOptions += addEventSourceIdConfigurator;
+                options.DefaultChannelName = channelName;
             });
-            
-            var esChannel = new CloudEventsChannel(channelName, async ev =>
+
+            _optionsMonitorCache.TryAdd(id, publisherFactoryOptions);
+
+            var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop);
+
+            return result;
+        }
+
+        private CloudEventsChannel CreateEventSourceInstanceChannel(EventSourceInstanceOptions instanceOptions, string channelName, string id)
+        {
+            var channelOptions = new CloudEventsDataflowChannelOptions { Name = channelName };
+
+            var channelEndpoint = new CloudEventsEndpoint(async ev =>
             {
                 IChannel channel;
 
@@ -263,19 +266,16 @@ namespace Weikio.EventFramework.EventSource
 
                 await channel.Send(ev);
             });
-            
-            _channelManager.Add(esChannel);
-            
-            publisherFactoryOptions.ConfigureOptions.Add(options =>
-            {
-                options.DefaultChannelName = channelName;
-            });
-            
-            _optionsMonitorCache.TryAdd(id, publisherFactoryOptions);
 
-            var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop);
+            channelOptions.CloudEventCreationOptions.AdditionalExtensions = channelOptions.CloudEventCreationOptions.AdditionalExtensions != null
+                ? channelOptions.CloudEventCreationOptions.AdditionalExtensions.Concat(new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) })
+                    .ToArray()
+                : new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) };
 
-            return result;
+            channelOptions.Endpoints.Add(channelEndpoint);
+            var esChannel = new CloudEventsChannel(channelOptions);
+
+            return esChannel;
         }
     }
 }

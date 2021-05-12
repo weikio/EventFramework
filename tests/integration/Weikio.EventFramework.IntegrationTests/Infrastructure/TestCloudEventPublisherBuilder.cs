@@ -21,11 +21,9 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
 
         public CloudEventPublisher Build(IOptions<CloudEventPublisherOptions> options)
         {
-            var gatewayManager = _serviceProvider.GetRequiredService<ICloudEventGatewayManager>();
-            var cloudEventCreator = _serviceProvider.GetRequiredService<ICloudEventCreator>();
             var channelManager = _serviceProvider.GetRequiredService<IChannelManager>();
 
-            var result = new MyTestCloudEventPublisher(gatewayManager, options, cloudEventCreator, _serviceProvider, channelManager);
+            var result = new MyTestCloudEventPublisher(options, _serviceProvider, channelManager);
 
             return result;
         }

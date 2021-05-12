@@ -34,10 +34,12 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
         {
             var serviceProvider = Init(services =>
             {
+                services.AddCloudEventDataflowChannels();
                 services.AddCloudEventSources();
                 services.AddCloudEventPublisher();
                 services.AddLocal();
                 services.AddEventSource<StatelessTestEventSource>();
+
             });
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
@@ -374,31 +376,33 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
         [Fact]
         public async Task CanConfigureEventCreationOptions()
         {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
-            {
-                options.Subject = "mytest";
-            });
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-
-            foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
-            {
-                Assert.Equal("mytest", ev.Subject);
-            }
+            throw new NotImplementedException();
+            //
+            // var serviceProvider = Init(services =>
+            // {
+            //     services.AddCloudEventSources();
+            //     services.AddCloudEventPublisher();
+            //     services.AddLocal();
+            //     services.AddEventSource<TestEventSource>();
+            // });
+            //
+            // var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            //
+            // var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
+            // {
+            //     options.Subject = "mytest";
+            // });
+            //
+            // await eventSourceInstanceManager.StartAll();
+            //
+            // await Task.Delay(TimeSpan.FromSeconds(2));
+            //
+            // Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+            //
+            // foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
+            // {
+            //     Assert.Equal("mytest", ev.Subject);
+            // }
         }
 
         [Fact]
@@ -435,194 +439,201 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
         [Fact]
         public async Task CanConfigureEventTypeSpecificEventCreationOptions()
         {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-
-                services.Configure<CloudEventPublisherOptions>(options =>
-                {
-                    options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
-                    {
-                        creationOptions.Subject = "specific";
-                    });
-                });
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-
-            foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
-            {
-                Assert.Equal("specific", ev.Subject);
-            }
+            throw new NotImplementedException();
+            // var serviceProvider = Init(services =>
+            // {
+            //     services.AddCloudEventSources();
+            //     services.AddCloudEventPublisher();
+            //     services.AddLocal();
+            //     services.AddEventSource<TestEventSource>();
+            //
+            //     services.Configure<CloudEventPublisherOptions>(options =>
+            //     {
+            //         options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
+            //         {
+            //             creationOptions.Subject = "specific";
+            //         });
+            //     });
+            // });
+            //
+            // var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            // await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1));
+            //
+            // await eventSourceInstanceManager.StartAll();
+            //
+            // await Task.Delay(TimeSpan.FromSeconds(2));
+            //
+            // Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+            //
+            // foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
+            // {
+            //     Assert.Equal("specific", ev.Subject);
+            // }
         }
 
         [Fact]
         public async Task CanConfigureEventTypeSpecificEventCreationOptionsForInstance()
         {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
+            throw new NotImplementedException();
 
-                services.Configure<CloudEventPublisherOptions>(options =>
-                {
-                    options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
-                    {
-                        creationOptions.Subject = "default";
-                    });
-                });
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
-            {
-                options.TypedCloudEventCreationOptions["NewFileEvent"] = creationOptions =>
-                {
-                    creationOptions.Subject = "instance";
-                };
-            });
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-
-            foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
-            {
-                Assert.Equal("instance", ev.Subject);
-            }
+            // var serviceProvider = Init(services =>
+            // {
+            //     services.AddCloudEventSources();
+            //     services.AddCloudEventPublisher();
+            //     services.AddLocal();
+            //     services.AddEventSource<TestEventSource>();
+            //
+            //     services.Configure<CloudEventPublisherOptions>(options =>
+            //     {
+            //         options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
+            //         {
+            //             creationOptions.Subject = "default";
+            //         });
+            //     });
+            // });
+            //
+            // var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            //
+            // await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
+            // {
+            //     options.TypedCloudEventCreationOptions["NewFileEvent"] = creationOptions =>
+            //     {
+            //         creationOptions.Subject = "instance";
+            //     };
+            // });
+            //
+            // await eventSourceInstanceManager.StartAll();
+            //
+            // await Task.Delay(TimeSpan.FromSeconds(2));
+            //
+            // Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+            //
+            // foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
+            // {
+            //     Assert.Equal("instance", ev.Subject);
+            // }
         }
 
         [Fact]
         public async Task CanOverrideEventTypeSpecificEventCreationOptionsForInstance()
         {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
-            {
-                options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
-                {
-                    creationOptions.Subject = "instance";
-                });
-            });
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-
-            foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
-            {
-                Assert.Equal("instance", ev.Subject);
-            }
+            throw new NotImplementedException();
+            //
+            // var serviceProvider = Init(services =>
+            // {
+            //     services.AddCloudEventSources();
+            //     services.AddCloudEventPublisher();
+            //     services.AddLocal();
+            //     services.AddEventSource<TestEventSource>();
+            // });
+            //
+            // var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            //
+            // await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configurePublisherOptions: options =>
+            // {
+            //     options.TypedCloudEventCreationOptions.Add("NewFileEvent", creationOptions =>
+            //     {
+            //         creationOptions.Subject = "instance";
+            //     });
+            // });
+            //
+            // await eventSourceInstanceManager.StartAll();
+            //
+            // await Task.Delay(TimeSpan.FromSeconds(2));
+            //
+            // Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+            //
+            // foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
+            // {
+            //     Assert.Equal("instance", ev.Subject);
+            // }
         }
 
         [Fact]
         public async Task CanConfigureInstanceSpecificCreationOptions()
         {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
-            {
-                options.Subject = "mytest";
-            });
-
-            var id2 = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
-            {
-                options.Subject = "anothertest";
-            });
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-
-            var id1Found = false;
-            var id2Found = false;
-
-            foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
-            {
-                if (ev.EventSourceId() == id)
-                {
-                    Assert.Equal("mytest", ev.Subject);
-                    id1Found = true;
-                }
-                else
-                {
-                    Assert.Equal("anothertest", ev.Subject);
-                    id2Found = true;
-                }
-            }
-
-            Assert.True(id1Found, "id1Found");
-            Assert.True(id2Found, "id2Found");
+            throw new NotImplementedException();
+            // var serviceProvider = Init(services =>
+            // {
+            //     services.AddCloudEventSources();
+            //     services.AddCloudEventPublisher();
+            //     services.AddLocal();
+            //     services.AddEventSource<TestEventSource>();
+            // });
+            //
+            // var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            //
+            // var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
+            // {
+            //     options.Subject = "mytest";
+            // });
+            //
+            // var id2 = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
+            // {
+            //     options.Subject = "anothertest";
+            // });
+            //
+            // await eventSourceInstanceManager.StartAll();
+            //
+            // await Task.Delay(TimeSpan.FromSeconds(2));
+            //
+            // Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+            //
+            // var id1Found = false;
+            // var id2Found = false;
+            //
+            // foreach (var ev in MyTestCloudEventPublisher.PublishedEvents)
+            // {
+            //     if (ev.EventSourceId() == id)
+            //     {
+            //         Assert.Equal("mytest", ev.Subject);
+            //         id1Found = true;
+            //     }
+            //     else
+            //     {
+            //         Assert.Equal("anothertest", ev.Subject);
+            //         id2Found = true;
+            //     }
+            // }
+            //
+            // Assert.True(id1Found, "id1Found");
+            // Assert.True(id2Found, "id2Found");
         }
 
         [Fact]
         public async Task CanOverrideDefaultEventCreationOptions()
         {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-
-                services.Configure<CloudEventCreationOptions>(options =>
-                {
-                    options.Subject = "default";
-                });
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
-            {
-                options.Subject = "changed";
-            });
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
-
-            Assert.All(MyTestCloudEventPublisher.PublishedEvents, cloudEvent =>
-            {
-                Assert.Equal("changed", cloudEvent.Subject);
-            });
+            throw new NotImplementedException();
+            // var serviceProvider = Init(services =>
+            // {
+            //     services.AddCloudEventSources();
+            //     services.AddCloudEventPublisher();
+            //     services.AddLocal();
+            //     services.AddEventSource<TestEventSource>();
+            //
+            //     services.Configure<CloudEventCreationOptions>(options =>
+            //     {
+            //         options.Subject = "default";
+            //     });
+            // });
+            //
+            // var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            //
+            // var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
+            // {
+            //     options.Subject = "changed";
+            // });
+            //
+            // await eventSourceInstanceManager.StartAll();
+            //
+            // await Task.Delay(TimeSpan.FromSeconds(2));
+            //
+            // Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
+            //
+            // Assert.All(MyTestCloudEventPublisher.PublishedEvents, cloudEvent =>
+            // {
+            //     Assert.Equal("changed", cloudEvent.Subject);
+            // });
         }
 
         [Fact]
@@ -630,6 +641,22 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
         {
             var serviceProvider = Init(services =>
             {
+                services.AddCloudEventDataflowChannels();   
+                services.AddChannel("test", (provider, channelOptions) =>
+                {
+                    channelOptions.Endpoints.Add(new CloudEventsEndpoint(ev =>
+                    {
+                        MyTestCloudEventPublisher.PublishedEvents.Add(ev);
+
+                        return Task.CompletedTask;
+                    }));
+                });
+
+                services.Configure<DefaultChannelOptions>(options =>
+                {
+                    options.DefaultChannelName = "test";
+                });
+                
                 services.AddCloudEventSources();
                 services.AddCloudEventPublisher();
                 services.AddLocal();
@@ -656,34 +683,36 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
         [Fact]
         public async Task EventContainsEventSourceIdWithPublisherConfiguration()
         {
-            var serviceProvider = Init(services =>
-            {
-                services.AddCloudEventSources();
-                services.AddCloudEventPublisher();
-                services.AddLocal();
-                services.AddEventSource<TestEventSource>();
-            });
-
-            var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
-
-            var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
-            {
-                options.Subject = "hello";
-            });
-
-            await eventSourceInstanceManager.StartAll();
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            var firstEvent = MyTestCloudEventPublisher.PublishedEvents.First();
-
-            Assert.Equal("hello", firstEvent.Subject);
-            var eventSourceId = firstEvent.EventSourceId();
-
-            Assert.NotNull(eventSourceId);
-            Assert.NotEqual(string.Empty, eventSourceId);
-
-            Assert.Equal(id, eventSourceId);
+            throw new NotImplementedException();
+            //
+            // var serviceProvider = Init(services =>
+            // {
+            //     services.AddCloudEventSources();
+            //     services.AddCloudEventPublisher();
+            //     services.AddLocal();
+            //     services.AddEventSource<TestEventSource>();
+            // });
+            //
+            // var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            //
+            // var id = await eventSourceInstanceManager.Create("TestEventSource", TimeSpan.FromSeconds(1), configureDefaultCloudEventCreationOptions: options =>
+            // {
+            //     options.Subject = "hello";
+            // });
+            //
+            // await eventSourceInstanceManager.StartAll();
+            //
+            // await Task.Delay(TimeSpan.FromSeconds(2));
+            //
+            // var firstEvent = MyTestCloudEventPublisher.PublishedEvents.First();
+            //
+            // Assert.Equal("hello", firstEvent.Subject);
+            // var eventSourceId = firstEvent.EventSourceId();
+            //
+            // Assert.NotNull(eventSourceId);
+            // Assert.NotEqual(string.Empty, eventSourceId);
+            //
+            // Assert.Equal(id, eventSourceId);
         }
 
         [Fact]
