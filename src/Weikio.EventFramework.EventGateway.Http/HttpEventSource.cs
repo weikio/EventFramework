@@ -8,6 +8,7 @@ using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventGateway.Http
 {
@@ -18,17 +19,21 @@ namespace Weikio.EventFramework.EventGateway.Http
         private readonly IApiProvider _apiProvider;
         private readonly CustomEndpointConfigurationProvider _customEndpointConfigurationProvider;
         private readonly ICloudEventPublisher _cloudEventPublisher;
+        private readonly EventSourceInstanceOptions _instanceOptions;
+        private readonly string _channelName;
         private readonly HttpEventSourceConfiguration _configuration;
 
         public HttpEventSource(ILogger<HttpEventSource> logger, EndpointManager endpointManager, IApiProvider apiProvider,
             CustomEndpointConfigurationProvider customEndpointConfigurationProvider, ICloudEventPublisher cloudEventPublisher,
-            HttpEventSourceConfiguration configuration = null)
+            EventSourceInstanceOptions instanceOptions, string channelName, HttpEventSourceConfiguration configuration = null)
         {
             _logger = logger;
             _endpointManager = endpointManager;
             _apiProvider = apiProvider;
             _customEndpointConfigurationProvider = customEndpointConfigurationProvider;
             _cloudEventPublisher = cloudEventPublisher;
+            _instanceOptions = instanceOptions;
+            _channelName = channelName;
 
             if (configuration == null)
             {
@@ -46,7 +51,10 @@ namespace Weikio.EventFramework.EventGateway.Http
 
             // Create HTTP Endpoint for the gateway
             var endpoint = new Endpoint(_configuration.Endpoint, api,
-                new HttpCloudEventReceiverApiConfiguration() { PolicyName = _configuration.PolicyName, CloudEventPublisher = _cloudEventPublisher });
+                new HttpCloudEventReceiverApiConfiguration()
+                {
+                    PolicyName = _configuration.PolicyName, CloudEventPublisher = _cloudEventPublisher, TargetChannelName = _channelName
+                });
 
             _endpointManager.AddEndpoint(endpoint);
             _endpointManager.Update();

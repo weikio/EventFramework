@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Weikio.EventFramework.Channels;
 
 namespace Weikio.EventFramework.EventGateway.Http
 {
@@ -17,12 +18,14 @@ namespace Weikio.EventFramework.EventGateway.Http
         private readonly ICloudEventGatewayManager _cloudEventGatewayManager;
         private readonly IAuthorizationService _authorizationService;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IChannelManager _channelManager;
 
-        public HttpCloudEventReceiverApi(ICloudEventGatewayManager cloudEventGatewayManager, IAuthorizationService authorizationService, IHttpContextAccessor contextAccessor)
+        public HttpCloudEventReceiverApi(ICloudEventGatewayManager cloudEventGatewayManager, IAuthorizationService authorizationService, IHttpContextAccessor contextAccessor, IChannelManager channelManager)
         {
             _cloudEventGatewayManager = cloudEventGatewayManager;
             _authorizationService = authorizationService;
             _contextAccessor = contextAccessor;
+            _channelManager = channelManager;
         }
 
         public HttpCloudEventReceiverApiConfiguration Configuration { get; set; }
@@ -78,15 +81,8 @@ namespace Weikio.EventFramework.EventGateway.Http
                 }
             }
 
-            await Configuration.CloudEventPublisher.Publish(receivedEvents);
-            //
-            // var gateway = _cloudEventGatewayManager.Get(Configuration.GatewayName);
-            // var channel = gateway.IncomingChannel;
-            //
-            // foreach (var receivedEvent in receivedEvents)
-            // {
-            //     await channel.Writer.WriteAsync(receivedEvent);
-            // }
+            var channel = _channelManager.Get(Configuration.TargetChannelName);
+            await channel.Send(receivedEvents);
             
             return new OkResult();
         }

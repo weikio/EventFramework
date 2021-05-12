@@ -69,7 +69,8 @@ namespace Weikio.EventFramework.EventSource
             var cronExpression = instanceOptions.CronExpression;
             var configurePublisherOptions = instanceOptions.ConfigurePublisherOptions;
             var configure = instanceOptions.Configure;
-            
+            var channelName = $"es_{id}";
+
             try
             {
                 _logger.LogInformation("Creating event source instance from event source {EventSource}", eventSource);
@@ -107,8 +108,10 @@ namespace Weikio.EventFramework.EventSource
                             extraParams.Add(instanceOptions.Configuration);
                         }
                         
-                        var publisher = _publisherFactory.CreatePublisher(id.ToString());
+                        var publisher = _publisherFactory.CreatePublisher(id);
                         extraParams.Add(publisher);
+                        extraParams.Add(instanceOptions);
+                        extraParams.Add(channelName);
                         
                         inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
 
@@ -244,8 +247,6 @@ namespace Weikio.EventFramework.EventSource
             {
                 options.ConfigureDefaultCloudEventCreationOptions += addEventSourceIdConfigurator;
             });
-            
-            var channelName = $"es_{id}";
             
             var esChannel = new CloudEventsChannel(channelName, async ev =>
             {

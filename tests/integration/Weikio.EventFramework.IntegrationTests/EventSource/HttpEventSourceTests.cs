@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
@@ -26,7 +28,8 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
     public class HttpEventSourceTests : PollingEventSourceTestBase, IDisposable
     {
         IServiceProvider serviceProvider = null;
-        
+        private List<CloudEvent> ReceivedEvents { get; set; } = new List<CloudEvent>();
+
         public HttpEventSourceTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)
         {
             serviceProvider = Init(services =>
@@ -35,9 +38,24 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                 services.AddCloudEventPublisher();
                 services.AddHttpGateways();
 
+                services.AddChannel("test", (provider, options) =>
+                {
+                    options.Endpoints.Add(new CloudEventsEndpoint(ev =>
+                    {
+                        ReceivedEvents.Add(ev);
+
+                        return Task.CompletedTask;
+                    }));
+                });
+
                 services.AddEventSource<HttpEventSource>();
+
+                services.Configure<DefaultChannelOptions>(options =>
+                {
+                    options.DefaultChannelName = "test";
+                });
             });
-            
+
             MyTestCloudEventPublisher.PublishedEvents = new List<CloudEvent>();
         }
 
@@ -57,8 +75,12 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             var content = ev.ToHttpContent();
 
             await Client.PostAsync("/api/events", content);
-            
-            await ContinueWhen(MyTestCloudEventPublisher.PublishedEvents.Any);
-        }      
+
+            await ContinueWhen(ReceivedEvents.Any);
+
+            var publishedEvent = ReceivedEvents.Single();
+
+            Assert.Equal(ev.Type, publishedEvent.Type);
+        }
     }
 }
