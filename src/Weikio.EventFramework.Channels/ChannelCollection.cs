@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Weikio.EventFramework.Channels.Abstractions;
 
 namespace Weikio.EventFramework.Channels
 {

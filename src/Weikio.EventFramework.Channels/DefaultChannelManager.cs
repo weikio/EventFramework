@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.Channels.Abstractions;
 
 namespace Weikio.EventFramework.Channels
 {

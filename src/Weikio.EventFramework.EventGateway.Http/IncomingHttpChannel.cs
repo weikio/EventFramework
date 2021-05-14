@@ -4,6 +4,7 @@ using CloudNative.CloudEvents;
 using Weikio.ApiFramework.Core.HealthChecks;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.Abstractions;
 
 namespace Weikio.EventFramework.EventGateway.Http
 {

@@ -9,7 +9,7 @@ using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Channels;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
@@ -39,7 +39,6 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                 services.AddCloudEventPublisher();
                 services.AddLocal();
                 services.AddEventSource<StatelessTestEventSource>();
-
             });
 
             var eventSourceInstanceManager = serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
@@ -922,6 +921,35 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             {
                 await eventSourceInstanceManager.Create(options);
             });
+        }
+        
+        [Fact]
+        public async Task CanConfigureChannel()
+        {
+            var id = Guid.NewGuid().ToString();
+            var opt = new CloudEventCreationOptions { Subject = "changed" };
+
+            Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+
+                services.AddSingleton(new EventSourceInstanceOptions()
+                {
+                    Autostart = true, PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource", Id = id,
+                    ConfigureChannel = options =>
+                    {
+                        options.CloudEventCreationOptions = opt;
+                    }
+                });
+            });
+
+            await ContinueWhen(MyTestCloudEventPublisher.PublishedEvents.Any);
+            var ev = MyTestCloudEventPublisher.PublishedEvents.First();
+            
+            Assert.Equal("changed", ev.Subject);
         }
 
         public void Dispose()

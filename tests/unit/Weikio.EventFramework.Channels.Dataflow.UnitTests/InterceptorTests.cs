@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using System.Transactions;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Abstractions;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.Abstractions;
+using Weikio.EventFramework.Channels.Dataflow.Abstractions;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.Tests.Shared;
 using Xunit;
@@ -22,7 +24,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddInterceptorPreReceive()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
 
             var interceptor = new MyInterceptor();
             options.Interceptors.Add((InterceptorTypeEnum.PreReceive, interceptor));
@@ -40,7 +42,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         {
             CloudEvent<CustomerCreated> receivedEvent = null;
 
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
 
             Task Receive(CloudEvent ev)
             {
@@ -64,7 +66,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddInterfacePreAdapters()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
 
             var interceptor = new ModifierInterceptor();
             var interceptor2 = new MyInterceptor();
@@ -86,7 +88,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddInterfacePostAdapters()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
 
             var interceptor = new TransformInterceptor(o =>
             {
@@ -117,7 +119,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddInterfacePreComponents()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
             CloudEvent<CustomerCreated> receivedEvent = null;
 
             options.Endpoint = ev =>
@@ -140,7 +142,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddInterfacePreEndpoints()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
 
             var interceptor = new MyInterceptor();
             options.Interceptors.Add((InterceptorTypeEnum.PreEndpoints, interceptor));
@@ -156,7 +158,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanAddInterceptorRuntime()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
             var counter = 0;
 
             options.Endpoint = ev =>
@@ -182,7 +184,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public async Task CanRemoveIntercept()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "name", };
+            var options = new CloudEventsChannelOptions() { Name = "name", };
             var counter = 0;
 
             options.Endpoint = ev =>
@@ -209,7 +211,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             Assert.Single(interceptor.Objs);
         }
 
-        public class MyInterceptor : IDataflowChannelInterceptor
+        public class MyInterceptor : IChannelInterceptor
         {
             public List<object> Objs { get; set; } = new List<object>();
             public object Received = null;
@@ -223,7 +225,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             }
         }
 
-        public class TransformInterceptor : IDataflowChannelInterceptor
+        public class TransformInterceptor : IChannelInterceptor
         {
             private readonly Func<object, Task<object>> _func;
 
@@ -238,7 +240,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             }
         }
 
-        public class ModifierInterceptor : IDataflowChannelInterceptor
+        public class ModifierInterceptor : IChannelInterceptor
         {
             public Task<object> Intercept(object obj)
             {

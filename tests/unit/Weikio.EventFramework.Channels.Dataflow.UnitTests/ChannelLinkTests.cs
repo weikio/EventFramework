@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.Abstractions;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Tests.Shared;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,7 +20,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var firstCounter = 0;
             var secondCounter = 0;
 
-            var firstOptions = new CloudEventsDataflowChannelOptions()
+            var firstOptions = new CloudEventsChannelOptions()
             {
                 Name = "first",
                 Endpoint = ev =>
@@ -29,7 +30,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var secondOptions = new CloudEventsDataflowChannelOptions()
+            var secondOptions = new CloudEventsChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>
@@ -62,7 +63,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var firstCounter = 0;
             var secondCounter = 0;
 
-            var firstOptions = new CloudEventsDataflowChannelOptions()
+            var firstOptions = new CloudEventsChannelOptions()
             {
                 Name = "first",
                 Endpoint = ev =>
@@ -72,7 +73,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var secondOptions = new CloudEventsDataflowChannelOptions()
+            var secondOptions = new CloudEventsChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>
@@ -108,13 +109,13 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var secondReceivedMessage = false;
             var thirdReceivedMessage = false;
 
-            var firstOptions = new CloudEventsDataflowChannelOptions()
+            var firstOptions = new CloudEventsChannelOptions()
             {
                 Name = "first",
                 LoggerFactory = _loggerFactory
             };
 
-            var secondOptions = new CloudEventsDataflowChannelOptions()
+            var secondOptions = new CloudEventsChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>
@@ -124,7 +125,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var thirdOptions = new CloudEventsDataflowChannelOptions()
+            var thirdOptions = new CloudEventsChannelOptions()
             {
                 Name = "third",
                 Endpoint = ev =>
@@ -158,14 +159,14 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var secondReceivedMessage = false;
             var thirdReceivedMessage = false;
 
-            var firstOptions = new CloudEventsDataflowChannelOptions()
+            var firstOptions = new CloudEventsChannelOptions()
             {
                 Name = "first",
                 LoggerFactory = _loggerFactory,
                 IsPubSub = false
             };
 
-            var secondOptions = new CloudEventsDataflowChannelOptions()
+            var secondOptions = new CloudEventsChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>
@@ -175,7 +176,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var thirdOptions = new CloudEventsDataflowChannelOptions()
+            var thirdOptions = new CloudEventsChannelOptions()
             {
                 Name = "third",
                 Endpoint = ev =>
@@ -209,7 +210,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var firstCounter = 0;
             var secondCounter = 0;
 
-            var firstOptions = new CloudEventsDataflowChannelOptions()
+            var firstOptions = new CloudEventsChannelOptions()
             {
                 Name = "first",
                 Endpoint = ev =>
@@ -219,7 +220,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            var secondOptions = new CloudEventsDataflowChannelOptions()
+            var secondOptions = new CloudEventsChannelOptions()
             {
                 Name = "second",
                 Endpoint = ev =>

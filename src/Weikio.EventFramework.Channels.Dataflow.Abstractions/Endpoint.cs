@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 
-namespace Weikio.EventFramework.Channels.Dataflow
+namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
 {
     public class Endpoint<TOutput>
     {

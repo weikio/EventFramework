@@ -13,7 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;

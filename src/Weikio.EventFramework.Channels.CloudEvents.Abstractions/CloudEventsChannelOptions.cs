@@ -1,11 +1,12 @@
 ﻿using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.EventCreator;
 
-namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
+namespace Weikio.EventFramework.Channels.CloudEvents
 {
-    public class CloudEventsDataflowChannelOptions : DataflowChannelOptionsBase<object, CloudEvent>
+    public class CloudEventsChannelOptions : DataflowChannelOptionsBase<object, CloudEvent>
     {
-        public CloudEventsDataflowChannelOptions()
+        public CloudEventsChannelOptions()
         {
             AdapterLayerBuilder = options =>
             {

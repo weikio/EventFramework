@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Weikio.EventFramework.Channels
+namespace Weikio.EventFramework.Channels.Abstractions
 {
     public interface IChannel
     {

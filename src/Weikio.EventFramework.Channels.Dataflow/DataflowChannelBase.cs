@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Weikio.EventFramework.Channels.Abstractions;
+using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using DataflowBlock = System.Threading.Tasks.Dataflow.DataflowBlock;
 using DataflowLinkOptions = System.Threading.Tasks.Dataflow.DataflowLinkOptions;
 
@@ -24,7 +26,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
         
         protected readonly Dictionary<string, IDisposable> Subscribers = new Dictionary<string, IDisposable>();
 
-        public List<(InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor)> Interceptors
+        public List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)> Interceptors
         {
             get => Options.Interceptors;
         }
@@ -105,12 +107,12 @@ namespace Weikio.EventFramework.Channels.Dataflow
             return await Input.SendAsync((TInput)cloudEvent);
         }
 
-        public void AddInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
+        public void AddInterceptor((InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor) interceptor)
         {
             Interceptors.Add((interceptor.InterceptorType, interceptor.Interceptor));
         }
 
-        public void RemoveInterceptor((InterceptorTypeEnum InterceptorType, IDataflowChannelInterceptor Interceptor) interceptor)
+        public void RemoveInterceptor((InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor) interceptor)
         {
             Interceptors.Remove((interceptor.InterceptorType, interceptor.Interceptor));
         }

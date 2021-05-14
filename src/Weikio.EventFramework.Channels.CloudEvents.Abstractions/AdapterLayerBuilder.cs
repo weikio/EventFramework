@@ -5,13 +5,15 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.Extensions;
+using Weikio.EventFramework.Channels.Dataflow;
+using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.EventCreator;
 
-namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
+namespace Weikio.EventFramework.Channels.CloudEvents
 {
     internal class AdapterLayerBuilder
     {
-        public DataflowLayerGeneric<object, CloudEvent> Build(CloudEventsDataflowChannelOptions options)
+        public DataflowLayerGeneric<object, CloudEvent> Build(CloudEventsChannelOptions options)
         {
             var inputBlock = new BufferBlock<object>();
             

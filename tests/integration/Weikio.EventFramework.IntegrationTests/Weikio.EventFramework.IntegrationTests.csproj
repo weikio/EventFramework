@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
-    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.Dataflow.CloudEvents\Weikio.EventFramework.Channels.Dataflow.CloudEvents.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.CloudEvents\Weikio.EventFramework.Channels.CloudEvents.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.Dataflow\Weikio.EventFramework.Channels.Dataflow.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventAggregator.AspNetCore\Weikio.EventFramework.EventAggregator.AspNetCore.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventDefinition\Weikio.EventFramework.EventDefinition.csproj" />

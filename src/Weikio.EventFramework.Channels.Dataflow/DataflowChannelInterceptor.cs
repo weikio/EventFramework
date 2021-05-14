@@ -3,24 +3,6 @@ using System.Threading.Tasks;
 
 namespace Weikio.EventFramework.Channels.Dataflow
 {
-    public interface IDataflowChannelInterceptor
-    {
-        // Task OnBeforeReceive(object obj);
-        // Task OnBeforeAdapterLayer(object obj);
-        // Task OnBeforeComponentLayer(object obj);
-        // Task OnBeforeEndpointLayer(object obj);
-        Task<object> Intercept(object obj);
-    }
-    
-    public interface IDataflowChannelInterceptorBase
-    {
-        // Task OnBeforeReceive(object obj);
-        // Task OnBeforeAdapterLayer(object obj);
-        // Task OnBeforeComponentLayer(object obj);
-        // Task OnBeforeEndpointLayer(object obj);
-        Task Intercept(object obj);
-    }
-    
     public interface IDataflowChannelInterceptor<in TInput, in TOutput> 
     {
         Task OnPreReceive(TInput obj)
@@ -52,16 +34,5 @@ namespace Weikio.EventFramework.Channels.Dataflow
         {
             return Task.CompletedTask;
         }
-    }
-
-    public enum InterceptorTypeEnum
-    {
-        PreReceive,
-        PostReceive,
-        PreAdapters,
-        PostAdapters,
-        PreComponents,
-        PostComponent,
-        PreEndpoints
     }
 }

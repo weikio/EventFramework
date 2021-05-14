@@ -17,15 +17,6 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
         public override async Task Publish(object obj, string channelName = null)
         {
             await base.Publish(obj, channelName);
-
-            if (obj is CloudEvent ev)
-            {
-                PublishedEvents.Add(ev);
-            }
-            else
-            {
-                
-            }
         }
 
         public MyTestCloudEventPublisher(IOptions<CloudEventPublisherOptions> options, 

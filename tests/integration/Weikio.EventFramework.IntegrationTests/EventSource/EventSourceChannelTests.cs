@@ -10,7 +10,7 @@ using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Channels;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventGateway.Gateways.Local;

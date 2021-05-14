@@ -1,5 +1,5 @@
 ﻿using System;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Xunit;
 
 namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
@@ -18,7 +18,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public void CanCreateChannelWithOptions()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = "test" };
+            var options = new CloudEventsChannelOptions() { Name = "test" };
             
             var channel = _builder.Create(options);
             Assert.NotNull(channel);
@@ -43,7 +43,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         [Fact]
         public void CanNotCreateChannelWithNullName()
         {
-            var options = new CloudEventsDataflowChannelOptions() { Name = null };
+            var options = new CloudEventsChannelOptions() { Name = null };
 
             Assert.Throws<ArgumentNullException>(() => _builder.Create(options));
         }

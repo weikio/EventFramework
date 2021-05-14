@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Weikio.EventFramework.Channels.Abstractions;
+using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 
 namespace Weikio.EventFramework.Channels.Dataflow
 {
     public class SequentialLayerBuilder<TOutput> where TOutput: class
     {
-        public DataflowLayerGeneric<TOutput, TOutput> Build(List<DataflowChannelComponent<TOutput>> components)
+        public DataflowLayerGeneric<TOutput, TOutput> Build(List<ChannelComponent<TOutput>> components)
         {
             var inputBlock = new BufferBlock<TOutput>();
             var outputBlock = new BufferBlock<TOutput>();
@@ -15,7 +17,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
             var componentBlocks = new List<TransformBlock<TOutput, TOutput>>();
 
-            async Task<TOutput> Execute(DataflowChannelComponent<TOutput> component, TOutput ev)
+            async Task<TOutput> Execute(ChannelComponent<TOutput> component, TOutput ev)
             {
                 try
                 {

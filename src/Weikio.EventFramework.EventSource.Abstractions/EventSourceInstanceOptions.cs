@@ -1,5 +1,5 @@
 using System;
-using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.Channels.CloudEvents;
 
 namespace Weikio.EventFramework.EventSource.Abstractions
 {
@@ -14,5 +14,6 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         public object Configuration { get; set; }
         public string TargetChannelName { get; set; }
         public string Id { get; set; }
+        public Action<CloudEventsChannelOptions> ConfigureChannel { get; set; } = options => { };
     }
 }

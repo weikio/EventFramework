@@ -16,7 +16,7 @@ using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.Channels.Dataflow;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventAggregator.AspNetCore;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;

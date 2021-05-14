@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Weikio.EventFramework.Channels.Abstractions;
 
 namespace Weikio.EventFramework.Channels
 {

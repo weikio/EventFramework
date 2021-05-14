@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Channels.Dataflow.Abstractions\Weikio.EventFramework.Channels.Dataflow.Abstractions.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Channels\Weikio.EventFramework.Channels.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventAggregator.Core\Weikio.EventFramework.EventAggregator.Core.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />

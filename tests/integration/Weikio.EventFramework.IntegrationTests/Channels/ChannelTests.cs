@@ -5,7 +5,7 @@ using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.AspNetCore.Extensions;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;

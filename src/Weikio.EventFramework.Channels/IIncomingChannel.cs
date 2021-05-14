@@ -1,5 +1,6 @@
 ﻿using System.Threading.Channels;
 using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels.Abstractions;
 
 namespace Weikio.EventFramework.Channels
 {

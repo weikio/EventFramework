@@ -1,17 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
+using Weikio.EventFramework.Channels.Abstractions;
 
-namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
+namespace Weikio.EventFramework.Channels.CloudEvents
 {
-    public interface ICloudEventsChannelManager 
-    {
-        public void Add(CloudEventsChannel channel);
-        public new CloudEventsChannel GetDefaultChannel();
-        public new CloudEventsChannel Get(string channelName);
-        public void Remove(CloudEventsChannel channel);
-    }
-    
     public class DefaultCloudEventsChannelManager : ICloudEventsChannelManager
     {
         private readonly IChannelManager _channelManager;

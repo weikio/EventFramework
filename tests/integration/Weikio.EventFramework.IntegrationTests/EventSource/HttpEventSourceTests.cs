@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Channels;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
@@ -28,7 +28,6 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
     public class HttpEventSourceTests : PollingEventSourceTestBase, IDisposable
     {
         IServiceProvider serviceProvider = null;
-        private List<CloudEvent> ReceivedEvents { get; set; } = new List<CloudEvent>();
 
         public HttpEventSourceTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)
         {
@@ -38,22 +37,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                 services.AddCloudEventPublisher();
                 services.AddHttpGateways();
 
-                services.AddChannel("test", (provider, options) =>
-                {
-                    options.Endpoints.Add(new CloudEventsEndpoint(ev =>
-                    {
-                        ReceivedEvents.Add(ev);
-
-                        return Task.CompletedTask;
-                    }));
-                });
-
                 services.AddEventSource<HttpEventSource>();
-
-                services.Configure<DefaultChannelOptions>(options =>
-                {
-                    options.DefaultChannelName = "test";
-                });
             });
 
             MyTestCloudEventPublisher.PublishedEvents = new List<CloudEvent>();
@@ -76,9 +60,9 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             await Client.PostAsync("/api/events", content);
 
-            await ContinueWhen(ReceivedEvents.Any);
+            await ContinueWhen(MyTestCloudEventPublisher.PublishedEvents.Any);
 
-            var publishedEvent = ReceivedEvents.Single();
+            var publishedEvent = MyTestCloudEventPublisher.PublishedEvents.Single();
 
             Assert.Equal(ev.Type, publishedEvent.Type);
         }

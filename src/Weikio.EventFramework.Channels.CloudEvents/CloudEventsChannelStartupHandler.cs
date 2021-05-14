@@ -3,74 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Weikio.EventFramework.Abstractions.DependencyInjection;
 
-namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
+namespace Weikio.EventFramework.Channels.CloudEvents
 {
-    public static class ServiceCollectionExtensions
-    {
-        public static IEventFrameworkBuilder AddCloudEventDataflowChannels(this IEventFrameworkBuilder builder)
-        {
-            AddCloudEventDataflowChannels(builder.Services);
-
-            return builder;
-        }
-
-        public static IServiceCollection AddCloudEventDataflowChannels(this IServiceCollection services)
-        {
-            services.AddDataflowChannels();
-            services.TryAddSingleton<IChannelBuilder, CloudEventsChannelBuilder>();
-            services.TryAddSingleton<ICloudEventsChannelManager, DefaultCloudEventsChannelManager>();
-            services.AddHostedService<CloudEventsChannelStartupHandler>();
-            services.TryAddSingleton<ICloudEventsChannelBuilder, DefaultCloudEventsChannelBuilder>();
-
-            return services;
-        }
-
-        public static IEventFrameworkBuilder AddChannel(this IEventFrameworkBuilder builder, string name,
-            Action<IServiceProvider, CloudEventsDataflowChannelOptions> configure = null)
-        {
-            builder.Services.AddChannel(name, configure);
-
-            return builder;
-        }
-
-        public static IServiceCollection AddChannel(this IServiceCollection services, string name,
-            Action<IServiceProvider, CloudEventsDataflowChannelOptions> configure = null)
-        {
-            services.AddCloudEventDataflowChannels();
-            services.AddSingleton(new ChannelInstanceOptions() { Configure = configure, Name = name });
-
-            return services;
-        }
-    }
-
-    public interface ICloudEventsChannelBuilder
-    {
-        CloudEventsChannel Create(CloudEventsDataflowChannelOptions options);
-    }
-
-    public class DefaultCloudEventsChannelBuilder : ICloudEventsChannelBuilder
-    {
-        public CloudEventsChannel Create(CloudEventsDataflowChannelOptions options)
-        {
-            return new CloudEventsChannel(options);
-        }
-    }
-
-    public class ChannelInstanceOptions
-    {
-        public string Name { get; set; }
-        public Action<IServiceProvider, CloudEventsDataflowChannelOptions> Configure { get; set; }
-    }
-
     public class CloudEventsChannelStartupHandler : IHostedService
     {
         private readonly ILogger<CloudEventsChannelStartupHandler> _logger;
@@ -110,13 +49,13 @@ namespace Weikio.EventFramework.Channels.Dataflow.CloudEvents
 
                 foreach (var channelInstance in channelInstances)
                 {
-                    CloudEventsDataflowChannelOptions options;
+                    CloudEventsChannelOptions options;
 
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var provider = scope.ServiceProvider;
 
-                        var optionsAccessor = provider.GetService<IOptionsSnapshot<CloudEventsDataflowChannelOptions>>();
+                        var optionsAccessor = provider.GetService<IOptionsSnapshot<CloudEventsChannelOptions>>();
                         options = optionsAccessor.Value;
                     }
                     

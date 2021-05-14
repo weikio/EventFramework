@@ -9,7 +9,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Channels;
-using Weikio.EventFramework.Channels.Dataflow.CloudEvents;
+using Weikio.EventFramework.Channels.Abstractions;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventSource.Abstractions;
@@ -249,7 +250,7 @@ namespace Weikio.EventFramework.EventSource
 
         private CloudEventsChannel CreateEventSourceInstanceChannel(EventSourceInstanceOptions instanceOptions, string channelName, string id)
         {
-            var channelOptions = new CloudEventsDataflowChannelOptions { Name = channelName };
+            var channelOptions = new CloudEventsChannelOptions { Name = channelName };
 
             var channelEndpoint = new CloudEventsEndpoint(async ev =>
             {
@@ -273,6 +274,8 @@ namespace Weikio.EventFramework.EventSource
                 : new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) };
 
             channelOptions.Endpoints.Add(channelEndpoint);
+            instanceOptions.ConfigureChannel?.Invoke(channelOptions);
+            
             var esChannel = new CloudEventsChannel(channelOptions);
 
             return esChannel;

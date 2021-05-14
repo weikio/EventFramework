@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
@@ -43,7 +45,18 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                     action?.Invoke(services);
                     
                     services.AddCloudEventCreator();
-                    services.AddTransient<ICloudEventPublisherBuilder, TestCloudEventPublisherBuilder>();
+                    services.AddChannel("test", (provider, options) =>
+                    {
+                        options.Endpoint = ev =>
+                        {
+                            MyTestCloudEventPublisher.PublishedEvents.Add(ev);
+                        };
+                    });
+                    
+                    services.Configure<DefaultChannelOptions>(options =>
+                    {
+                        options.DefaultChannelName = "test";
+                    });
                 });
                 
                 builder.ConfigureLogging(logging =>

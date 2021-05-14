@@ -1,23 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
-namespace Weikio.EventFramework.Channels.Dataflow
+namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
 {
     public class DataflowLayerGeneric<TInput, TOutput>
     {
         private readonly Func<TimeSpan, Task> _completionTask;
         private readonly IPropagatorBlock<TInput, TOutput> _layer;
-
-        public IPropagatorBlock<TInput, TOutput> Layer
-        {
-            get
-            {
-                return _layer;
-            }
-        }
 
         public ITargetBlock<TInput> Input
         {
@@ -60,11 +50,13 @@ namespace Weikio.EventFramework.Channels.Dataflow
 
         public void Dispose()
         {
+            // Todo: Timeout
             _completionTask.Invoke(TimeSpan.FromSeconds(180)).Wait();
         }
 
         public async ValueTask DisposeAsync()
         {
+            // Todo: Timeout
             await _completionTask.Invoke(TimeSpan.FromSeconds(180));
         }
     }
