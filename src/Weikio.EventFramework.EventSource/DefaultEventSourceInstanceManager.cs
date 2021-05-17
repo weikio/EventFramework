@@ -139,7 +139,7 @@ namespace Weikio.EventFramework.EventSource
                 throw new ArgumentException("Unknown event source instance " + eventSourceInstanceId);
             }
 
-            if (inst.Status == EventSourceStatusEnum.Starting && inst.Status == EventSourceStatusEnum.Started)
+            if (inst.Status == EventSourceStatusEnum.Starting || inst.Status == EventSourceStatusEnum.Started)
             {
                 _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, stop before removing", eventSourceInstanceId,
                     inst.Status.Status);
