@@ -952,6 +952,82 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
             Assert.Equal("changed", ev.Subject);
         }
 
+        
+        [Fact]
+        public async Task CanDelete()
+        {
+            var id = Guid.NewGuid().ToString();
+            var opt = new CloudEventCreationOptions { Subject = "changed" };
+
+            var eventSourceInstanceOptions = new EventSourceInstanceOptions()
+            {
+                Autostart = true, PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource", Id = id,
+                ConfigureChannel = options =>
+                {
+                    options.CloudEventCreationOptions = opt;
+                }
+            };
+
+            Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+
+                services.AddSingleton(eventSourceInstanceOptions);
+            });
+
+            await ContinueWhen(MyTestCloudEventPublisher.PublishedEvents.Any);
+
+            var manager = _serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            await manager.Delete(id);
+
+            var instances = manager.GetAll();
+            Assert.Empty(instances);
+        }
+
+        [Fact]
+        public async Task CanDeleteAndAddWithSameId()
+        {
+            var id = Guid.NewGuid().ToString();
+            var opt = new CloudEventCreationOptions { Subject = "changed" };
+
+            var eventSourceInstanceOptions = new EventSourceInstanceOptions()
+            {
+                Autostart = true, PollingFrequency = TimeSpan.FromSeconds(1), EventSourceDefinition = "TestEventSource", Id = id,
+                ConfigureChannel = options =>
+                {
+                    options.CloudEventCreationOptions = opt;
+                }
+            };
+
+            Init(services =>
+            {
+                services.AddCloudEventSources();
+                services.AddCloudEventPublisher();
+                services.AddLocal();
+                services.AddEventSource<TestEventSource>();
+
+                services.AddSingleton(eventSourceInstanceOptions);
+            });
+
+            await ContinueWhen(MyTestCloudEventPublisher.PublishedEvents.Any);
+
+            var manager = _serviceProvider.GetRequiredService<IEventSourceInstanceManager>();
+            await manager.Delete(id);
+            
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            MyTestCloudEventPublisher.PublishedEvents.Clear();
+           
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            Assert.Empty(MyTestCloudEventPublisher.PublishedEvents);
+            await manager.Create(eventSourceInstanceOptions); 
+            
+            await ContinueWhen(MyTestCloudEventPublisher.PublishedEvents.Any);
+        }
+
         public void Dispose()
         {
         }
