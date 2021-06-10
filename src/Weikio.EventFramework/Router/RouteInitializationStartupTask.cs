@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
-using Weikio.AspNetCore.StartupTasks;
 using Weikio.EventFramework.Abstractions;
 
 namespace Weikio.EventFramework.Router
