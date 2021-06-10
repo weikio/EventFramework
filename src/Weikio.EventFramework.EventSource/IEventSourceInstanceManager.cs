@@ -16,5 +16,6 @@ namespace Weikio.EventFramework.EventSource
         Task StopAll();
         Task Remove(string eventSourceInstanceId);
         Task RemoveAll();
+        Task Delete(string eventSourceInstanceId);
     }
 }

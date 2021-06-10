@@ -28,17 +28,16 @@ namespace Weikio.EventFramework.EventSource
         private readonly ILogger<DefaultEventSourceInstanceFactory> _logger;
         private readonly EventSourceChangeNotifier _changeNotifier;
         private readonly IOptionsMonitorCache<CloudEventPublisherFactoryOptions> _optionsMonitorCache;
-        private readonly IOptionsMonitor<CloudEventPublisherFactoryOptions> _optionsMonitor;
         private readonly ICloudEventPublisherFactory _publisherFactory;
         private readonly IEventSourceDefinitionConfigurationTypeProvider _configurationTypeProvider;
         private readonly IChannelManager _channelManager;
+        private readonly IOptionsMonitor<EventSourceOptions> _eventSourceOptionsAccessor;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
             PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier,
-            IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache,
-            IOptionsMonitor<CloudEventPublisherFactoryOptions> optionsMonitor, ICloudEventPublisherFactory publisherFactory,
+            IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, ICloudEventPublisherFactory publisherFactory,
             IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider,
-            IChannelManager channelManager)
+            IChannelManager channelManager, IOptionsMonitor<EventSourceOptions> eventSourceOptionsAccessor)
         {
             _serviceProvider = serviceProvider;
             _optionsCache = optionsCache;
@@ -46,10 +45,10 @@ namespace Weikio.EventFramework.EventSource
             _logger = logger;
             _changeNotifier = changeNotifier;
             _optionsMonitorCache = optionsMonitorCache;
-            _optionsMonitor = optionsMonitor;
             _publisherFactory = publisherFactory;
             _configurationTypeProvider = configurationTypeProvider;
             _channelManager = channelManager;
+            _eventSourceOptionsAccessor = eventSourceOptionsAccessor;
         }
 
         public EventSourceInstance Create(Abstractions.EventSource eventSource, EventSourceInstanceOptions instanceOptions)
@@ -69,7 +68,9 @@ namespace Weikio.EventFramework.EventSource
             var pollingFrequency = instanceOptions.PollingFrequency;
             var cronExpression = instanceOptions.CronExpression;
             var configure = instanceOptions.Configure;
-            var channelName = $"es_{id}";
+
+            var eventSourceOptions = _eventSourceOptionsAccessor.CurrentValue;
+            var channelName = eventSourceOptions.EventSourceInstanceChannelNameFactory(id);
 
             try
             {

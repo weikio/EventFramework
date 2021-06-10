@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource
@@ -13,14 +15,18 @@ namespace Weikio.EventFramework.EventSource
         private readonly IEventSourceProvider _eventSourceProvider;
         private readonly IEventSourceInstanceFactory _instanceFactory;
         private readonly ILogger<DefaultEventSourceInstanceManager> _logger;
+        private readonly IChannelManager _channelManager;
+        private readonly IOptionsMonitor<EventSourceOptions> _eventSourceOptionsAccessor;
 
         public DefaultEventSourceInstanceManager(IServiceProvider serviceProvider, IEventSourceProvider eventSourceProvider,
-            IEventSourceInstanceFactory instanceFactory, ILogger<DefaultEventSourceInstanceManager> logger)
+            IEventSourceInstanceFactory instanceFactory, ILogger<DefaultEventSourceInstanceManager> logger, IChannelManager channelManager, IOptionsMonitor<EventSourceOptions> eventSourceOptionsAccessor)
         {
             _serviceProvider = serviceProvider;
             _eventSourceProvider = eventSourceProvider;
             _instanceFactory = instanceFactory;
             _logger = logger;
+            _channelManager = channelManager;
+            _eventSourceOptionsAccessor = eventSourceOptionsAccessor;
         }
 
         public IEnumerable<EventSourceInstance> GetAll()
@@ -158,6 +164,42 @@ namespace Weikio.EventFramework.EventSource
             {
                 await Remove(eventSourceInstance.Id);
             }
+        }
+        
+        public async Task Delete(string eventSourceInstanceId)
+        {
+            _logger.LogInformation("Deleting event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
+
+            var inst = this.FirstOrDefault(x => x.Id == eventSourceInstanceId);
+
+            if (inst == null)
+            {
+                throw new ArgumentException("Unknown event source instance " + eventSourceInstanceId);
+            }
+            
+            if (inst.Status != EventSourceStatusEnum.Removed)
+            {
+                _logger.LogDebug("Event source with id {EventSourceInstanceId} is in status {Status}, remove before deleting", eventSourceInstanceId,
+                    inst.Status.Status);
+
+                await Remove(eventSourceInstanceId);
+            }
+
+            Remove(inst);
+            
+            // We also need to do some cleanup work by deleting the instance's channel
+            var eventSourceOptions = _eventSourceOptionsAccessor.CurrentValue;
+            var channelName = eventSourceOptions.EventSourceInstanceChannelNameFactory(eventSourceInstanceId);
+
+            var channel = _channelManager.Get(channelName);
+
+            if (channel != null)
+            {
+                _logger.LogDebug("Deleting internal channel {ChannelName} for event source instance with id {EventSourceInstanceId}", channelName, eventSourceInstanceId);
+                _channelManager.Remove(channel);
+            }
+            
+            _logger.LogDebug("Deleted event source instance with id {EventSourceInstanceId}", eventSourceInstanceId);
         }
     }
 }

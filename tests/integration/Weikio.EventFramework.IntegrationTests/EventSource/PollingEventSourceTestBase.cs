@@ -24,7 +24,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
     public abstract class PollingEventSourceTestBase : IClassFixture<WebApplicationFactory<Startup>>, IDisposable
     {
         private readonly WebApplicationFactory<Startup> _factory;
-        private IServiceProvider _serviceProvider;
+        protected IServiceProvider _serviceProvider;
         
         protected HttpClient Client { get; set; }
         

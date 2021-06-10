@@ -17,7 +17,7 @@ namespace Weikio.EventFramework.Channels.CloudEvents
 
         public override string ToString()
         {
-            return $"{Options.Name} (Pubsub: {Options.IsPubSub}";
+            return $"{Options.Name} (Pubsub: {Options.IsPubSub})";
         }
     }
 }
