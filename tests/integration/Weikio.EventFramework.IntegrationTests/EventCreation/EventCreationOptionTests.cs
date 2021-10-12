@@ -2,6 +2,7 @@
 using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.IntegrationTests.EventSource;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;
@@ -66,6 +67,37 @@ namespace Weikio.EventFramework.IntegrationTests.EventCreation
         
             // Assert
             Assert.Equal("John Smith", result.Subject);
+        }
+        
+        [Fact]
+        public void CanConfigureDefaultOptions()
+        {
+            throw new NotImplementedException();
+            // Not yet working. DefaultCloudEventCreatorOptionsProvider returns "new" instead of the configured default options.
+            // Should use something like "IsConfigured" in CloudEventCreationOptions
+            var server = Init(services =>
+            {
+                services.Configure<CloudEventCreationOptions>(options =>
+                {
+                    options.GetEventTypeName = (creationOptions, provider, eventObject) =>
+                    {
+                        if (eventObject.GetType() == typeof(CustomerCreatedEvent))
+                        {
+                            return "custom";
+                        }
+
+                        return "default";
+                    };
+                });
+            });
+            
+            // Act 
+            var result = server.CreateCloudEvent(new CustomerCreatedEvent() { Name = "John Smith" });
+            var result2 = server.CreateCloudEvent(new CustomerDeletedEvent() { Name = "John Smith" });
+
+            // Assert
+            Assert.Equal("custom", result.Type);
+            Assert.Equal("default", result2.Type);
         }
     }
 }

@@ -1,4 +1,7 @@
 ﻿using System;
+using Weikio.EventFramework.EventCreator;
+
+[assembly: EventSource("https://assembly.source")]
 
 namespace Weikio.EventFramework.Tests.Shared
 {
@@ -19,5 +22,15 @@ namespace Weikio.EventFramework.Tests.Shared
     public class InvoiceCreated
     {
         public int Index { get; set; } = 0;
+    }
+    
+    [EventType("CustomerOrderCreated")]
+    [EventSource("https://test.event")]
+    public class OrderCreated
+    {
+    }
+    
+    public class CustomerDeleted
+    {
     }
 }

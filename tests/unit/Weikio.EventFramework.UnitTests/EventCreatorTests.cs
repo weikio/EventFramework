@@ -47,5 +47,45 @@ namespace Weikio.EventFramework.UnitTests
 
             Assert.Equal(id.ToString(), result.Id);
         }
+        
+        [Fact]
+        public void CanDefineEventTypeUsingAttribute()
+        {
+            var obj = new OrderCreated();
+
+            var result = CloudEventCreator.Create(obj);
+
+            Assert.Equal("CustomerOrderCreated", result.Type);
+        }
+        
+        [Fact]
+        public void CanDefineEventSourceUsingAttribute()
+        {
+            var obj = new OrderCreated();
+
+            var result = CloudEventCreator.Create(obj);
+
+            Assert.Equal(new Uri("https://test.event"), result.Source);
+        }
+
+        [Fact]
+        public void CanDefineEventSourceUsingAssemblyLevelAttribute()
+        {
+            var obj = new CustomerDeleted();
+
+            var result = CloudEventCreator.Create(obj);
+
+            Assert.Equal(new Uri("https://assembly.source"), result.Source);
+        }
+
+        [Fact]
+        public void TypeLevelEventSourceOverridesAssemblyLevelSource()
+        {
+            var obj = new OrderCreated();
+
+            var result = CloudEventCreator.Create(obj);
+
+            Assert.Equal(new Uri("https://test.event"), result.Source);
+        }
     }
 }

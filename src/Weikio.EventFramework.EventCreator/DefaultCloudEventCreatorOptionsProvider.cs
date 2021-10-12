@@ -13,7 +13,14 @@ namespace Weikio.EventFramework.EventCreator
 
         public CloudEventCreationOptions Get(string optionsName)
         {
-            return _optionsMonitor.Get(optionsName);
+            var result = _optionsMonitor.Get(optionsName);
+
+            if (result != null)
+            {
+                return result;
+            }
+
+            return new CloudEventCreationOptions();
         }
     }
 }
