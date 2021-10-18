@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
@@ -46,6 +47,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             var hasNonBooleanParameter = actionParameters?.Any(x => typeof(bool).IsAssignableFrom(x.ParameterType) == false);
             
             var containsState = hasNonBooleanParameter == true;
+            ParameterInfo stateType = null;
+
+            if (containsState)
+            {
+                stateType = actionParameters?.First(x => typeof(bool).IsAssignableFrom(x.ParameterType) == false);
+            }
 
             if (hasReturnValue == false) // scenario 1
             {
@@ -94,8 +101,9 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     var parameters = new List<object>();
 
                     // TODO: Check for parameter declaration errors.
-                    if (containsState)
+                    if (containsState && stateType != null)
                     {
+                        dynamic deserializedState = state != null ? JsonConvert.DeserializeObject(state.ToString() ?? string.Empty, stateType.ParameterType) : null;
                         if (actionParameters.Length == 1)
                         {
                             if (typeof(bool).IsAssignableFrom(actionParameters.Single().ParameterType))
@@ -104,12 +112,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                             }
                             else
                             {
-                                parameters.Add(state);
+                                parameters.Add(deserializedState);
                             }
                         }
                         else if (actionParameters.Count() == 2)
                         {
-                            parameters.Add(state);
+                            parameters.Add(deserializedState);
                             parameters.Add(isFirstRun);
                         }
                     }

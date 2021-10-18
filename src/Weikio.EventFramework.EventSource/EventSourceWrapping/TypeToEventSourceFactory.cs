@@ -156,7 +156,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return factory;
         }
 
-        private static Delegate CreateDelegate(MethodInfo methodInfo, object target)
+        private Delegate CreateDelegate(MethodInfo methodInfo, object target)
         {
             var key = GetId(methodInfo);
 
@@ -173,8 +173,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
             return Delegate.CreateDelegate(funcTypeFromCache, target, methodInfo.Name);
         }
 
-        private static string GetId(MethodInfo methodInfo)
+        private string GetId(MethodInfo methodInfo)
         {
+            if (!string.IsNullOrWhiteSpace(Id))
+            {
+                return Id + "_" + methodInfo.DeclaringType?.FullName + methodInfo.Name;
+            }
+            
             return methodInfo.DeclaringType?.FullName + methodInfo.Name + "_" + Guid.NewGuid();
         }
 

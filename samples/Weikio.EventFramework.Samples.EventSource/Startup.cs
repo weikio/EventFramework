@@ -8,12 +8,18 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Quartz;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.CloudEvents;
+using Weikio.EventFramework.EventAggregator.AspNetCore;
+using Weikio.EventFramework.EventAggregator.Core;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.EventSource.Plugins.Files;
 using Weikio.EventFramework.Extensions.EventAggregator;
 
 namespace Weikio.EventFramework.Samples.EventSource
@@ -72,27 +78,55 @@ namespace Weikio.EventFramework.Samples.EventSource
     }
     public class Startup
     {
+        public const string FolderToMonitor = @"c:\temp\listen";
+        
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
+            services.AddControllers();
 
-            services.AddCloudEventSources();
-            services.AddCloudEventPublisher();
-            services.AddLocal();
-
-            services.AddSource<WebPageEventSource>(TimeSpan.FromSeconds(15));
-            services.AddHandler<Handler>();
-            services.AddHandler<MegaHandler>();
-
-            // 2. Configure the gateway to write all the received events into the Datastore
-            services.Configure<CloudEventGatewayOptions>(options =>
+            services.AddEventFramework()
+                .AddCloudEventSources(options =>
                 {
-                    options.OnMessageRead = (gateway, channel, dateTime, cloudEvent, serviceProvider) =>
+                    options.ConfigureStatePersistentStore = storeOptions =>
                     {
-                        DataStore.Events.Add(cloudEvent);
+                        storeOptions.UseSqlServer(sqlServer =>
+                        {
+                            sqlServer.ConnectionString = "Server=(localdb)\\mssqllocaldb;Database=quartz;Trusted_Connection=True;MultipleActiveResultSets=true";
+                            sqlServer.TablePrefix = "QRTZ_";
+                        });
                     };
-                }
-            );
+                })
+                .AddCloudEventAggregator()
+                .AddChannel("bus", (provider, options) =>
+                {
+                    options.Endpoint = async ev =>
+                    {
+                        var aggr = provider.GetRequiredService<ICloudEventAggregator>();
+                        await aggr.Publish(ev);
+                    };
+                })
+                // .AddFileEventSource(options =>
+                // {
+                //     options.Configuration = new FileEventSourceConfiguration() { Filter = "*.txt", Folder = FolderToMonitor };
+                //     options.Autostart = true;
+                // })
+                .AddLocal()
+                .AddHandler(ev =>
+                {
+                    var json = ev.ToJson();
+                    Console.WriteLine(json);
+                })
+                .AddEventSource<TestEventSource>(options =>
+                {
+                    options.Autostart = true;
+                    options.Id = "mytest";
+                    options.PollingFrequency = TimeSpan.FromSeconds(10);
+                });
+            
+            services.Configure<DefaultChannelOptions>(options =>
+            {
+                options.DefaultChannelName = "bus";
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -110,7 +144,6 @@ namespace Weikio.EventFramework.Samples.EventSource
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapRazorPages();
                 endpoints.MapControllers();
             });
         }

@@ -5,8 +5,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\EventFramework.EventSource.Plugins.Files\src\Weikio.EventFramework.EventSource.Plugins.Files\Weikio.EventFramework.EventSource.Plugins.Files.csproj" />
+      <ProjectReference Include="..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
       <ProjectReference Include="..\..\src\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />
       <ProjectReference Include="..\..\src\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
+
+      <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.1" />
     </ItemGroup>
 
     <ItemGroup>
