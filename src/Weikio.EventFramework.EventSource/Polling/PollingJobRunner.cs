@@ -21,7 +21,9 @@ namespace Weikio.EventFramework.EventSource.Polling
         private readonly IEventSourceInstanceManager _instanceManager;
 
         public PollingJobRunner(IServiceProvider serviceProvider, IOptionsMonitor<JobOptions> optionsMonitor,
-            ILogger<PollingJobRunner> logger, ICloudEventPublisherFactory publisherFactory, IEventSourceInstanceManager instanceManager)
+            ILogger<PollingJobRunner> logger, 
+            ICloudEventPublisherFactory publisherFactory, 
+            IEventSourceInstanceManager instanceManager)
         {
             _serviceProvider = serviceProvider;
             _optionsMonitor = optionsMonitor;
@@ -49,13 +51,7 @@ namespace Weikio.EventFramework.EventSource.Polling
                     var action = job.Action;
                     var eventSourceId = job.EventSource.Id;
 
-                    var currentState = context.JobDetail.JobDataMap["state"];
-                    bool.TryParse(context.JobDetail.JobDataMap["isfirstrun"] as string, out var isFirstRun);
-
-                    _logger.LogDebug("Running the scheduled event source with {Id}. Is first run: {IsFirstRun}, current state: {CurrentState}", id,
-                        isFirstRun, currentState);
-
-                    var task = (Task) action.DynamicInvoke(new[] { currentState, isFirstRun });
+                    var task = (Task) action.DynamicInvoke(new[] { eventSourceId });
 
                     if (task == null)
                     {
@@ -64,27 +60,23 @@ namespace Weikio.EventFramework.EventSource.Polling
 
                     await task;
 
-                    context.JobDetail.JobDataMap["isfirstrun"] = "false";
-
                     _logger.LogDebug("The scheduled event source with {Id} was run successfully", id);
 
                     EventPollingResult pollingResult = ((dynamic) task).Result;
 
-                    if (isFirstRun && pollingResult.NewState != null)
+                    if (pollingResult.IsFirstRun && pollingResult.NewState != null)
                     {
                         _logger.LogDebug("First run done for event source with {Id}. Initialized state to {InitialState}", id, pollingResult.NewState);
-                        context.JobDetail.JobDataMap["state"] = JsonConvert.SerializeObject(pollingResult.NewState);
 
                         return;
                     }
 
                     if (pollingResult.NewState != null)
                     {
-                        context.JobDetail.JobDataMap["state"] = JsonConvert.SerializeObject(pollingResult.NewState);
                         _logger.LogDebug("Updating the scheduled event source's current state with {Id} to {NewState}", id, pollingResult.NewState);
                     }
 
-                    if (pollingResult.NewEvents?.Any() == true && (!isFirstRun || pollingResult.NewState == null))
+                    if (pollingResult.NewEvents?.Any() == true && (!pollingResult.IsFirstRun || pollingResult.NewState == null))
                     {
                         _logger.LogDebug("Publishing new events from event source with {Id}. Event count {EventCount}", id, pollingResult.NewEvents.Count);
 

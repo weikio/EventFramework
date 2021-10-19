@@ -9,8 +9,6 @@
       <ProjectReference Include="..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
       <ProjectReference Include="..\..\src\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />
       <ProjectReference Include="..\..\src\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
-
-      <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -18,6 +16,5 @@
       <_ContentIncludedByDefault Remove="Shared\NavMenu.razor" />
       <_ContentIncludedByDefault Remove="Pages\Index.cshtml" />
     </ItemGroup>
-
 
 </Project>

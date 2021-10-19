@@ -7,6 +7,6 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 {
     public interface IActionWrapper
     {
-        (Func<Delegate, object, bool, Task<EventPollingResult>> Action, bool ContainsState) Wrap(MethodInfo method);
+        (Func<Delegate, string, Task<EventPollingResult>> Action, bool ContainsState) Wrap(MethodInfo method);
     }
 }

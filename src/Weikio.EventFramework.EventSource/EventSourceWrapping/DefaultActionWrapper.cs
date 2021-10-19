@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.Polling;
 
 namespace Weikio.EventFramework.EventSource.EventSourceWrapping
@@ -14,16 +15,18 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
     public class DefaultActionWrapper : IActionWrapper
     {
         private readonly ILogger<DefaultActionWrapper> _logger;
+        private readonly IEventSourceInstanceStorageFactory _eventSourceInstanceStorageFactory;
 
-        public DefaultActionWrapper(ILogger<DefaultActionWrapper> logger)
+        public DefaultActionWrapper(ILogger<DefaultActionWrapper> logger, IEventSourceInstanceStorageFactory eventSourceInstanceStorageFactory)
         {
             _logger = logger;
+            _eventSourceInstanceStorageFactory = eventSourceInstanceStorageFactory;
         }
 
-        public (Func<Delegate, object, bool, Task<EventPollingResult>> Action, bool ContainsState) Wrap(MethodInfo method)
+        public (Func<Delegate, string, Task<EventPollingResult>> Action, bool ContainsState) Wrap(MethodInfo method)
         {
             var actionParameters = method.GetParameters();
-            
+
             // Five (and a half) scenarios: 
             // 1.  Task without any return values
             // 2.  Task with value tuple as result where Item1 = new events and Item2 = new state
@@ -45,7 +48,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             // Boolean parameter is reserved for the "isFirstRun"-flag
             var hasNonBooleanParameter = actionParameters?.Any(x => typeof(bool).IsAssignableFrom(x.ParameterType) == false);
-            
+
             var containsState = hasNonBooleanParameter == true;
             ParameterInfo stateType = null;
 
@@ -94,16 +97,21 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 }
             }
 
-            var result = new Func<Delegate, object, bool, Task<EventPollingResult>>(async (action, state, isFirstRun) =>
+            var result = new Func<Delegate, string, Task<EventPollingResult>>(async (action, id) =>
             {
                 try
                 {
                     var parameters = new List<object>();
+                    var stateStorage = await _eventSourceInstanceStorageFactory.GetStorage(id);
+                    var state = await stateStorage.LoadState();
+
+                    var isFirstRun = await stateStorage.HasRun() == false;
 
                     // TODO: Check for parameter declaration errors.
                     if (containsState && stateType != null)
                     {
-                        dynamic deserializedState = state != null ? JsonConvert.DeserializeObject(state.ToString() ?? string.Empty, stateType.ParameterType) : null;
+                        dynamic deserializedState = state != null ? JsonConvert.DeserializeObject(state, stateType.ParameterType) : null;
+
                         if (actionParameters.Length == 1)
                         {
                             if (typeof(bool).IsAssignableFrom(actionParameters.Single().ParameterType))
@@ -129,10 +137,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                             {
                                 parameters.Add(isFirstRun);
                             }
-                        }  
+                        }
                     }
 
                     Task cloudEvent = null;
+
+                    _logger.LogDebug("Running the scheduled event source with {Id}. Is first run: {IsFirstRun}, current state: {CurrentState}", id, isFirstRun,
+                        state);
 
                     if (!isTask)
                     {
@@ -140,7 +151,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     }
                     else
                     {
-                        cloudEvent = (Task) action.DynamicInvoke(parameters.ToArray());
+                        cloudEvent = (Task)action.DynamicInvoke(parameters.ToArray());
                     }
 
                     if (cloudEvent == null)
@@ -151,6 +162,11 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     await cloudEvent;
                     var eventPollingResult = handlingTask(cloudEvent);
 
+                    // TODO: Convert this to stream(?) based system but for now just pass strings around
+                    var updatedStateString = eventPollingResult.NewState != null ? JsonConvert.SerializeObject(eventPollingResult.NewState, Formatting.Indented) : "";
+                    await stateStorage.Save(updatedStateString);
+
+                    eventPollingResult.IsFirstRun = isFirstRun;
                     return eventPollingResult;
                 }
                 catch (Exception e)
@@ -166,12 +182,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
         private EventPollingResult HandleNoResultReturn(Task pollingResult)
         {
-            return new EventPollingResult(){NewEvents = new List<object>(), NewState = default(int)};
+            return new EventPollingResult() { NewEvents = new List<object>(), NewState = default(int) };
         }
 
         private EventPollingResult HandleValueTuple(Task pollingResult)
         {
-            ITuple actionResult = ((dynamic) pollingResult).Result;
+            ITuple actionResult = ((dynamic)pollingResult).Result;
 
             var eventsType = actionResult[0]?.GetType();
             var upatedState = actionResult[1];
@@ -186,7 +202,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
             if (typeof(IEnumerable).IsAssignableFrom(eventsType))
             {
-                var newCloudEventsAsEnumerable = (IEnumerable<object>) actionResult[0];
+                var newCloudEventsAsEnumerable = (IEnumerable<object>)actionResult[0];
                 newCloudEvents.AddRange(newCloudEventsAsEnumerable);
             }
             else
@@ -194,37 +210,36 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 newCloudEvents.Add(actionResult[0]);
             }
 
-
             return new EventPollingResult() { NewEvents = newCloudEvents, NewState = upatedState };
         }
 
         private EventPollingResult HandleUpdatedStateResult(Task pollingResult)
         {
-            object newState = ((dynamic) pollingResult).Result;
+            object newState = ((dynamic)pollingResult).Result;
 
-            return new EventPollingResult(){NewEvents = new List<object>(), NewState = newState};
+            return new EventPollingResult() { NewEvents = new List<object>(), NewState = newState };
         }
 
         private EventPollingResult HandleNewEventsResult(Task pollingResult)
         {
-            object newEvents = ((dynamic) pollingResult).Result;
+            object newEvents = ((dynamic)pollingResult).Result;
             var newCloudEvents = new List<object>();
 
             if (newEvents is IEnumerable)
             {
-                newCloudEvents.AddRange((IEnumerable<object>) newEvents);
+                newCloudEvents.AddRange((IEnumerable<object>)newEvents);
             }
             else
             {
                 newCloudEvents.Add(newEvents);
             }
 
-            return new EventPollingResult(){NewEvents = newCloudEvents, NewState = null};
+            return new EventPollingResult() { NewEvents = newCloudEvents, NewState = null };
         }
-        
+
         private EventPollingResult HandleEventPollingResult(Task pollingResult)
         {
-            EventPollingResult result = ((dynamic) pollingResult).Result;
+            EventPollingResult result = ((dynamic)pollingResult).Result;
 
             return result;
         }

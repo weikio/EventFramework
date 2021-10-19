@@ -85,17 +85,7 @@ namespace Weikio.EventFramework.Samples.EventSource
             services.AddControllers();
 
             services.AddEventFramework()
-                .AddCloudEventSources(options =>
-                {
-                    options.ConfigureStatePersistentStore = storeOptions =>
-                    {
-                        storeOptions.UseSqlServer(sqlServer =>
-                        {
-                            sqlServer.ConnectionString = "Server=(localdb)\\mssqllocaldb;Database=quartz;Trusted_Connection=True;MultipleActiveResultSets=true";
-                            sqlServer.TablePrefix = "QRTZ_";
-                        });
-                    };
-                })
+                .AddCloudEventSources()
                 .AddCloudEventAggregator()
                 .AddChannel("bus", (provider, options) =>
                 {

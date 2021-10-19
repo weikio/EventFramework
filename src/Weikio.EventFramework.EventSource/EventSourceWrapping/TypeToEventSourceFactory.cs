@@ -70,13 +70,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
         }
 
 
-        private (Func<object, bool, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method,
+        private (Func<string, Task<EventPollingResult>> Action, bool ContainsState) ConvertMethodToPollingEventSource(MethodInfo method,
             IServiceProvider serviceProvider)
         {
             var wrapper = serviceProvider.GetRequiredService<IActionWrapper>();
             var wrappedMethodCall = wrapper.Wrap(method);
 
-            Task<EventPollingResult> WrapperRunner(object state, bool isFirstRun)
+            Task<EventPollingResult> WrapperRunner(string eventSourceInstanceId)
             {
                 var instance = CreateInstance(serviceProvider);
 
@@ -87,7 +87,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                 var del = CreateDelegate(method, instance);
 
-                var res = wrappedMethodCall.Action.DynamicInvoke(del, state, isFirstRun);
+                var res = wrappedMethodCall.Action.DynamicInvoke(del, eventSourceInstanceId);
                 var taskResult = (Task<EventPollingResult>) res;
 
                 return taskResult;

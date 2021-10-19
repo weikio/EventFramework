@@ -148,7 +148,6 @@ namespace Weikio.EventFramework.EventSource.Polling
             dynamic jobDetail = JobBuilder
                 .Create(typeof(PollingJobRunner))
                 .WithIdentity(schedule.Id)
-                .UsingJobData("isfirstrun", "true")
                 .WithDescription(schedule.Id)
                 .StoreDurably(true)
                 .Build();

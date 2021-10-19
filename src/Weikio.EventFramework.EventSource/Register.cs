@@ -56,23 +56,7 @@ namespace Weikio.EventFramework.EventSource
             services.AddQuartz(q =>
             {
                 q.UseMicrosoftDependencyInjectionJobFactory();
-
-                if (setupAction != null)
-                {
-                    q.UsePersistentStore(s =>
-                    {
-                        EventSourceOptions.Defaults.ConfigureStatePersistentStore(s);
-
-                        var setup = new EventSourceOptions();
-                        setupAction(setup);
-
-                        setup.ConfigureStatePersistentStore?.Invoke(s);
-                    });
-                }
-                else
-                {
-                    q.UseInMemoryStore();
-                }
+                q.UseInMemoryStore();
             });
 
             services.TryAddSingleton<PollingJobRunner>();
@@ -95,6 +79,8 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<IEventSourceDefinitionProvider, DefaultEventSourceDefinitionProvider>();
             services.TryAddSingleton<IEventSourceDefinitionConfigurationTypeProvider, DefaultEventSourceDefinitionConfigurationTypeProvider>();
             services.TryAddSingleton<ITypeToEventSourceTypeProvider, DefaultTypeToEventSourceTypeProvider>();
+            services.TryAddSingleton<IEventSourceInstanceStorageFactory, DefaultEventSourceInstanceStorageFactory>();
+            services.TryAddTransient<IPersistableEventSourceInstanceDataStore, FileEventSourceInstanceDataStore>();
 
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
