@@ -15,12 +15,14 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
     public class DefaultActionWrapper : IActionWrapper
     {
         private readonly ILogger<DefaultActionWrapper> _logger;
-        private readonly IEventSourceInstanceStorageFactory _eventSourceInstanceStorageFactory;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
 
-        public DefaultActionWrapper(ILogger<DefaultActionWrapper> logger, IEventSourceInstanceStorageFactory eventSourceInstanceStorageFactory)
+        public DefaultActionWrapper(ILogger<DefaultActionWrapper> logger, IServiceProvider serviceProvider, IEventSourceInstanceManager eventSourceInstanceManager)
         {
             _logger = logger;
-            _eventSourceInstanceStorageFactory = eventSourceInstanceStorageFactory;
+            _serviceProvider = serviceProvider;
+            _eventSourceInstanceManager = eventSourceInstanceManager;
         }
 
         public (Func<Delegate, string, Task<EventPollingResult>> Action, bool ContainsState) Wrap(MethodInfo method)
@@ -102,7 +104,10 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                 try
                 {
                     var parameters = new List<object>();
-                    var stateStorage = await _eventSourceInstanceStorageFactory.GetStorage(id);
+                    var esInstance = _eventSourceInstanceManager.Get(id);
+
+                    var eventSourceInstanceStorageFactory = esInstance.Options.EventSourceInstanceDataStoreFactory(_serviceProvider);
+                    var stateStorage = await eventSourceInstanceStorageFactory.GetStorage(id);
                     var state = await stateStorage.LoadState();
 
                     var isFirstRun = await stateStorage.HasRun() == false;

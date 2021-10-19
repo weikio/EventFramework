@@ -129,6 +129,7 @@ namespace Weikio.EventFramework.EventSource
 
                 if (esInstance.Options.PersistState)
                 {
+                    // TODO: Add option to configure the default data store type
                     return new FileEventSourceInstanceDataStore(eventSourceInstanceId);
                 }
 

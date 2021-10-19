@@ -18,11 +18,11 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         public Action<CloudEventsChannelOptions> ConfigureChannel { get; set; } = options => { };
         public bool PersistState { get; set; } = true;
 
-        public Func<IServiceProvider, IPersistableEventSourceInstanceDataStore> EventSourceInstanceDataStoreFactory { get; set; } = provider =>
+        public Func<IServiceProvider, IEventSourceInstanceStorageFactory> EventSourceInstanceDataStoreFactory { get; set; } = provider =>
         {
-            
-            provider.GetService<IPersistableEventSourceInstanceDataStore>()
-            return new FileEventSourceInstanceDataStore(Id);
+            var result = provider.GetRequiredService<IEventSourceInstanceStorageFactory>();
+
+            return result;
         };
     }
 }
