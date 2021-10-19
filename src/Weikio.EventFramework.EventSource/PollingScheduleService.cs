@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource
@@ -112,13 +113,17 @@ namespace Weikio.EventFramework.EventSource
     internal class DefaultEventSourceInstanceStorageFactory : IEventSourceInstanceStorageFactory
     {
         private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
+        private readonly IOptions<DefaultEventSourceInstanceStorageFactoryOptions> _options;
+        private readonly IServiceProvider _serviceProvider;
 
         private readonly ConcurrentDictionary<string, IEventSourceInstanceDataStore> _dataStores =
             new ConcurrentDictionary<string, IEventSourceInstanceDataStore>();
 
-        public DefaultEventSourceInstanceStorageFactory(IEventSourceInstanceManager eventSourceInstanceManager)
+        public DefaultEventSourceInstanceStorageFactory(IEventSourceInstanceManager eventSourceInstanceManager, IOptions<DefaultEventSourceInstanceStorageFactoryOptions> options, IServiceProvider serviceProvider)
         {
             _eventSourceInstanceManager = eventSourceInstanceManager;
+            _options = options;
+            _serviceProvider = serviceProvider;
         }
 
         public Task<IEventSourceInstanceDataStore> GetStorage(string eventSourceInstanceId)
@@ -129,8 +134,9 @@ namespace Weikio.EventFramework.EventSource
 
                 if (esInstance.Options.PersistState)
                 {
-                    // TODO: Add option to configure the default data store type
-                    return new FileEventSourceInstanceDataStore(eventSourceInstanceId);
+                    var optionsValue = _options.Value;
+
+                    return optionsValue.CreateDefaultPersistableEventSourceInstanceDataStore(_serviceProvider, eventSourceInstanceId);
                 }
 
                 return new InMemoryEventSourceInstanceDataStore(eventSourceInstanceId);
