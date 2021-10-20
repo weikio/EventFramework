@@ -11,39 +11,11 @@ namespace Weikio.EventFramework.Samples.EventSource
     public class TestEventSource
     {
 
-        public Task<(List<NewFileEvent> NewEvents, List<string> NewState)> CheckForNewFiles(List<string> currentState)
+        public Task<(CountEvent NewEvent, int NewState)> IncrementCount(int currentState)
         {
-            List<string> files;
+            var newState = currentState + 1;
 
-            if (currentState == null)
-            {
-                files = new List<string>() { "file1.txt", "file2.txt" };
-            }
-            else
-            {
-                files = new List<string>(currentState) { DateTime.Now.ToString(CultureInfo.InvariantCulture)+".txt" };
-            }
-
-            var result = new List<string>(files);
-
-            if (currentState?.Any() == true)
-            {
-                result = files.Except(currentState).ToList();
-            }
-
-            if (!result.Any())
-            {
-                return Task.FromResult<(List<NewFileEvent> NewEvents, List<string> NewState)>((null, files));
-            }
-
-            var newEvents = new List<NewFileEvent>();
-
-            foreach (var res in result)
-            {
-                newEvents.Add(new NewFileEvent(res));
-            }
-
-            return Task.FromResult((newEvents, files));
+            return Task.FromResult((new CountEvent(newState), newState));
         }
     }
 }

@@ -87,6 +87,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Sampl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.Plugins.Files", "..\..\EventFramework.EventSource.Plugins.Files\src\Weikio.EventFramework.EventSource.Plugins.Files\Weikio.EventFramework.EventSource.Plugins.Files.csproj", "{43EE1BE3-EBC1-4806-A1E3-143D61985918}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.DataSources.CosmosDB", "Weikio.EventFramework.EventSource.DataSources.CosmosDB\Weikio.EventFramework.EventSource.DataSources.CosmosDB.csproj", "{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -237,6 +239,10 @@ Global
 		{43EE1BE3-EBC1-4806-A1E3-143D61985918}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43EE1BE3-EBC1-4806-A1E3-143D61985918}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43EE1BE3-EBC1-4806-A1E3-143D61985918}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}

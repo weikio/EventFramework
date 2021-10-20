@@ -1,12 +1,11 @@
 ﻿namespace Weikio.EventFramework.Samples.EventSource
 {
-    public class NewFileEvent
+    public class CountEvent
     {
-        public string FileName { get; }
-
-        public NewFileEvent(string fileName)
+        public int Count { get; set; }
+        public CountEvent(int newCount)
         {
-            FileName = fileName;
+            Count = newCount;
         }
     }
 }

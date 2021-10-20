@@ -12,19 +12,4 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         List<EventSourceDefinition> List();
         EventSource Get(EventSourceDefinition definition);
     }
-
-    public interface IEventSourceInstanceDataStore
-    {
-        string EventSourceInstanceId { get; }
-        Task<bool> HasRun();
-        Task<string> LoadState();
-        Task Save(string updatedState);
-    }
-    
-    public interface IPersistableEventSourceInstanceDataStore{}
-    
-    public interface IEventSourceInstanceStorageFactory
-    {
-        Task<IEventSourceInstanceDataStore> GetStorage(string eventSourceInstanceId);
-    }
 }

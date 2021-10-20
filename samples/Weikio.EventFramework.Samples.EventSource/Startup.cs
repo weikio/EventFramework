@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Adafy.Candy.CosmosDB;
 using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -19,67 +20,15 @@ using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.DataSources.CosmosDB;
 using Weikio.EventFramework.EventSource.Plugins.Files;
 using Weikio.EventFramework.Extensions.EventAggregator;
 
 namespace Weikio.EventFramework.Samples.EventSource
 {
-    public static class DataStore
-    {
-        public static List<CloudEvent> Events { get; set; } = new List<CloudEvent>();
-    }
-
-    public class WebPageEventSource
-    {
-        public async Task<(ContentChanged NewEvent, string NewState)> CheckForUpdatedWebSite(string currentState)
-        {
-            var client = new HttpClient();
-
-            var result = await client.GetStringAsync(
-                "https://fi.newbalance.eu/on/demandware.store/Sites-newbalance_eu-Site/en/Product-GetVariants?pid=MRCELV1-34439");
-
-            if (string.Equals(currentState, result))
-            {
-                return (null, result);
-            }
-
-            return (new ContentChanged() { Content = result }, result);
-        }
-    }
-
-    public class ContentChanged
-    {
-        public string Content { get; set; }
-    }
-
-    public class MegaHandler
-    {
-        private readonly ILogger<MegaHandler> _logger;
-
-        public MegaHandler(ILogger<MegaHandler> logger)
-        {
-            _logger = logger;
-        }
-
-        public Task Handle(CloudEvent<ContentChanged> contentChangedEvent)
-        {
-            _logger.LogInformation("Received event {CloudEvent}", contentChangedEvent);
-            
-            return Task.CompletedTask;
-        }
-    }
-    
-    public class Handler
-    {
-        public Task Handle(CloudEvent<ContentChanged> contentChangedEvent)
-        {
-            return Task.CompletedTask;
-        }
-    }
     public class Startup
     {
-        public const string FolderToMonitor = @"c:\temp\listen";
-        
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
@@ -95,28 +44,73 @@ namespace Weikio.EventFramework.Samples.EventSource
                         await aggr.Publish(ev);
                     };
                 })
-                // .AddFileEventSource(options =>
-                // {
-                //     options.Configuration = new FileEventSourceConfiguration() { Filter = "*.txt", Folder = FolderToMonitor };
-                //     options.Autostart = true;
-                // })
                 .AddLocal()
                 .AddHandler(ev =>
                 {
                     var json = ev.ToJson();
                     Console.WriteLine(json);
                 })
-                .AddEventSource<TestEventSource>(options =>
+                .AddEventSource<TestEventSource>();
+            
+            // services.AddSingleton(new EventSourceInstanceOptions()
+            // {
+            //     Id = "nonpersist",
+            //     Autostart = true, 
+            //     PollingFrequency = TimeSpan.FromSeconds(1), 
+            //     EventSourceDefinition = "TestEventSource",
+            //     PersistState = false
+            // });
+            //
+            // services.AddSingleton(new EventSourceInstanceOptions()
+            // {
+            //     Id = "persist",
+            //     Autostart = true, 
+            //     PollingFrequency = TimeSpan.FromSeconds(1), 
+            //     EventSourceDefinition = "TestEventSource",
+            //     PersistState = true
+            // });
+            //
+            // services.AddSingleton(new EventSourceInstanceOptions()
+            // {
+            //     Id = "anotherpersist",
+            //     Autostart = true, 
+            //     PollingFrequency = TimeSpan.FromSeconds(1), 
+            //     EventSourceDefinition = "TestEventSource",
+            //     PersistState = true
+            // });
+            //
+            services.AddSingleton(new EventSourceInstanceOptions()
+            {
+                Id = "third",
+                Autostart = true, 
+                PollingFrequency = TimeSpan.FromSeconds(1), 
+                EventSourceDefinition = "TestEventSource",
+                PersistState = true,
+                EventSourceInstanceDataStore = (provider, instance, eventSourceStateType) =>
                 {
-                    options.Autostart = true;
-                    options.Id = "mytest";
-                    options.PollingFrequency = TimeSpan.FromSeconds(10);
-                });
+                    var cosmosDb = provider.GetRequiredService<CosmosDBEventSourceInstanceDataSource>();
+                    cosmosDb.EventSourceInstance = instance;
+                    cosmosDb.StateType = eventSourceStateType;
+                    
+                    return cosmosDb;
+                } 
+            });
             
             services.Configure<DefaultChannelOptions>(options =>
             {
                 options.DefaultChannelName = "bus";
             });
+
+            services.AddCosmosDb(settings =>
+            {
+                settings.CollectionId = "efstate";
+                settings.DatabaseId = "myefdb";
+                settings.DocumentDbKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+                settings.DocumentDbUri = "https://localhost:8081";
+            });
+
+            services.AddTransient<StateRepository>();
+            services.AddTransient<CosmosDBEventSourceInstanceDataSource>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

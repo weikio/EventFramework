@@ -107,16 +107,15 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     var esInstance = _eventSourceInstanceManager.Get(id);
 
                     var eventSourceInstanceStorageFactory = esInstance.Options.EventSourceInstanceDataStoreFactory(_serviceProvider);
-                    var stateStorage = await eventSourceInstanceStorageFactory.GetStorage(id);
+                    var stateStorage = await eventSourceInstanceStorageFactory.GetStorage(esInstance, stateType?.ParameterType);
+                    
                     var state = await stateStorage.LoadState();
-
+                    
                     var isFirstRun = await stateStorage.HasRun() == false;
 
                     // TODO: Check for parameter declaration errors.
                     if (containsState && stateType != null)
                     {
-                        dynamic deserializedState = state != null ? JsonConvert.DeserializeObject(state, stateType.ParameterType) : null;
-
                         if (actionParameters.Length == 1)
                         {
                             if (typeof(bool).IsAssignableFrom(actionParameters.Single().ParameterType))
@@ -125,12 +124,12 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                             }
                             else
                             {
-                                parameters.Add(deserializedState);
+                                parameters.Add(state);
                             }
                         }
                         else if (actionParameters.Count() == 2)
                         {
-                            parameters.Add(deserializedState);
+                            parameters.Add(state);
                             parameters.Add(isFirstRun);
                         }
                     }
@@ -147,8 +146,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
 
                     Task cloudEvent = null;
 
-                    _logger.LogDebug("Running the scheduled event source with {Id}. Is first run: {IsFirstRun}, current state: {CurrentState}", id, isFirstRun,
-                        state);
+                    _logger.LogDebug("Running the scheduled event source with {Id}. Is first run: {IsFirstRun}", id, isFirstRun);
 
                     if (!isTask)
                     {
@@ -167,9 +165,7 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     await cloudEvent;
                     var eventPollingResult = handlingTask(cloudEvent);
 
-                    // TODO: Convert this to stream(?) based system but for now just pass strings around
-                    var updatedStateString = eventPollingResult.NewState != null ? JsonConvert.SerializeObject(eventPollingResult.NewState, Formatting.Indented) : "";
-                    await stateStorage.Save(updatedStateString);
+                    await stateStorage.Save(eventPollingResult.NewState);
 
                     eventPollingResult.IsFirstRun = isFirstRun;
                     return eventPollingResult;
