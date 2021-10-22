@@ -48,7 +48,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
 
             await eventSourceInstanceManager.StartAll();
 
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            // await Task.Delay(TimeSpan.FromSeconds(2));
 
             Assert.NotEmpty(MyTestCloudEventPublisher.PublishedEvents);
         }

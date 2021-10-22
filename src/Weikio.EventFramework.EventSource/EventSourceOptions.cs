@@ -1,12 +1,10 @@
 ﻿using System;
+using Quartz;
 
 namespace Weikio.EventFramework.EventSource
 {
     public class EventSourceOptions
     {
-        public Func<string, string> EventSourceInstanceChannelNameFactory { get; set; } = instanceId =>
-        {
-            return $"system/eventsourceinstances/{instanceId}";
-        };
+        public Func<string, string> EventSourceInstanceChannelNameFactory { get; set; } = instanceId => $"system/eventsourceinstances/{instanceId}";
     }
 }

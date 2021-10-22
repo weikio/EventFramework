@@ -45,7 +45,6 @@ namespace Weikio.EventFramework.EventSource.Polling
 
             await StartJobs(cancellationToken);
 
-
             _logger.LogInformation("Created {Count} polling event sources. Starting the polling service for the sources", _pollingScheduleService.Count());
             await Scheduler.Start(cancellationToken);
         }
@@ -57,32 +56,43 @@ namespace Weikio.EventFramework.EventSource.Polling
             try
             {
                 await _semaphoreSlim.WaitAsync(cancellationToken);
-            
+                
                 foreach (var jobSchedule in _pollingScheduleService)
                 {
                     try
                     {
                         var job = CreateJob(jobSchedule);
+                        var scheduledByQuartz = await Scheduler.GetJobDetail(job.Key, cancellationToken);
+                        
                         _logger.LogDebug("Created job with {Id}", jobSchedule.Id);
 
                         var existingJob = _startedJobs.FirstOrDefault(x => string.Equals(x.Key.Name, jobSchedule.Id, StringComparison.InvariantCultureIgnoreCase));
 
-                        if (existingJob != null)
+                        if (existingJob != null || scheduledByQuartz != null)
                         {
-                            _logger.LogDebug("Job has already started, no need create it again.", jobSchedule.Id);
+                            _logger.LogDebug("Job {JobId} has already started, no need create it again", jobSchedule.Id);
+
+                            if (scheduledByQuartz != null)
+                            {
+                                _logger.LogDebug("Recreating the trigger for job {JobId} to make sure it is run with correct parameters", jobSchedule.Id);
+                                var existingTriggers = await Scheduler.GetTriggersOfJob(scheduledByQuartz.Key, cancellationToken);
+
+                                foreach (var existingTrigger in existingTriggers)
+                                {
+                                    await Scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+                                }
+
+                                await Schedule(cancellationToken, jobSchedule, job);
+                            }
+                            
                             continue;
                         }
                     
                         _logger.LogDebug("Starting polling event source with {Id}", jobSchedule.Id);
                         await Scheduler.AddJob(job, true, cancellationToken);
 
-                        var triggers = CreateTriggers(jobSchedule, job);
+                        await Schedule(cancellationToken, jobSchedule, job);
 
-                        foreach (var trigger in triggers)
-                        {
-                            await Scheduler.ScheduleJob(trigger, cancellationToken);
-                        }
-                    
                         _startedJobs.Add(job);
                     }
                     catch (Exception e)
@@ -118,6 +128,16 @@ namespace Weikio.EventFramework.EventSource.Polling
             }
         }
 
+        private async Task Schedule(CancellationToken cancellationToken, PollingSchedule jobSchedule, IJobDetail job)
+        {
+            var triggers = CreateTriggers(jobSchedule, job);
+
+            foreach (var trigger in triggers)
+            {
+                await Scheduler.ScheduleJob(trigger, cancellationToken);
+            }
+        }
+
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             await Scheduler?.Shutdown(cancellationToken);
@@ -127,9 +147,8 @@ namespace Weikio.EventFramework.EventSource.Polling
         {
             dynamic jobDetail = JobBuilder
                 .Create(typeof(PollingJobRunner))
-                .WithIdentity(schedule.Id.ToString())
-                .UsingJobData("isfirstrun", true)
-                .WithDescription(schedule.Id.ToString())
+                .WithIdentity(schedule.Id)
+                .WithDescription(schedule.Id)
                 .StoreDurably(true)
                 .Build();
 
@@ -192,7 +211,7 @@ namespace Weikio.EventFramework.EventSource.Polling
             var initilizationTrigger = TriggerBuilder
                 .Create()
                 .ForJob(jobDetail)
-                .WithIdentity($"{schedule.Id}.initilization.trigger")
+                .WithIdentity($"{schedule.Id}.initialization.trigger")
                 .WithDescription(schedule.CronExpression)
                 .StartNow()
                 .Build();

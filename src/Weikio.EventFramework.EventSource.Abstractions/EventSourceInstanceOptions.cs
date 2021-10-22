@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Channels.CloudEvents;
 
 namespace Weikio.EventFramework.EventSource.Abstractions
@@ -15,5 +16,17 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         public string TargetChannelName { get; set; }
         public string Id { get; set; }
         public Action<CloudEventsChannelOptions> ConfigureChannel { get; set; } = options => { };
+        public bool PersistState { get; set; } = true;
+
+        public Func<IServiceProvider, IEventSourceInstanceStorageFactory> EventSourceInstanceDataStoreFactory { get; set; } = provider =>
+        {
+            var result = provider.GetRequiredService<IEventSourceInstanceStorageFactory>();
+
+            return result;
+        };
+        
+        public Func<IServiceProvider, EventSourceInstance, Type, IEventSourceInstanceDataStore> EventSourceInstanceDataStore { get; set; }
+        
+        public Type EventSourceInstanceDataStoreType { get; set; }
     }
 }

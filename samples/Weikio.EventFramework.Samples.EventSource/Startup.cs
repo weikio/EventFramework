@@ -2,97 +2,105 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Adafy.Candy.CosmosDB;
 using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Quartz;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.CloudEvents;
+using Weikio.EventFramework.EventAggregator.AspNetCore;
+using Weikio.EventFramework.EventAggregator.Core;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventGateway.Http;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.DataSources.CosmosDB;
 using Weikio.EventFramework.Extensions.EventAggregator;
 
 namespace Weikio.EventFramework.Samples.EventSource
 {
-    public static class DataStore
-    {
-        public static List<CloudEvent> Events { get; set; } = new List<CloudEvent>();
-    }
-
-    public class WebPageEventSource
-    {
-        public async Task<(ContentChanged NewEvent, string NewState)> CheckForUpdatedWebSite(string currentState)
-        {
-            var client = new HttpClient();
-
-            var result = await client.GetStringAsync(
-                "https://fi.newbalance.eu/on/demandware.store/Sites-newbalance_eu-Site/en/Product-GetVariants?pid=MRCELV1-34439");
-
-            if (string.Equals(currentState, result))
-            {
-                return (null, result);
-            }
-
-            return (new ContentChanged() { Content = result }, result);
-        }
-    }
-
-    public class ContentChanged
-    {
-        public string Content { get; set; }
-    }
-
-    public class MegaHandler
-    {
-        private readonly ILogger<MegaHandler> _logger;
-
-        public MegaHandler(ILogger<MegaHandler> logger)
-        {
-            _logger = logger;
-        }
-
-        public Task Handle(CloudEvent<ContentChanged> contentChangedEvent)
-        {
-            _logger.LogInformation("Received event {CloudEvent}", contentChangedEvent);
-            
-            return Task.CompletedTask;
-        }
-    }
-    
-    public class Handler
-    {
-        public Task Handle(CloudEvent<ContentChanged> contentChangedEvent)
-        {
-            return Task.CompletedTask;
-        }
-    }
     public class Startup
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
+            services.AddControllers();
 
-            services.AddCloudEventSources();
-            services.AddCloudEventPublisher();
-            services.AddLocal();
-
-            services.AddSource<WebPageEventSource>(TimeSpan.FromSeconds(15));
-            services.AddHandler<Handler>();
-            services.AddHandler<MegaHandler>();
-
-            // 2. Configure the gateway to write all the received events into the Datastore
-            services.Configure<CloudEventGatewayOptions>(options =>
+            services.AddEventFramework()
+                .AddCloudEventSources()
+                .AddCloudEventAggregator()
+                .AddChannel("bus", (provider, options) =>
                 {
-                    options.OnMessageRead = (gateway, channel, dateTime, cloudEvent, serviceProvider) =>
+                    options.Endpoint = async ev =>
                     {
-                        DataStore.Events.Add(cloudEvent);
+                        var aggr = provider.GetRequiredService<ICloudEventAggregator>();
+                        await aggr.Publish(ev);
                     };
-                }
-            );
+                })
+                .AddLocal()
+                .AddHandler(ev =>
+                {
+                    var json = ev.ToJson();
+                    Console.WriteLine(json);
+                })
+                .AddEventSource<TestEventSource>();
+            
+            // services.AddSingleton(new EventSourceInstanceOptions()
+            // {
+            //     Id = "nonpersist",
+            //     Autostart = true, 
+            //     PollingFrequency = TimeSpan.FromSeconds(1), 
+            //     EventSourceDefinition = "TestEventSource",
+            //     PersistState = false
+            // });
+            //
+            // services.AddSingleton(new EventSourceInstanceOptions()
+            // {
+            //     Id = "persist",
+            //     Autostart = true, 
+            //     PollingFrequency = TimeSpan.FromSeconds(1), 
+            //     EventSourceDefinition = "TestEventSource",
+            //     PersistState = true
+            // });
+            //
+            // services.AddSingleton(new EventSourceInstanceOptions()
+            // {
+            //     Id = "anotherpersist",
+            //     Autostart = true, 
+            //     PollingFrequency = TimeSpan.FromSeconds(1), 
+            //     EventSourceDefinition = "TestEventSource",
+            //     PersistState = true
+            // });
+            //
+            services.AddSingleton(new EventSourceInstanceOptions()
+            {
+                Id = "third",
+                Autostart = true, 
+                PollingFrequency = TimeSpan.FromSeconds(1), 
+                EventSourceDefinition = "TestEventSource",
+                PersistState = true,
+                EventSourceInstanceDataStoreType = typeof(CosmosDBEventSourceInstanceDataSource)
+            });
+            
+            services.Configure<DefaultChannelOptions>(options =>
+            {
+                options.DefaultChannelName = "bus";
+            });
+
+            services.AddCosmosDbStateStore(settings =>
+            {
+                settings.CollectionId = "efstate";
+                settings.DatabaseId = "myefdb";
+                settings.DocumentDbKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+                settings.DocumentDbUri = "https://localhost:8081";
+                settings.IsDefaultStateStore = false;
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -110,7 +118,6 @@ namespace Weikio.EventFramework.Samples.EventSource
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapRazorPages();
                 endpoints.MapControllers();
             });
         }
