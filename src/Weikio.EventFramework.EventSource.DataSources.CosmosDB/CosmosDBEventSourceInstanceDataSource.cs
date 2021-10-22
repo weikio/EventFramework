@@ -1,17 +1,13 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Adafy.Candy.CosmosDB;
 using Adafy.Candy.CosmosDB.Initialization;
-using Adafy.Candy.Entity;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource.DataSources.CosmosDB
 {
-    public class CosmosDBEventSourceInstanceDataSource : IEventSourceInstanceDataStore
+    public class CosmosDBEventSourceInstanceDataSource : IPersistableEventSourceInstanceDataStore
     {
         private readonly StateRepository _stateRepository;
         private readonly CosmosDbInitializor _initializor;
@@ -94,31 +90,5 @@ namespace Weikio.EventFramework.EventSource.DataSources.CosmosDB
             doc.State = json;
             await _stateRepository.Replace(doc);
         }
-    }
-
-    public class StateRepository : RepositoryBase<StateEntity>
-    {
-        public StateRepository(IDocumentWrapperService<StateEntity> db, ILogger<StateRepository> logger) : base(db, logger)
-        {
-        }
-
-        public async Task<StateEntity> GetByInstanceId(string eventSourceInstanceId)
-        {
-            var query = Db.CreateQuery();
-
-            query = query.Where(x => x.EventSourceInstanceId == eventSourceInstanceId);
-
-            var queryResult = await Db.Find(query);
-
-            var result = queryResult.FirstOrDefault();
-
-            return result;
-        }
-    }
-
-    public class StateEntity : Entity
-    {
-        public string EventSourceInstanceId { get; set; }
-        public string State { get; set; }
     }
 }

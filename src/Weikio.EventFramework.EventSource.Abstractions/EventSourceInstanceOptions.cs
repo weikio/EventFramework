@@ -26,5 +26,7 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         };
         
         public Func<IServiceProvider, EventSourceInstance, Type, IEventSourceInstanceDataStore> EventSourceInstanceDataStore { get; set; }
+        
+        public Type EventSourceInstanceDataStoreType { get; set; }
     }
 }

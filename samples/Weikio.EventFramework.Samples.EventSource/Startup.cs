@@ -22,7 +22,6 @@ using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.DataSources.CosmosDB;
-using Weikio.EventFramework.EventSource.Plugins.Files;
 using Weikio.EventFramework.Extensions.EventAggregator;
 
 namespace Weikio.EventFramework.Samples.EventSource
@@ -86,14 +85,7 @@ namespace Weikio.EventFramework.Samples.EventSource
                 PollingFrequency = TimeSpan.FromSeconds(1), 
                 EventSourceDefinition = "TestEventSource",
                 PersistState = true,
-                EventSourceInstanceDataStore = (provider, instance, eventSourceStateType) =>
-                {
-                    var cosmosDb = provider.GetRequiredService<CosmosDBEventSourceInstanceDataSource>();
-                    cosmosDb.EventSourceInstance = instance;
-                    cosmosDb.StateType = eventSourceStateType;
-                    
-                    return cosmosDb;
-                } 
+                EventSourceInstanceDataStoreType = typeof(CosmosDBEventSourceInstanceDataSource)
             });
             
             services.Configure<DefaultChannelOptions>(options =>
@@ -101,16 +93,14 @@ namespace Weikio.EventFramework.Samples.EventSource
                 options.DefaultChannelName = "bus";
             });
 
-            services.AddCosmosDb(settings =>
+            services.AddCosmosDbStateStore(settings =>
             {
                 settings.CollectionId = "efstate";
                 settings.DatabaseId = "myefdb";
                 settings.DocumentDbKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
                 settings.DocumentDbUri = "https://localhost:8081";
+                settings.IsDefaultStateStore = false;
             });
-
-            services.AddTransient<StateRepository>();
-            services.AddTransient<CosmosDBEventSourceInstanceDataSource>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
