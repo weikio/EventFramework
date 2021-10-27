@@ -11,6 +11,7 @@ using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Extensions;
+using Weikio.EventFramework.IntegrationFlow.CloudEvents;
 using Weikio.EventFramework.Router;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
@@ -27,6 +28,7 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.AddCloudEventGateway();
             builder.AddCloudEventSources();
             builder.AddCloudEventDataflowChannels();
+            builder.AddCloudEventIntegrationFlows();
 
             builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
 

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using EventFrameworkTestBed;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -42,6 +44,38 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
             });
 
             return result.Services;
+        }
+        
+        public async Task ContinueWhen(Func<bool> probe, string assertErrorMessage = null, TimeSpan? timeout = null)
+        {
+            if (timeout == null)
+            {
+                timeout = TimeSpan.FromSeconds(3);
+            }
+
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(timeout.GetValueOrDefault());
+
+            var success = false;
+
+            while (cts.IsCancellationRequested == false)
+            {
+                success = probe();
+
+                if (success)
+                {
+                    break;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(50), cts.Token);
+            }
+
+            if (success)
+            {
+                return;
+            }
+
+            throw new Exception(assertErrorMessage ?? "Assertion failed");
         }
     }
 }

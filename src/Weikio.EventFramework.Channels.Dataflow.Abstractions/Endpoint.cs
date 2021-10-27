@@ -5,8 +5,12 @@ namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
 {
     public class Endpoint<TOutput>
     {
-        public Func<TOutput, Task> Func { get; private set; }
-        public Predicate<TOutput> Predicate { get; private set; }
+        public Func<TOutput, Task> Func { get; protected set; }
+        public Predicate<TOutput> Predicate { get; protected set; } = ev => true;
+
+        protected Endpoint()
+        {
+        }
 
         public Endpoint(Func<TOutput, Task> func, Predicate<TOutput> predicate = null)
         {

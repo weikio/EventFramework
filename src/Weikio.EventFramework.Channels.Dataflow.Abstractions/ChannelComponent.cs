@@ -5,13 +5,15 @@ namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
 {
     public class ChannelComponent<TOutput>
     {
-        public Func<TOutput, Task<TOutput>> Func { get; private set; }
-        public Predicate<TOutput> Predicate { get; private set; }
+        public Func<TOutput, Task<TOutput>> Func { get; protected set; }
+        public Predicate<TOutput> Predicate { get; protected set; } = ev => true; 
+
+        protected ChannelComponent() { }
 
         public ChannelComponent(Func<TOutput, TOutput> func, Predicate<TOutput> predicate = null) : this(output => Task.FromResult(func(output)), predicate)
         {
         }
-        
+
         public ChannelComponent(Func<TOutput, Task<TOutput>> func, Predicate<TOutput> predicate = null)
         {
             if (func == null)

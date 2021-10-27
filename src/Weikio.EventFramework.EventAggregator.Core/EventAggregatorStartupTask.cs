@@ -22,15 +22,8 @@ namespace Weikio.EventFramework.EventAggregator.Core
             _logger = logger;
         }
 
-        public void Execute(CancellationToken cancellationToken)
-        {
-
-        }
-
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            //Execute(cancellationToken);
-            
             foreach (var eventLink in _eventLinks)
             {
                 _handlerInitializer.Initialize(eventLink);

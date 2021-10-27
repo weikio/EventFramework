@@ -784,7 +784,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 LoggerFactory = _loggerFactory
             };
 
-            options.Components.Add(new CloudEventsComponent(ev => null));
+            options.Components.Add(new CloudEventsComponent(ev => Task.FromResult<CloudEvent>(null)));
 
             using (var channel = new CloudEventsChannel(options))
             {

@@ -58,5 +58,12 @@ namespace Weikio.EventFramework.EventSource
             throw new UnknownEventSourceException(
                 $"No event source found with definition {definition}. Available definitions:{Environment.NewLine}{string.Join(Environment.NewLine, allDefinitions)}");
         }
+
+        public async Task AddCatalog(IEventSourceCatalog eventSourceCatalog)
+        {
+            await eventSourceCatalog.Initialize(new CancellationToken());
+            
+            Add(eventSourceCatalog);
+        }
     }
 }
