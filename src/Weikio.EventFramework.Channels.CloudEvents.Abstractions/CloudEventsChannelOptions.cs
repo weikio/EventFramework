@@ -1,4 +1,5 @@
 ﻿using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels.CloudEvents.Abstractions;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.EventCreator;
 

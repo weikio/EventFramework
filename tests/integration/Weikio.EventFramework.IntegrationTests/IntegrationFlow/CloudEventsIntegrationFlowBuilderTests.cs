@@ -35,16 +35,16 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var server = Init();
             var handlerCounter = new Counter();
 
-            var flowBuilder = IntegrationFlowBuilder.From<TestEventSource>()
+            var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
                 .Channel("hellochannel")
                 .Channel("specialchannel", ev => ev.Type == "special")
                 .Transform(ev =>
                 {
-                    ev.Subject = "tranformed";
+                    ev.Subject = "transformed";
 
                     return ev;
                 })
-                .Filter(ev => ev.Type == "mycontent")
+                .Filter(ev => ev.Type == "CounterEvent")
                 .Handle<FlowHandler>(configure: handler =>
                 {
                     handler.Counter = handlerCounter;
@@ -55,7 +55,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var manager = server.GetRequiredService<CloudEventsIntegrationFlowManager>();
             await manager.Execute(flow);
 
-            await ContinueWhen(() => handlerCounter.Get() > 0);
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(15));
         }
 
         public class FlowHandler
