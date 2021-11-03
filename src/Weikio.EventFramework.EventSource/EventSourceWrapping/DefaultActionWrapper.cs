@@ -106,6 +106,13 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                     var parameters = new List<object>();
                     var esInstance = _eventSourceInstanceManager.Get(id);
 
+                    if (esInstance == null)
+                    {
+                        throw new Exception($"Unknown Event Source Instance with instance id {id}. Unable to run");
+                    }
+                    
+                    _logger.LogDebug("Loading state for Event Source Instance {EventSourceInstance}", id);
+                    
                     var eventSourceInstanceStorageFactory = esInstance.Options.EventSourceInstanceDataStoreFactory(_serviceProvider);
                     var stateStorage = await eventSourceInstanceStorageFactory.GetStorage(esInstance, stateType?.ParameterType);
                     
@@ -143,6 +150,8 @@ namespace Weikio.EventFramework.EventSource.EventSourceWrapping
                             }
                         }
                     }
+
+                    _logger.LogDebug("Running Event Source Instance {EventSourceInstance} using parameters {Parameters}", id, parameters);
 
                     Task cloudEvent = null;
 
