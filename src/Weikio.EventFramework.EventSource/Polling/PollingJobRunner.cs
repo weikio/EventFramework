@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -102,6 +102,11 @@ namespace Weikio.EventFramework.EventSource.Polling
             catch (Exception e)
             {
                 _logger.LogError(e, "Failed to run scheduled event source");
+
+                if (e.InnerException != null)
+                {
+                    _logger.LogError(e.InnerException, "Failed to run scheduled event source, inner exception thrown");
+                }
 
                 throw;
             }
