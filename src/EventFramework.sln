@@ -85,13 +85,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Chann
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Samples.EventSource", "..\samples\Weikio.EventFramework.Samples.EventSource\Weikio.EventFramework.Samples.EventSource.csproj", "{0533F0CE-003C-4E0C-9577-B348C5115C66}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.Plugins.Files", "..\..\EventFramework.EventSource.Plugins.Files\src\Weikio.EventFramework.EventSource.Plugins.Files\Weikio.EventFramework.EventSource.Plugins.Files.csproj", "{43EE1BE3-EBC1-4806-A1E3-143D61985918}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.DataSources.CosmosDB", "Weikio.EventFramework.EventSource.DataSources.CosmosDB\Weikio.EventFramework.EventSource.DataSources.CosmosDB.csproj", "{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.IntegrationFlow", "Weikio.EventFramework.IntegrationFlow\Weikio.EventFramework.IntegrationFlow.csproj", "{16F53D33-DBD1-4592-9DFC-5E44994F0B58}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.IntegrationFlow.CloudEvents", "Weikio.EventFramework.IntegrationFlow.CloudEvents\Weikio.EventFramework.IntegrationFlow.CloudEvents.csproj", "{0E870D8F-2501-4899-9091-4EE883D21977}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components", "Weikio.EventFramework.Components\Weikio.EventFramework.Components.csproj", "{6DFE7AF2-E973-4C70-A32A-2B967C3C546B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -239,10 +239,6 @@ Global
 		{0533F0CE-003C-4E0C-9577-B348C5115C66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0533F0CE-003C-4E0C-9577-B348C5115C66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0533F0CE-003C-4E0C-9577-B348C5115C66}.Release|Any CPU.Build.0 = Release|Any CPU
-		{43EE1BE3-EBC1-4806-A1E3-143D61985918}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{43EE1BE3-EBC1-4806-A1E3-143D61985918}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{43EE1BE3-EBC1-4806-A1E3-143D61985918}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{43EE1BE3-EBC1-4806-A1E3-143D61985918}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB7FCAC9-0DA1-4C40-8C56-A59D172A9592}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -255,6 +251,10 @@ Global
 		{0E870D8F-2501-4899-9091-4EE883D21977}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E870D8F-2501-4899-9091-4EE883D21977}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E870D8F-2501-4899-9091-4EE883D21977}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DFE7AF2-E973-4C70-A32A-2B967C3C546B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DFE7AF2-E973-4C70-A32A-2B967C3C546B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DFE7AF2-E973-4C70-A32A-2B967C3C546B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DFE7AF2-E973-4C70-A32A-2B967C3C546B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}

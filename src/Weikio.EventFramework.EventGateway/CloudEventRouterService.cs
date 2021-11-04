@@ -92,7 +92,7 @@ namespace Weikio.EventFramework.EventGateway
                 }
             }
 
-            _logger.LogInformation("Event router service for {Channel} is stopping.", _incomingChannel);
+            _logger.LogInformation("Event router service for {Channel} is stopping", _incomingChannel);
         }
     }
 }

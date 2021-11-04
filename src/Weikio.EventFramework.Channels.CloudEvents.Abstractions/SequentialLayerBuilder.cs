@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 
-namespace Weikio.EventFramework.Channels.Dataflow
+namespace Weikio.EventFramework.Channels.CloudEvents.Abstractions
 {
     public class SequentialLayerBuilder<TOutput> where TOutput: class
     {

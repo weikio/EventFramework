@@ -245,6 +245,7 @@ namespace Weikio.EventFramework.EventSource
             _optionsMonitorCache.TryAdd(id, publisherFactoryOptions);
 
             var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop);
+            result.InternalChannelId = channelName;
 
             return result;
         }

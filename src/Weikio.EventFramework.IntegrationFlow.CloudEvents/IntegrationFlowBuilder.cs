@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Weikio.EventFramework.Channels.CloudEvents;
+using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
@@ -13,7 +14,9 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         private List<Func<IServiceProvider, Task<CloudEventsComponent>>> _components = new List<Func<IServiceProvider, Task<CloudEventsComponent>>>();
         private Action<EventSourceInstanceOptions> _configureEventSourceInstance;
         private Type _eventSourceType;
-        public string Id { get; private set; } = "testflow";
+        public string Source { get; private set; }
+        public string Id { get; private set; } = "flow_" + Guid.NewGuid();
+        public string Description { get; private set; } = "";
 
         public static IntegrationFlowBuilder From()
         {
@@ -32,15 +35,45 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return builder;
         }
+        
+        public static IntegrationFlowBuilder From(string source)
+        {
+            var builder = new IntegrationFlowBuilder
+            {
+                Source =  source
+            };
+
+            return builder;
+        }
+
+        public IntegrationFlowBuilder WithId(string id)
+        {
+            Id = id;
+
+            return this;
+        }
+        
+        public IntegrationFlowBuilder WithDescription(string description)
+        {
+            Description = description;
+
+            return this;
+        }
 
         public async Task<CloudEventsIntegrationFlow> Build(IServiceProvider serviceProvider)
         {
             var result = new CloudEventsIntegrationFlow
             {
-                Id = Id, Description = "description", 
+                Id = Id, 
+                Description = Description, 
                 ConfigureEventSourceInstanceOptions = _configureEventSourceInstance,
-                EventSourceType = _eventSourceType
+                EventSourceType = _eventSourceType,
+                Source = Source
             };
+            
+            // Insert a component which adds a IntegrationFlowExtension to the event's attributes
+            var extensionComponent = new AddExtensionComponent(new EventFrameworkIntegrationFlowEventExtension(Id));
+            result.Components.Add(extensionComponent);
 
             foreach (var componentBuilder in _components)
             {
@@ -50,14 +83,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return result;
         }
-
-        // public IntegrationFlowBuilder Register(object flowItem)
-        // {
-        //     _flow.Add(flowItem);
-        //
-        //     return this;
-        // }
-        //
 
         public IntegrationFlowBuilder Register(CloudEventsComponent component)
         {

@@ -16,6 +16,8 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         public TimeSpan? PollingFrequency { get => Options.PollingFrequency; }
         public string CronExpression { get => Options.CronExpression; }
         public MulticastDelegate Configure { get => Options.Configure; }
+        public string InternalChannelId { get; set; }
+        
         public EventSourceInstance(string id, EventSource eventSource, EventSourceInstanceOptions options, Func<IServiceProvider, EventSourceInstance, Task<bool>> start, 
             Func<IServiceProvider, EventSourceInstance, Task<bool>> stop)
         {

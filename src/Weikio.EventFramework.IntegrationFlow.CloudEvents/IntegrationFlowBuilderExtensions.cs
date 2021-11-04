@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Channels.CloudEvents;
+using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
@@ -55,35 +56,81 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         public static IntegrationFlowBuilder Handle<THandlerType>(this IntegrationFlowBuilder builder, Predicate<CloudEvent> predicate = null,
             Action<THandlerType> configure = null)
         {
+            if (predicate == null)
+            {
+                predicate = ev => true;
+            }
+            
+            var taskPredicate = new Func<CloudEvent, Task<bool>>(ev => Task.FromResult(predicate(ev)));
+
+            return builder.Handle(null, taskPredicate, typeof(THandlerType), configure);
+        }
+
+        public static IntegrationFlowBuilder Handle(this IntegrationFlowBuilder builder, Action<CloudEvent> handler, Predicate<CloudEvent> predicate = null)
+        {
+            var func = new Func<CloudEvent, Task>(ev =>
+            {
+                handler(ev);
+
+                return Task.CompletedTask;
+            });
+
+            return builder.Handle(func, predicate);
+        }
+
+        public static IntegrationFlowBuilder Handle(this IntegrationFlowBuilder builder, Func<CloudEvent, Task> handler, Predicate<CloudEvent> predicate = null)
+        {
+            if (predicate == null)
+            {
+                predicate = ev => true;
+            }
+            
+            var taskPredicate = new Func<CloudEvent, Task<bool>>(ev => Task.FromResult(predicate(ev)));
+
+            return builder.Handle(handler, taskPredicate);
+        }
+
+        public static IntegrationFlowBuilder Handle(this IntegrationFlowBuilder builder, Func<CloudEvent, Task> handler,
+            Func<CloudEvent, Task<bool>> predicate = null, Type handlerType = null, MulticastDelegate configureHandler = null)
+        {
             Task<CloudEventsComponent> Handler(IServiceProvider provider)
             {
-                var typeToEventLinksConverter = provider.GetRequiredService<ITypeToEventLinksConverter>();
                 var eventLinkInitializer = provider.GetRequiredService<EventLinkInitializer>();
+                var typeToEventLinksConverter = provider.GetRequiredService<ITypeToEventLinksConverter>();
 
                 if (predicate == null)
                 {
-                    predicate = ev => true;
+                    predicate = cloudEvent => Task.FromResult(true);
                 }
 
-                predicate = predicate + new Predicate<CloudEvent>(ev =>
+                predicate = predicate + (ev =>
                 {
                     var attrs = ev.GetAttributes();
 
-                    if (attrs.ContainsKey("eventFramework_eventsource") == false)
+                    if (attrs.ContainsKey(EventFrameworkIntegrationFlowEventExtension.EventFrameworkIntegrationFlowAttributeName) == false)
                     {
-                        return false;
+                        return Task.FromResult(false);
                     }
 
-                    var flowId = attrs["eventFramework_eventsource"] as string;
+                    var flowId = attrs[EventFrameworkIntegrationFlowEventExtension.EventFrameworkIntegrationFlowAttributeName] as string;
 
-                    return string.Equals(builder.Id, flowId);
+                    return Task.FromResult(string.Equals(builder.Id, flowId));
                 });
-                
-                var links = typeToEventLinksConverter.Create(provider, typeof(THandlerType), ev => Task.FromResult(predicate(ev)), configure);
 
-                foreach (var eventLink in links)
+                if (handlerType != null)
                 {
-                    eventLinkInitializer.Initialize(eventLink);
+                    var links = typeToEventLinksConverter.Create(provider, handlerType, predicate, configureHandler);
+
+                    foreach (var eventLink in links)
+                    {
+                        eventLinkInitializer.Initialize(eventLink);
+                    }
+                }
+
+                if (handler != null)
+                {
+                    var link = new EventLink(predicate, handler);
+                    eventLinkInitializer.Initialize(link);
                 }
 
                 var aggregatorComponent = new CloudEventsComponent(async ev =>
@@ -101,5 +148,15 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return builder;
         }
+    }
+
+    public class UnknownIntegrationFlowSourceException : Exception
+    {
+        
+    }
+    
+    public class NotSupportedChannelTypeForIntegrationFlow : Exception
+    {
+        
     }
 }

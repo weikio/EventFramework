@@ -6,6 +6,19 @@ namespace Weikio.EventFramework.Channels.CloudEvents
 {
     public class CloudEventsChannel : DataflowChannelBase<object, CloudEvent>
     {
+        public bool IsPubSub
+        {
+            get
+            {
+                if (Options == null)
+                {
+                    return false;
+                }
+
+                return Options.IsPubSub;
+            }
+        }
+        
         public CloudEventsChannel(CloudEventsChannelOptions options) : base(options)
         {
         }

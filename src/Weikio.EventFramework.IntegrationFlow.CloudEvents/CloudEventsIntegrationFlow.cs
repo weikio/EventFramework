@@ -7,5 +7,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     public class CloudEventsIntegrationFlow : IntegrationFlowBase<CloudEvent>
     {
         public Type EventSourceType { get; set; }
+        public string Source { get; set; }
     }
 }

@@ -3,7 +3,7 @@ using CloudNative.CloudEvents;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
 
-namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
+namespace Weikio.EventFramework.Components
 {
     public class ChannelComponent : CloudEventsComponent
     {
