@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
@@ -12,16 +10,21 @@ using Weikio.PluginFramework.Catalogs;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
-    public class CloudEventsIntegrationFlowManager
+    public interface ICloudEventsIntegrationFlowManager
+    {
+        Task Execute(CloudEventsIntegrationFlow flow);
+    }
+
+    internal class DefaultCloudEventsIntegrationFlowManager : ICloudEventsIntegrationFlowManager
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
         private readonly IEventSourceProvider _eventSourceProvider;
-        private readonly ILogger<CloudEventsIntegrationFlowManager> _logger;
+        private readonly ILogger<DefaultCloudEventsIntegrationFlowManager> _logger;
         private readonly ICloudEventsChannelManager _channelManager;
 
-        public CloudEventsIntegrationFlowManager(IServiceProvider serviceProvider, IEventSourceInstanceManager eventSourceInstanceManager,
-            IEventSourceProvider eventSourceProvider, ILogger<CloudEventsIntegrationFlowManager> logger, ICloudEventsChannelManager channelManager)
+        public DefaultCloudEventsIntegrationFlowManager(IServiceProvider serviceProvider, IEventSourceInstanceManager eventSourceInstanceManager,
+            IEventSourceProvider eventSourceProvider, ILogger<DefaultCloudEventsIntegrationFlowManager> logger, ICloudEventsChannelManager channelManager)
         {
             _serviceProvider = serviceProvider;
             _eventSourceInstanceManager = eventSourceInstanceManager;

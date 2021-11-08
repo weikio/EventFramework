@@ -6,7 +6,6 @@ using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventSource.SDK;
@@ -56,7 +55,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             var flow = await flowBuilder.Build(server);
 
-            var manager = server.GetRequiredService<CloudEventsIntegrationFlowManager>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
             await manager.Execute(flow);
 
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
@@ -84,7 +83,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             var flow = await flowBuilder.Build(server);
 
-            var manager = server.GetRequiredService<CloudEventsIntegrationFlowManager>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
             await manager.Execute(flow);
 
             await ContinueWhen(() => msgReceived, timeout: TimeSpan.FromSeconds(5));
@@ -107,7 +106,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             var flow = await flowBuilder.Build(server);
 
-            var manager = server.GetRequiredService<CloudEventsIntegrationFlowManager>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
             await manager.Execute(flow);
 
             var channelManager = server.GetRequiredService<IChannelManager>();
@@ -138,7 +137,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var flowBuilder = IntegrationFlowBuilder.From("testchannel");
             var flow = await flowBuilder.Build(server);
 
-            var manager = server.GetRequiredService<CloudEventsIntegrationFlowManager>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
 
             await Assert.ThrowsAsync<NotSupportedChannelTypeForIntegrationFlow>(async () =>
             {
@@ -154,7 +153,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var flowBuilder = IntegrationFlowBuilder.From("unknown");
             var flow = await flowBuilder.Build(server);
 
-            var manager = server.GetRequiredService<CloudEventsIntegrationFlowManager>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
 
             await Assert.ThrowsAsync<UnknownIntegrationFlowSourceException>(async () =>
             {
@@ -176,12 +175,132 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             var flow = await flowBuilder.Build(server);
 
-            var manager = server.GetRequiredService<CloudEventsIntegrationFlowManager>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
             await manager.Execute(flow);
 
             await ContinueWhen(() => extensionFound, timeout: TimeSpan.FromSeconds(5));
         }
+        
+        [Fact]
+        public async Task CanCreateFlowBuilderInConfigureServices()
+        {
+            var handlerCounter = new Counter();
 
+            Init(services =>
+            {
+                services.AddIntegrationFlow(IntegrationFlowBuilder.From<NumberEventSource>()
+                    .Channel("hellochannel")
+                    .Channel("specialchannel", ev => ev.Type == "special")
+                    .Transform(ev =>
+                    {
+                        ev.Subject = "transformed";
+
+                        return ev;
+                    })
+                    .Filter(ev => ev.Type == "CounterEvent")
+                    .Handle<FlowHandler>(configure: handler =>
+                    {
+                        handler.Counter = handlerCounter;
+                    }));
+            });
+
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+                
+        [Fact]
+        public async Task CanAccessOtherResourcesInFlowsCreatedInConfigureServices()
+        {
+            var handlerCounter = new Counter();
+
+            var provider = Init(services =>
+            {
+                services.AddChannel("local");
+                
+                services.AddIntegrationFlow(IntegrationFlowBuilder.From("local")
+                    .Handle<FlowHandler>(configure: handler =>
+                    {
+                        handler.Counter = handlerCounter;
+                    }));
+            });
+
+            var channel = provider.GetRequiredService<IChannelManager>().Get("local");
+
+            await channel.Send(new CustomerCreatedEvent());
+            
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task CanCreateFlowByInheritingBaseClass()
+        {
+            var handlerCounter = new Counter();
+
+            var provider = Init(services =>
+            {
+                services.AddChannel("local");
+                services.AddChannel("flowoutput", (serviceProvider, options) =>
+                {
+                    options.Endpoint = ev =>
+                    {
+                        handlerCounter.Increment();
+                    };
+                });
+                
+                services.AddIntegrationFlow<FirstCustomTestFlow>();
+            });
+
+            var channel = provider.GetRequiredService<IChannelManager>().Get("local");
+
+            await channel.Send(new CustomerCreatedEvent());
+            
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+        
+        [Fact]
+        public async Task CanConfigureFlow()
+        {
+            var handlerCounter = new Counter();
+
+            var provider = Init(services =>
+            {
+                services.AddChannel("local");
+
+                services.AddIntegrationFlow<CustomTestFlow>(new Action<CustomTestFlow>(flow =>
+                {
+                    flow.HandlerCounter = handlerCounter;
+                }));
+            });
+
+            var channel = provider.GetRequiredService<IChannelManager>().Get("local");
+
+            await channel.Send(new CustomerCreatedEvent());
+            
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+
+        public class FirstCustomTestFlow : CloudEventsIntegrationFlowBase
+        {
+            public FirstCustomTestFlow()
+            {
+                Flow = IntegrationFlowBuilder.From("local")
+                    .Channel("flowoutput");
+            }
+        }
+        
+        public class CustomTestFlow : CloudEventsIntegrationFlowBase
+        {
+            public Counter HandlerCounter;
+
+            public CustomTestFlow(Action<CustomTestFlow> configure) : base(configure)
+            {
+                Flow = IntegrationFlowBuilder.From("local")
+                    .Handle(ev =>
+                    {
+                        HandlerCounter.Increment();
+                    });
+            }
+        }
+        
         public class FlowHandler
         {
             public Counter Counter { get; set; }
