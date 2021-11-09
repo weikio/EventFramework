@@ -1,11 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Integration Flows for Event Framework</Description>
+    <PackageDescription>Integration Flows for Event Framework</PackageDescription>
+    <PackageId>Weikio.EventFramework.IntegrationFlow</PackageId>
+    <Product>Weikio.EventFramework.IntegrationFlow</Product>
+    <PackageTags>cloudevents;integration flow</PackageTags>
+    <Title>Integration Flows for Event Framework</Title>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj"/>
+  </ItemGroup>
 
 </Project>
