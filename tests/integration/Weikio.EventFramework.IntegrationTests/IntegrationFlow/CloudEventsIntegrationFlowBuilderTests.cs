@@ -6,6 +6,7 @@ using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventSource.SDK;
@@ -47,7 +48,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
                     return ev;
                 })
-                .Filter(ev => ev.Type == "CounterEvent")
+                .Filter(ev => ev.Type != "CounterEvent")
                 .Handle<FlowHandler>(configure: handler =>
                 {
                     handler.Counter = handlerCounter;
@@ -197,7 +198,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
                         return ev;
                     })
-                    .Filter(ev => ev.Type == "CounterEvent")
+                    .Filter(ev => ev.Type != "CounterEvent")
                     .Handle<FlowHandler>(configure: handler =>
                     {
                         handler.Counter = handlerCounter;
@@ -205,6 +206,42 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             });
 
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+        
+        [Fact]
+        public async Task FilteringBreaksTheFlowIfWanted()
+        {
+            var handlerCounter = new Counter();
+
+            Init(services =>
+            {
+                var received = false;
+                
+                services.AddIntegrationFlow(IntegrationFlowBuilder.From<NumberEventSource>(options =>
+                    {
+                        options.PollingFrequency = TimeSpan.FromSeconds(1);
+                        options.Autostart = true;
+                    })
+                    .Filter(ev =>
+                    {
+                        if (received)
+                        {
+                            return Filter.Skip;
+                        }
+
+                        received = true;
+
+                        return Filter.Continue;
+                    })
+                    .Handle<FlowHandler>(configure: handler =>
+                    {
+                        handler.Counter = handlerCounter;
+                    }));
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            
+            Assert.Equal(1, handlerCounter.Get());
         }
                 
         [Fact]
@@ -265,10 +302,30 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             {
                 services.AddChannel("local");
 
-                services.AddIntegrationFlow<CustomTestFlow>(new Action<CustomTestFlow>(flow =>
+                services.AddIntegrationFlow<CustomTestFlow>(flow =>
                 {
                     flow.HandlerCounter = handlerCounter;
-                }));
+                });
+            });
+
+            var channel = provider.GetRequiredService<IChannelManager>().Get("local");
+
+            await channel.Send(new CustomerCreatedEvent());
+            
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+        
+        [Fact]
+        public async Task CanInjectDependenciesInFlow()
+        {
+            var handlerCounter = new Counter();
+
+            var provider = Init(services =>
+            {
+                services.AddChannel("local");
+                services.AddSingleton(handlerCounter);
+                
+                services.AddIntegrationFlow<DependencyTestFlow>();
             });
 
             var channel = provider.GetRequiredService<IChannelManager>().Get("local");
@@ -287,11 +344,29 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             }
         }
         
+        public class DependencyTestFlow : CloudEventsIntegrationFlowBase
+        {
+            private readonly ILogger<DependencyTestFlow> _logger;
+            private readonly Counter _handlerCounter;
+
+            public DependencyTestFlow(ILogger<DependencyTestFlow> logger, Counter handlerCounter)
+            {
+                _logger = logger;
+                _handlerCounter = handlerCounter;
+
+                Flow = IntegrationFlowBuilder.From("local")
+                    .Handle(ev =>
+                    {
+                        _handlerCounter.Increment();
+                    });
+            }
+        }
+        
         public class CustomTestFlow : CloudEventsIntegrationFlowBase
         {
             public Counter HandlerCounter;
 
-            public CustomTestFlow(Action<CustomTestFlow> configure) : base(configure)
+            public CustomTestFlow() 
             {
                 Flow = IntegrationFlowBuilder.From("local")
                     .Handle(ev =>

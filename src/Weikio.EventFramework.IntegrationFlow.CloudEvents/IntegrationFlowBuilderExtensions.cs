@@ -9,6 +9,12 @@ using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
+    public enum Filter
+    {
+        Continue, 
+        Skip
+    }
+    
     public static class IntegrationFlowBuilderExtensions
     {
         public static IntegrationFlowBuilder Channel(this IntegrationFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null)
@@ -45,9 +51,35 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return builder;
         }
 
+        public static IntegrationFlowBuilder Filter(this IntegrationFlowBuilder builder, Func<CloudEvent, Filter> filter)
+        {
+            var component = new CloudEventsComponent(ev =>
+            {
+                if (filter(ev) == CloudEvents.Filter.Skip)
+                {
+                    return null;
+                }
+                
+                return ev;
+            });
+            
+            builder.Register(component);
+
+            return builder;
+        }
+        
         public static IntegrationFlowBuilder Filter(this IntegrationFlowBuilder builder, Predicate<CloudEvent> filter)
         {
-            var component = new CloudEventsComponent(ev => ev, filter);
+            var component = new CloudEventsComponent(ev =>
+            {
+                if (filter(ev))
+                {
+                    return null;
+                }
+                
+                return ev;
+            });
+            
             builder.Register(component);
 
             return builder;

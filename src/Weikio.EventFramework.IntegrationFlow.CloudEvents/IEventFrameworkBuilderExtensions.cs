@@ -71,7 +71,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return builder;
         }
         
-        public static IServiceCollection AddIntegrationFlow<TFlowType>(this IServiceCollection services, MulticastDelegate configure = null)
+        public static IServiceCollection AddIntegrationFlow<TFlowType>(this IServiceCollection services, Action<TFlowType> configure = null)
         {
             services.AddIntegrationFlow(typeof(TFlowType), configure);
 
@@ -86,28 +86,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             {
                 var result = new CloudEventsIntegrationFlowFactory(serviceProvider =>
                 {
-                    var ctor = flowType.GetConstructors().FirstOrDefault();
-
-                    var hasConfigureParamter = false;
-                    if (ctor != null)
-                    {
-                        if (ctor.GetParameters().Length > 0)
-                        {
-                            hasConfigureParamter = true;
-                        }
-                    }
-
-                    CloudEventsIntegrationFlowBase instance;
-
-                    if (hasConfigureParamter)
-                    {
-                        instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType, new object[] { configure });
-                    }
-                    else
-                    {
-                        instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType);
-                    }
-                    
+                    var instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType);
                     configure?.DynamicInvoke(instance);
 
                     return instance.Flow.Build(serviceProvider);

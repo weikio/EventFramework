@@ -14,16 +14,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     public abstract class CloudEventsIntegrationFlowBase
     {
         public IntegrationFlowBuilder Flow { get; protected set; }
-        public MulticastDelegate Configure { get; protected set; }
-
-        protected CloudEventsIntegrationFlowBase() : this(null)
-        {
-        }
-
-        protected CloudEventsIntegrationFlowBase(MulticastDelegate configureFlow)
-        {
-            Configure = configureFlow;
-        }
     }
 
     public class CloudEventsIntegrationFlowFactory
