@@ -80,7 +80,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 var component = await componentBuilder(serviceProvider);
                 result.Components.Add(component);
             }
-
+            
             return result;
         }
 

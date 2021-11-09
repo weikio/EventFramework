@@ -7,6 +7,7 @@ using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventSource.SDK;
@@ -333,6 +334,28 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             await channel.Send(new CustomerCreatedEvent());
             
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+        
+        [Fact]
+        public async Task FlowReceivesLatestEvent()
+        {
+            var currentValue = -1;
+            Init(services =>
+            {
+                services.AddIntegrationFlow(IntegrationFlowBuilder.From<NumberEventSource>(options =>
+                    {
+                        options.Autostart = true;
+                        options.PollingFrequency = TimeSpan.FromSeconds(1);
+                    })
+                    .Handle(ev =>
+                    {
+                        var numberEv = ev.To<CounterEvent>();
+                        
+                        currentValue = numberEv.Object.CurrentCount;
+                    }));
+            });
+
+            await ContinueWhen(() => currentValue > 2, timeout: TimeSpan.FromSeconds(5));
         }
 
         public class FirstCustomTestFlow : CloudEventsIntegrationFlowBase

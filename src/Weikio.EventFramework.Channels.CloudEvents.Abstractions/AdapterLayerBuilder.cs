@@ -127,11 +127,6 @@ namespace Weikio.EventFramework.Channels.CloudEvents
 
             async Task Complete(TimeSpan timeout)
             {
-                // preInterceptorBlock.Complete();
-                // await Task.WhenAny(
-                //     Task.WhenAll(preInterceptorBlock.Completion),
-                //     Task.Delay(timeout));
-                
                 inputBlock.Complete();
 
                 await Task.WhenAny(
@@ -159,12 +154,6 @@ namespace Weikio.EventFramework.Channels.CloudEvents
                 await Task.WhenAny(
                     Task.WhenAll(outputBlock.Completion),
                     Task.Delay(timeout));
-
-                // postInterceptorBlock.Complete();
-                //
-                // await Task.WhenAny(
-                //     Task.WhenAll(postInterceptorBlock.Completion),
-                //     Task.Delay(timeout));
             }
 
             var block = DataflowBlock.Encapsulate(inputBlock, outputBlock);
