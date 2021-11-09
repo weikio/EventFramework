@@ -8,7 +8,13 @@ namespace Weikio.EventFramework.Channels.CloudEvents
 {
     public class CloudEventsComponent : ChannelComponent<CloudEvent>
     {
+        public CloudEventsComponent() { }
+
         public CloudEventsComponent(Func<CloudEvent, CloudEvent> func, Predicate<CloudEvent> predicate = null) : base(func, predicate)
+        {
+        }
+        
+        public CloudEventsComponent(Func<CloudEvent, Task<CloudEvent>> func, Predicate<CloudEvent> predicate = null) : base(func, predicate)
         {
         }
         

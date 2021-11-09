@@ -5,9 +5,10 @@ using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.EventSource.SDK
 {
-    public static  class EventFrameworkBuilderExtensions
-    { 
-        public static IEventFrameworkBuilder AddEventSource<TEventSourceType>(this IEventFrameworkBuilder builder, Action<EventSourceInstanceOptions> configureInstance = null, Type configurationType = null)
+    public static class EventFrameworkBuilderExtensions
+    {
+        public static IEventFrameworkBuilder AddEventSource<TEventSourceType>(this IEventFrameworkBuilder builder,
+            Action<EventSourceInstanceOptions> configureInstance = null, Type configurationType = null)
         {
             var services = builder.Services;
 
@@ -15,13 +16,11 @@ namespace Weikio.EventFramework.EventSource.SDK
 
             return builder;
         }
-        
-        public static IServiceCollection AddEventSource<TEventSourceType>(this IServiceCollection services, Action<EventSourceInstanceOptions> configureInstance = null, Type configurationType = null)
+
+        public static IServiceCollection AddEventSource<TEventSourceType>(this IServiceCollection services,
+            Action<EventSourceInstanceOptions> configureInstance = null, Type configurationType = null)
         {
-            services.AddSingleton(new EventSourcePlugin()
-            {
-                EventSourceType = typeof(TEventSourceType), ConfigureInstance = configureInstance
-            });
+            services.AddSingleton(new EventSourcePlugin() { EventSourceType = typeof(TEventSourceType), ConfigureInstance = configureInstance });
 
             if (configurationType != null)
             {
@@ -30,25 +29,27 @@ namespace Weikio.EventFramework.EventSource.SDK
                     options.ConfigurationType = configurationType;
                 });
             }
-            
-            if (configureInstance != null)
-            {
-                services.AddSingleton(provider =>
-                {
-                    var options = new EventSourceInstanceOptions();
-                    configureInstance(options);
-            
-                    if (options.EventSourceDefinition == null)
-                    {
-                        var esProvider = provider.GetRequiredService<IEventSourceDefinitionProvider>();
-                        var def = esProvider.GetByType(typeof(TEventSourceType));
 
-                        options.EventSourceDefinition = def;
-                    }
-                    
-                    return options;
-                });
+            if (configureInstance == null)
+            {
+                return services;
             }
+
+            services.AddSingleton(provider =>
+            {
+                var options = new EventSourceInstanceOptions();
+                configureInstance(options);
+
+                if (options.EventSourceDefinition == null)
+                {
+                    var esProvider = provider.GetRequiredService<IEventSourceDefinitionProvider>();
+                    var def = esProvider.GetByType(typeof(TEventSourceType));
+
+                    options.EventSourceDefinition = def;
+                }
+
+                return options;
+            });
 
             return services;
         }

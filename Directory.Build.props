@@ -5,7 +5,7 @@
     <Company>Weik.io</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/weikio/EventFramework</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/weikio/EventFramework</PackageProjectUrl>
+    <PackageProjectUrl>https://weik.io/EventFramework</PackageProjectUrl>
     <Copyright>©2021 Weik.io</Copyright>
     <LangVersion>8.0</LangVersion>
     <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>

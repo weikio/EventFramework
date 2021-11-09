@@ -245,6 +245,7 @@ namespace Weikio.EventFramework.EventSource
             _optionsMonitorCache.TryAdd(id, publisherFactoryOptions);
 
             var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop);
+            result.InternalChannelId = channelName;
 
             return result;
         }
@@ -253,21 +254,30 @@ namespace Weikio.EventFramework.EventSource
         {
             var channelOptions = new CloudEventsChannelOptions { Name = channelName };
 
-            var channelEndpoint = new CloudEventsEndpoint(async ev =>
+            CloudEventsEndpoint channelEndpoint;
+
+            if (instanceOptions.PublishToChannel)
             {
-                IChannel channel;
-
-                if (string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName))
+                channelEndpoint = new CloudEventsEndpoint(async ev =>
                 {
-                    channel = _channelManager.GetDefaultChannel();
-                }
-                else
-                {
-                    channel = _channelManager.Get(instanceOptions.TargetChannelName);
-                }
+                    IChannel channel;
 
-                await channel.Send(ev);
-            });
+                    if (string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName))
+                    {
+                        channel = _channelManager.GetDefaultChannel();
+                    }
+                    else
+                    {
+                        channel = _channelManager.Get(instanceOptions.TargetChannelName);
+                    }
+
+                    await channel.Send(ev);
+                });
+            }
+            else
+            {
+                channelEndpoint = new CloudEventsEndpoint(Task.FromResult);
+            }
 
             channelOptions.CloudEventCreationOptions.AdditionalExtensions = channelOptions.CloudEventCreationOptions.AdditionalExtensions != null
                 ? channelOptions.CloudEventCreationOptions.AdditionalExtensions.Concat(new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) })

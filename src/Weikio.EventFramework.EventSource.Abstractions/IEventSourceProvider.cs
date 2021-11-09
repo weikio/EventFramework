@@ -11,5 +11,6 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         Task Initialize(CancellationToken cancellationToken);
         List<EventSourceDefinition> List();
         EventSource Get(EventSourceDefinition definition);
+        Task AddCatalog(IEventSourceCatalog eventSourceCatalog);
     }
 }

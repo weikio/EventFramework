@@ -34,7 +34,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks.EventLinkFactori
                         continue;
                     }
 
-                    var handler = provider.GetRequiredService(handlerType);
+                    var handler = ActivatorUtilities.CreateInstance(provider, handlerType);
 
                     configure?.DynamicInvoke(handler);
 
