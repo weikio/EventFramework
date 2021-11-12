@@ -110,15 +110,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 esOptions.ConfigureChannel = options =>
                 {
                     options.Components.AddRange(flow.Components);
-                    options.Components.Add(new CloudEventsComponent(ev =>
-                    {
-                        // Try to get rid of the event
-                        return Task.FromResult<CloudEvent>(null);
-                    }));
-                    options.Endpoints.Add(new CloudEventsEndpoint(ev =>
-                    {
-                        return Task.CompletedTask;
-                    }));
                 };
 
                 await _eventSourceInstanceManager.Create(esOptions);
@@ -159,17 +150,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             var channelName = $"system/flows/{flow.Id}";
             var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
             flowChannelOptions.Components.AddRange(flow.Components);
-            
-            // Add empty endpoint so that we can get rid of the message
-            flowChannelOptions.Endpoint = ev =>
-            {
-                
-            }; 
-            
-            flowChannelOptions.Endpoints.Add(new CloudEventsEndpoint(ev =>
-            {
-                return Task.CompletedTask;
-            }));
             
             var flowChannel = new CloudEventsChannel(flowChannelOptions);
 

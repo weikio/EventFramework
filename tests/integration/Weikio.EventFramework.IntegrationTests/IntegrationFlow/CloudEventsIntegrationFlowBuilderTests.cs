@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.Extensions;
 using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
+using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventSource.SDK;
 using Weikio.EventFramework.IntegrationFlow;
 using Weikio.EventFramework.IntegrationFlow.CloudEvents;
@@ -62,7 +64,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanCreateFlowUsingExistingEventSource()
         {
@@ -77,6 +79,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             });
 
             var msgReceived = false;
+
             var flowBuilder = IntegrationFlowBuilder.From("mynumberflow")
                 .Handle(ev =>
                 {
@@ -90,7 +93,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             await ContinueWhen(() => msgReceived, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanCreateFlowUsingExistingChannel()
         {
@@ -100,6 +103,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             });
 
             var msgReceived = false;
+
             var flowBuilder = IntegrationFlowBuilder.From("testchannel")
                 .Handle(ev =>
                 {
@@ -118,13 +122,13 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             await ContinueWhen(() => msgReceived, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public void CanCreateFlowUsingExistingIntegrationFlow()
         {
             throw new NotImplementedException();
         }
-        
+
         [Fact]
         public async Task FlowRequiresPubSubChannel()
         {
@@ -146,7 +150,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                 await manager.Execute(flow);
             });
         }
-        
+
         [Fact]
         public async Task ThrowsSourceUnknownIfNoSuitableSourceFound()
         {
@@ -162,13 +166,14 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                 await manager.Execute(flow);
             });
         }
-        
+
         [Fact]
         public async Task IntegrationFlowExtensionIsAddedToEvent()
         {
             var server = Init();
 
             var extensionFound = false;
+
             var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
                 .Handle(ev =>
                 {
@@ -182,7 +187,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             await ContinueWhen(() => extensionFound, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanCreateFlowBuilderInConfigureServices()
         {
@@ -208,7 +213,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task FilteringBreaksTheFlowIfWanted()
         {
@@ -217,7 +222,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             Init(services =>
             {
                 var received = false;
-                
+
                 services.AddIntegrationFlow(IntegrationFlowBuilder.From<NumberEventSource>(options =>
                     {
                         options.PollingFrequency = TimeSpan.FromSeconds(1);
@@ -241,10 +246,10 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             });
 
             await Task.Delay(TimeSpan.FromSeconds(5));
-            
+
             Assert.Equal(1, handlerCounter.Get());
         }
-                
+
         [Fact]
         public async Task CanAccessOtherResourcesInFlowsCreatedInConfigureServices()
         {
@@ -253,7 +258,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var provider = Init(services =>
             {
                 services.AddChannel("local");
-                
+
                 services.AddIntegrationFlow(IntegrationFlowBuilder.From("local")
                     .Handle<FlowHandler>(configure: handler =>
                     {
@@ -264,7 +269,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var channel = provider.GetRequiredService<IChannelManager>().Get("local");
 
             await channel.Send(new CustomerCreatedEvent());
-            
+
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
 
@@ -276,6 +281,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var provider = Init(services =>
             {
                 services.AddChannel("local");
+
                 services.AddChannel("flowoutput", (serviceProvider, options) =>
                 {
                     options.Endpoint = ev =>
@@ -283,17 +289,17 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                         handlerCounter.Increment();
                     };
                 });
-                
+
                 services.AddIntegrationFlow<FirstCustomTestFlow>();
             });
 
             var channel = provider.GetRequiredService<IChannelManager>().Get("local");
 
             await channel.Send(new CustomerCreatedEvent());
-            
+
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanConfigureFlow()
         {
@@ -312,10 +318,10 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var channel = provider.GetRequiredService<IChannelManager>().Get("local");
 
             await channel.Send(new CustomerCreatedEvent());
-            
+
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanInjectDependenciesInFlow()
         {
@@ -325,21 +331,22 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             {
                 services.AddChannel("local");
                 services.AddSingleton(handlerCounter);
-                
+
                 services.AddIntegrationFlow<DependencyTestFlow>();
             });
 
             var channel = provider.GetRequiredService<IChannelManager>().Get("local");
 
             await channel.Send(new CustomerCreatedEvent());
-            
+
             await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task FlowReceivesLatestEvent()
         {
             var currentValue = -1;
+
             Init(services =>
             {
                 services.AddIntegrationFlow(IntegrationFlowBuilder.From<NumberEventSource>(options =>
@@ -347,11 +354,10 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                         options.Autostart = true;
                         options.PollingFrequency = TimeSpan.FromSeconds(1);
                     })
-                    .Handle(ev =>
+                    .Transform(ev =>
                     {
-                        var numberEv = ev.To<CounterEvent>();
-                        
-                        currentValue = numberEv.Object.CurrentCount;
+                        currentValue = ev.To<CounterEvent>().Object.CurrentCount;
+                        return ev;
                     }));
             });
 
@@ -366,7 +372,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                     .Channel("flowoutput");
             }
         }
-        
+
         public class DependencyTestFlow : CloudEventsIntegrationFlowBase
         {
             private readonly ILogger<DependencyTestFlow> _logger;
@@ -384,12 +390,12 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                     });
             }
         }
-        
+
         public class CustomTestFlow : CloudEventsIntegrationFlowBase
         {
             public Counter HandlerCounter;
 
-            public CustomTestFlow() 
+            public CustomTestFlow()
             {
                 Flow = IntegrationFlowBuilder.From("local")
                     .Handle(ev =>
@@ -398,7 +404,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                     });
             }
         }
-        
+
         public class FlowHandler
         {
             public Counter Counter { get; set; }

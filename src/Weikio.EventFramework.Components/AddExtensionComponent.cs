@@ -7,22 +7,23 @@ namespace Weikio.EventFramework.Components
 {
     public class AddExtensionComponent : CloudEventsComponent
     {
-        public AddExtensionComponent(ICloudEventExtension extension, Predicate<CloudEvent> predicate = null)
+        public AddExtensionComponent(Func<CloudEvent, ICloudEventExtension> extensionFactory, Predicate<CloudEvent> predicate = null)
         {
-            if (extension == null)
+            if (extensionFactory == null)
             {
-                throw new ArgumentNullException(nameof(extension));
+                throw new ArgumentNullException(nameof(extensionFactory));
             }
             
             Func = ev =>
             {
+                var extension = extensionFactory.Invoke(ev);
                 extension.Attach(ev);
                 return Task.FromResult(ev);
             };
 
             if (predicate == null)
             {
-                return;
+                predicate = ev => true;
             }
 
             Predicate = predicate;
