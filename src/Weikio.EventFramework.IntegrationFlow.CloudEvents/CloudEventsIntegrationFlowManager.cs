@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
@@ -149,6 +150,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             var channelName = $"system/flows/{flow.Id}";
             var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
             flowChannelOptions.Components.AddRange(flow.Components);
+            
             var flowChannel = new CloudEventsChannel(flowChannelOptions);
 
             _channelManager.Add(flowChannel);

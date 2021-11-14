@@ -650,6 +650,40 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             Assert.Equal(6, counter);
         }
+        
+        [Fact]
+        public async Task ComponentsReceiveLatestEvent()
+        {
+            var counter = 0;
+
+            var options = new CloudEventsChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            options.Components.Add(new Func<CloudEvent, CloudEvent>(ev =>
+            {
+                var inv = ev.To<InvoiceCreated>();
+                
+                counter += inv.Object.Index + 1;
+
+                return ev;
+            }));
+
+            options.Components.Add(new Func<CloudEvent, CloudEvent>(ev =>
+            {
+                var inv = ev.To<InvoiceCreated>();
+
+                counter += inv.Object.Index + 5;
+
+                return ev;
+            }));
+
+            using (var channel = new CloudEventsChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated(){Index = 0}));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated(){Index = 100}));
+            }
+
+            Assert.Equal(212, counter);
+        }
 
         [Fact]
         public async Task ComponentsAreRunInOrder()

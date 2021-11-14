@@ -72,7 +72,8 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             };
             
             // Insert a component which adds a IntegrationFlowExtension to the event's attributes
-            var extensionComponent = new AddExtensionComponent(new EventFrameworkIntegrationFlowEventExtension(Id));
+            var extensionComponent = new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(Id));
+            
             result.Components.Add(extensionComponent);
 
             foreach (var componentBuilder in _components)
@@ -80,7 +81,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 var component = await componentBuilder(serviceProvider);
                 result.Components.Add(component);
             }
-
+            
             return result;
         }
 
