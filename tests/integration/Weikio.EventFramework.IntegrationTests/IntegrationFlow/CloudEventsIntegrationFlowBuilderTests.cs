@@ -343,6 +343,69 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         }
 
         [Fact]
+        public async Task CanUseConfiguration()
+        {
+            var counter = new Counter();
+
+            var provider = Init(services =>
+            {
+                services.AddChannel("local");
+
+                services.AddChannel("testconfig", (serviceProvider, options) =>
+                {
+                    options.Endpoint = ev =>
+                    {
+                        counter.Increment();
+                    };
+                });
+
+                services.AddIntegrationFlow<ConfigurationFlow>(new ConfigurationFlow.Config() { TargetChannelName = "testconfig" });
+            });
+
+            var channel = provider.GetRequiredService<IChannelManager>().Get("local");
+            await channel.Send(new CustomerCreatedEvent());
+
+            await ContinueWhen(() => counter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task CanHaveMultipleInstancesOfFlowWithDifferentConfigurations()
+        {
+            var counter = new Counter();
+            var secondCounter = new Counter();
+
+            var provider = Init(services =>
+            {
+                services.AddChannel("local");
+
+                services.AddChannel("testconfig", (serviceProvider, options) =>
+                {
+                    options.Endpoint = ev =>
+                    {
+                        counter.Increment();
+                    };
+                });
+
+                services.AddChannel("anothertestconfig", (serviceProvider, options) =>
+                {
+                    options.Endpoint = ev =>
+                    {
+                        secondCounter.Increment();
+                    };
+                });
+
+                services.AddIntegrationFlow<ConfigurationFlow>(new ConfigurationFlow.Config() { TargetChannelName = "testconfig" });
+
+                services.AddIntegrationFlow<ConfigurationFlow>(new ConfigurationFlow.Config() { TargetChannelName = "anothertestconfig" });
+            });
+
+            var channel = provider.GetRequiredService<IChannelManager>().Get("local");
+            await channel.Send(new CustomerCreatedEvent());
+
+            await ContinueWhen(() => counter.Get() > 0 && secondCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
         public async Task FlowReceivesLatestEvent()
         {
             var currentValue = -1;
@@ -357,6 +420,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                     .Transform(ev =>
                     {
                         currentValue = ev.To<CounterEvent>().Object.CurrentCount;
+
                         return ev;
                     }));
             });
@@ -402,6 +466,20 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                     {
                         HandlerCounter.Increment();
                     });
+            }
+        }
+
+        public class ConfigurationFlow : CloudEventsIntegrationFlowBase
+        {
+            public ConfigurationFlow(Config config)
+            {
+                Flow = IntegrationFlowBuilder.From("local")
+                    .Channel(config.TargetChannelName);
+            }
+
+            public class Config
+            {
+                public string TargetChannelName { get; set; }
             }
         }
 

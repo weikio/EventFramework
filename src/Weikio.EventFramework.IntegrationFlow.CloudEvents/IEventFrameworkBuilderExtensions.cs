@@ -53,32 +53,61 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return services;
         }
 
-        public static IEventFrameworkBuilder AddIntegrationFlow<TFlowType>(this IEventFrameworkBuilder builder, MulticastDelegate configure = null)
+        public static IEventFrameworkBuilder AddIntegrationFlow<TFlowType>(this IEventFrameworkBuilder builder, MulticastDelegate configure = null,
+            object configuration = null)
         {
             var services = builder.Services;
-            
-            services.AddIntegrationFlow(typeof(TFlowType), configure);
 
-            return builder;
-        }
-
-        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, Type flowType, MulticastDelegate configure = null)
-        {
-            var services = builder.Services;
-            
-            services.AddIntegrationFlow(flowType, configure);
+            services.AddIntegrationFlow(typeof(TFlowType), configure, configuration);
 
             return builder;
         }
         
-        public static IServiceCollection AddIntegrationFlow<TFlowType>(this IServiceCollection services, Action<TFlowType> configure = null)
+        public static IEventFrameworkBuilder AddIntegrationFlow<TFlowType>(this IEventFrameworkBuilder builder, object configuration)
         {
-            services.AddIntegrationFlow(typeof(TFlowType), configure);
+            var services = builder.Services;
+
+            services.AddIntegrationFlow(typeof(TFlowType), null, configuration);
+
+            return builder;
+        }
+
+        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, Type flowType, MulticastDelegate configure = null,
+            object configuration = null)
+        {
+            var services = builder.Services;
+
+            services.AddIntegrationFlow(flowType, configure, configuration);
+
+            return builder;
+        }
+        
+        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, Type flowType, object configuration)
+        {
+            var services = builder.Services;
+
+            services.AddIntegrationFlow(flowType, null, configuration);
+
+            return builder;
+        }
+
+        public static IServiceCollection AddIntegrationFlow<TFlowType>(this IServiceCollection services, Action<TFlowType> configure = null,
+            object configuration = null)
+        {
+            services.AddIntegrationFlow(typeof(TFlowType), configure, configuration);
+
+            return services;
+        }
+        
+        public static IServiceCollection AddIntegrationFlow<TFlowType>(this IServiceCollection services, object configuration)
+        {
+            services.AddIntegrationFlow(typeof(TFlowType), null, configuration);
 
             return services;
         }
 
-        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, Type flowType, MulticastDelegate configure = null)
+        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, Type flowType, MulticastDelegate configure = null,
+            object configuration = null)
         {
             services.AddIntegrationFlows();
 
@@ -86,12 +115,22 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             {
                 var result = new CloudEventsIntegrationFlowFactory(serviceProvider =>
                 {
-                    var instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType);
+                    CloudEventsIntegrationFlowBase instance;
+
+                    if (configuration != null)
+                    {
+                        instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType, new object[] { configuration });
+                    }
+                    else
+                    {
+                        instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType);
+                    }
+
                     configure?.DynamicInvoke(instance);
 
                     return instance.Flow.Build(serviceProvider);
                 });
-                
+
                 return result;
             });
 
@@ -117,7 +156,8 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         private readonly List<IntegrationFlowBuilder> _flowBuilders;
 
         public IntegrationFlowStartupService(IServiceProvider serviceProvider, ILogger<IntegrationFlowStartupService> logger,
-            IEnumerable<CloudEventsIntegrationFlow> flows, IEnumerable<IntegrationFlowBuilder> flowBuilders, ICloudEventsIntegrationFlowManager flowManager, IEnumerable<CloudEventsIntegrationFlowFactory> flowFactories)
+            IEnumerable<CloudEventsIntegrationFlow> flows, IEnumerable<IntegrationFlowBuilder> flowBuilders, ICloudEventsIntegrationFlowManager flowManager,
+            IEnumerable<CloudEventsIntegrationFlowFactory> flowFactories)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -129,7 +169,9 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Executing integration flows. Flow count: {FlowCount}, Flow builder count: {FlowBuilderCount}, Flow factory count: {FlowFactoryCount}", _flows.Count,
+            _logger.LogInformation(
+                "Executing integration flows. Flow count: {FlowCount}, Flow builder count: {FlowBuilderCount}, Flow factory count: {FlowFactoryCount}",
+                _flows.Count,
                 _flowBuilders.Count, _flowFactories.Count);
 
             foreach (var flow in _flows)
@@ -169,7 +211,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                     _logger.LogError(e, "Failed to build and execute flow {BuilderId}", flowBuilder.Id);
                 }
             }
-            
+
             foreach (var flowFactory in _flowFactories)
             {
                 try
