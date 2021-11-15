@@ -16,7 +16,6 @@ namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
         public List<Endpoint<TOutput>> Endpoints { get; set; } = new List<Endpoint<TOutput>>();
         public Action<TOutput> Endpoint { get; set; }
         public List<ChannelComponent<TOutput>> Components { get; set; } = new List<ChannelComponent<TOutput>>();
-
         public List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)> Interceptors { get; set; } =
             new List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)>();
     }

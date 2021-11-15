@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
@@ -11,41 +13,24 @@ using Weikio.PluginFramework.Catalogs;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
-    public interface ICloudEventsIntegrationFlowManager
-    {
-        Task Execute(CloudEventsIntegrationFlow flow);
-    }
-
-    internal class DefaultCloudEventsIntegrationFlowManager : ICloudEventsIntegrationFlowManager
+    internal class DefaultCloudEventsIntegrationFlowManager : List<CloudEventsIntegrationFlow>, ICloudEventsIntegrationFlowManager
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IEventSourceInstanceManager _eventSourceInstanceManager;
         private readonly IEventSourceProvider _eventSourceProvider;
         private readonly ILogger<DefaultCloudEventsIntegrationFlowManager> _logger;
         private readonly ICloudEventsChannelManager _channelManager;
+        private readonly IntegrationFlowProvider _integrationFlowProvider;
 
         public DefaultCloudEventsIntegrationFlowManager(IServiceProvider serviceProvider, IEventSourceInstanceManager eventSourceInstanceManager,
-            IEventSourceProvider eventSourceProvider, ILogger<DefaultCloudEventsIntegrationFlowManager> logger, ICloudEventsChannelManager channelManager)
+            IEventSourceProvider eventSourceProvider, ILogger<DefaultCloudEventsIntegrationFlowManager> logger, ICloudEventsChannelManager channelManager, IntegrationFlowProvider integrationFlowProvider)
         {
             _serviceProvider = serviceProvider;
             _eventSourceInstanceManager = eventSourceInstanceManager;
             _eventSourceProvider = eventSourceProvider;
             _logger = logger;
             _channelManager = channelManager;
-        }
-
-        Task CreateResources()
-        {
-            // Create event source if needed
-            // Create channels if needed
-            // Create channel subscriptions
-
-            return Task.CompletedTask;
-        }
-
-        Task Start()
-        {
-            return Task.CompletedTask;
+            _integrationFlowProvider = integrationFlowProvider;
         }
 
         public async Task Execute(CloudEventsIntegrationFlow flow)
@@ -110,12 +95,15 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 esOptions.ConfigureChannel = options =>
                 {
                     options.Components.AddRange(flow.Components);
+                    options.Interceptors.AddRange(flow.Interceptors);
                 };
 
                 await _eventSourceInstanceManager.Create(esOptions);
 
                 _logger.LogDebug("New Event source with Id {EsId} created for Integration flow with Id {Id}", esOptions.Id, flow.Id);
 
+                Add(flow);
+                
                 return;
             }
 
@@ -150,7 +138,8 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             var channelName = $"system/flows/{flow.Id}";
             var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
             flowChannelOptions.Components.AddRange(flow.Components);
-            
+            flowChannelOptions.Interceptors.AddRange(flow.Interceptors);
+
             var flowChannel = new CloudEventsChannel(flowChannelOptions);
 
             _channelManager.Add(flowChannel);
@@ -178,6 +167,39 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             }
             
             sourceChannel.Subscribe(flowChannel);
+            
+            Add(flow);
+        }
+
+        public async Task<CloudEventsIntegrationFlow> Create(IntegrationFlowDefinition flowDefinition, string id = null, string description = null,
+            object configuration = null)
+        {
+            _logger.LogInformation("Creating Integration Flow using registered flow with definition {Definition}", flowDefinition);
+
+            var flowType = _integrationFlowProvider.Get(flowDefinition);
+            
+            CloudEventsIntegrationFlowBase flow;
+
+            if (configuration != null)
+            {
+                flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType, new object[] { configuration });
+            }
+            else
+            {
+                flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType);
+            }
+
+            var result = await flow.Flow.Build(_serviceProvider);
+            result.Id = id;
+            result.Description = description;
+            result.Configuration = configuration;
+
+            return result;
+        }
+
+        public List<CloudEventsIntegrationFlow> List()
+        {
+            return this;
         }
     }
 }

@@ -64,7 +64,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         }
 
         [Fact]
-        public async Task CanAddInterfacePreAdapters()
+        public async Task CanAddInterceptorPreAdapters()
         {
             var options = new CloudEventsChannelOptions() { Name = "name", };
 
@@ -86,7 +86,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         }
 
         [Fact]
-        public async Task CanAddInterfacePostAdapters()
+        public async Task CanAddInterceptorPostAdapters()
         {
             var options = new CloudEventsChannelOptions() { Name = "name", };
 
@@ -117,7 +117,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         }
 
         [Fact]
-        public async Task CanAddInterfacePreComponents()
+        public async Task CanAddInterceptorPreComponents()
         {
             var options = new CloudEventsChannelOptions() { Name = "name", };
             CloudEvent<CustomerCreated> receivedEvent = null;
@@ -140,7 +140,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
         }
 
         [Fact]
-        public async Task CanAddInterfacePreEndpoints()
+        public async Task CanAddInterceptorPreEndpoints()
         {
             var options = new CloudEventsChannelOptions() { Name = "name", };
 
@@ -210,6 +210,62 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             Assert.Single(interceptor.Objs);
         }
+        
+                
+        [Fact]
+        public async Task CanAddInterceptorPreEachComponent()
+        {
+            var options = new CloudEventsChannelOptions() { Name = "name", };
+
+            options.Components.Add(new CloudEventsComponent(ev =>
+            {
+                return Task.FromResult(ev);
+            }));
+            
+            options.Components.Add(new CloudEventsComponent(ev =>
+            {
+                return Task.FromResult(ev);
+            }));
+
+            var interceptor = new CounterInterceptor();
+            
+            options.Interceptors.Add((InterceptorTypeEnum.PreComponent, interceptor));
+
+            await using (var channel = new CloudEventsChannel(options))
+            {
+                await channel.Send(new InvoiceCreated());
+            }
+
+            Assert.Equal(2, interceptor.Counter);
+        }
+        
+        [Fact]
+        public async Task CanAddInterceptorAfterEachComponent()
+        {
+            var options = new CloudEventsChannelOptions() { Name = "name", };
+
+            options.Components.Add(new CloudEventsComponent(ev =>
+            {
+                return Task.FromResult(ev);
+            }));
+            
+            options.Components.Add(new CloudEventsComponent(ev =>
+            {
+                return Task.FromResult(ev);
+            }));
+
+            var interceptor = new CounterInterceptor();
+            
+            options.Interceptors.Add((InterceptorTypeEnum.PreComponent, interceptor));
+            options.Interceptors.Add((InterceptorTypeEnum.PostComponent, interceptor));
+
+            await using (var channel = new CloudEventsChannel(options))
+            {
+                await channel.Send(new InvoiceCreated());
+            }
+
+            Assert.Equal(4, interceptor.Counter);
+        }
 
         public class MyInterceptor : IChannelInterceptor
         {
@@ -220,6 +276,22 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             {
                 Objs.Add(obj);
                 Received = obj;
+
+                return Task.FromResult(obj);
+            }
+        }
+        
+        public class CounterInterceptor : IChannelInterceptor
+        {
+            public int Counter { get; private set; }
+
+            public CounterInterceptor()
+            {
+            }
+
+            public Task<object> Intercept(object obj)
+            {
+                Counter += 1;
 
                 return Task.FromResult(obj);
             }

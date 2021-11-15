@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
@@ -8,7 +9,8 @@ namespace Weikio.EventFramework.Channels.CloudEvents.Abstractions
 {
     public class SequentialLayerBuilder<TOutput> where TOutput: class
     {
-        public DataflowLayerGeneric<TOutput, TOutput> Build(List<ChannelComponent<TOutput>> components)
+        public DataflowLayerGeneric<TOutput, TOutput> Build(List<ChannelComponent<TOutput>> components,
+            List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)> interceptors)
         {
             var inputBlock = new BufferBlock<TOutput>();
             var outputBlock = new BufferBlock<TOutput>();
@@ -22,7 +24,27 @@ namespace Weikio.EventFramework.Channels.CloudEvents.Abstractions
                 {
                     if (component.Predicate(ev))
                     {
-                        return await component.Func.Invoke(ev);
+                        // Run pre interceptors
+                        if (interceptors != null)
+                        {
+                            foreach (var interceptor in interceptors.Where(x => x.Item1 == InterceptorTypeEnum.PreComponent))
+                            {
+                                ev = (TOutput) await interceptor.Interceptor.Intercept(ev);
+                            }
+                        }
+                        
+                        var result = await component.Func.Invoke(ev);
+
+                        // Run post interceptors
+                        if (interceptors != null)
+                        {
+                            foreach (var interceptor in interceptors.Where(x => x.Item1 == InterceptorTypeEnum.PostComponent))
+                            {
+                                ev = (TOutput) await interceptor.Interceptor.Intercept(ev);
+                            }
+                        }
+                        
+                        return result;
                     }
 
                     return ev;

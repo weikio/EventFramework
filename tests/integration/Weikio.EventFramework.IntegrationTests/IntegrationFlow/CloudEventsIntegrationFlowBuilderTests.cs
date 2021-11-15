@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
-using CloudNative.CloudEvents.Extensions;
 using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
-using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventSource.SDK;
 using Weikio.EventFramework.IntegrationFlow;
 using Weikio.EventFramework.IntegrationFlow.CloudEvents;
@@ -93,7 +88,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             await ContinueWhen(() => msgReceived, timeout: TimeSpan.FromSeconds(5));
         }
-
+        
         [Fact]
         public async Task CanCreateFlowUsingExistingChannel()
         {
@@ -428,86 +423,30 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             await ContinueWhen(() => currentValue > 2, timeout: TimeSpan.FromSeconds(5));
         }
 
-        public class FirstCustomTestFlow : CloudEventsIntegrationFlowBase
+        [Fact]
+        public async Task CanExecuteRegisteredIntegrationFlowRuntime()
         {
-            public FirstCustomTestFlow()
+            var counter = new Counter();
+
+            var provider = Init(services =>
             {
-                Flow = IntegrationFlowBuilder.From("local")
-                    .Channel("flowoutput");
-            }
-        }
+                services.AddChannel("local");
 
-        public class DependencyTestFlow : CloudEventsIntegrationFlowBase
-        {
-            private readonly ILogger<DependencyTestFlow> _logger;
-            private readonly Counter _handlerCounter;
-
-            public DependencyTestFlow(ILogger<DependencyTestFlow> logger, Counter handlerCounter)
-            {
-                _logger = logger;
-                _handlerCounter = handlerCounter;
-
-                Flow = IntegrationFlowBuilder.From("local")
-                    .Handle(ev =>
+                services.AddChannel("testconfig", (serviceProvider, options) =>
+                {
+                    options.Endpoint = ev =>
                     {
-                        _handlerCounter.Increment();
-                    });
-            }
-        }
+                        counter.Increment();
+                    };
+                });
 
-        public class CustomTestFlow : CloudEventsIntegrationFlowBase
-        {
-            public Counter HandlerCounter;
+                services.AddIntegrationFlow<ConfigurationFlow>(new ConfigurationFlow.Config() { TargetChannelName = "testconfig" });
+            });
 
-            public CustomTestFlow()
-            {
-                Flow = IntegrationFlowBuilder.From("local")
-                    .Handle(ev =>
-                    {
-                        HandlerCounter.Increment();
-                    });
-            }
-        }
+            var channel = provider.GetRequiredService<IChannelManager>().Get("local");
+            await channel.Send(new CustomerCreatedEvent());
 
-        public class ConfigurationFlow : CloudEventsIntegrationFlowBase
-        {
-            public ConfigurationFlow(Config config)
-            {
-                Flow = IntegrationFlowBuilder.From("local")
-                    .Channel(config.TargetChannelName);
-            }
-
-            public class Config
-            {
-                public string TargetChannelName { get; set; }
-            }
-        }
-
-        public class FlowHandler
-        {
-            public Counter Counter { get; set; }
-
-            public Task Handle(CloudEvent ev)
-            {
-                Counter.Increment();
-
-                return Task.CompletedTask;
-            }
-        }
-
-        public class Counter
-        {
-            private int _count;
-
-            public void Increment()
-            {
-                Interlocked.Increment(ref _count);
-            }
-
-            public int Get()
-            {
-                return _count;
-            }
+            await ContinueWhen(() => counter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
     }
 }

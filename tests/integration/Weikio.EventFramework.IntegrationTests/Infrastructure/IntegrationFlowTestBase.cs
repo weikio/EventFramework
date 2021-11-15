@@ -60,13 +60,25 @@ namespace Weikio.EventFramework.IntegrationTests.Infrastructure
 
             while (cts.IsCancellationRequested == false)
             {
-                success = probe();
+                try
+                {
+                    success = probe();
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
 
                 if (success)
                 {
                     break;
                 }
 
+                if (cts.Token.IsCancellationRequested)
+                {
+                    break;
+                }
+                
                 await Task.Delay(TimeSpan.FromMilliseconds(50), cts.Token);
             }
 

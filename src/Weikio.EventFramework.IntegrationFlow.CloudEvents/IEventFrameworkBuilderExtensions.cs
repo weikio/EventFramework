@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
+using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.PluginFramework.Catalogs;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
@@ -62,7 +60,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return builder;
         }
-        
+
         public static IEventFrameworkBuilder AddIntegrationFlow<TFlowType>(this IEventFrameworkBuilder builder, object configuration)
         {
             var services = builder.Services;
@@ -81,7 +79,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return builder;
         }
-        
+
         public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, Type flowType, object configuration)
         {
             var services = builder.Services;
@@ -98,7 +96,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return services;
         }
-        
+
         public static IServiceCollection AddIntegrationFlow<TFlowType>(this IServiceCollection services, object configuration)
         {
             services.AddIntegrationFlow(typeof(TFlowType), null, configuration);
@@ -144,95 +142,21 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return services;
         }
-    }
 
-    public class IntegrationFlowStartupService : BackgroundService
-    {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<IntegrationFlowStartupService> _logger;
-        private readonly ICloudEventsIntegrationFlowManager _flowManager;
-        private readonly List<CloudEventsIntegrationFlowFactory> _flowFactories;
-        private readonly List<CloudEventsIntegrationFlow> _flows;
-        private readonly List<IntegrationFlowBuilder> _flowBuilders;
-
-        public IntegrationFlowStartupService(IServiceProvider serviceProvider, ILogger<IntegrationFlowStartupService> logger,
-            IEnumerable<CloudEventsIntegrationFlow> flows, IEnumerable<IntegrationFlowBuilder> flowBuilders, ICloudEventsIntegrationFlowManager flowManager,
-            IEnumerable<CloudEventsIntegrationFlowFactory> flowFactories)
+        public static IServiceCollection RegisterIntegrationFlow<TFlowType>(this IServiceCollection services)
         {
-            _serviceProvider = serviceProvider;
-            _logger = logger;
-            _flowManager = flowManager;
-            _flowFactories = flowFactories.ToList();
-            _flows = flows.ToList();
-            _flowBuilders = flowBuilders.ToList();
-        }
+            var typeOfIntegrationFlow = typeof(TFlowType);
+    
+            var typePluginCatalog = new TypePluginCatalog(typeOfIntegrationFlow);
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            _logger.LogInformation(
-                "Executing integration flows. Flow count: {FlowCount}, Flow builder count: {FlowBuilderCount}, Flow factory count: {FlowFactoryCount}",
-                _flows.Count,
-                _flowBuilders.Count, _flowFactories.Count);
-
-            foreach (var flow in _flows)
+            services.AddSingleton<IIntegrationFlowCatalog>(provider =>
             {
-                try
-                {
-                    _logger.LogDebug("Executing flow {FlowId}", flow.Id);
+                var catalog = new PluginFrameworkIntegrationFlowCatalog(typePluginCatalog);
 
-                    await _flowManager.Execute(flow);
+                return catalog;
+            });
 
-                    _logger.LogDebug("Flow {FlowId} executed successfully", flow.Id);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to execute flow {FlowId}", flow.Id);
-                }
-            }
-
-            foreach (var flowBuilder in _flowBuilders)
-            {
-                try
-                {
-                    _logger.LogDebug("Creating flow from builder {BuilderId}", flowBuilder.Id);
-
-                    var flow = await flowBuilder.Build(_serviceProvider);
-
-                    _logger.LogDebug("Flow {FlowId} built successfully", flow.Id);
-
-                    _logger.LogDebug("Executing flow {FlowId}", flow.Id);
-
-                    await _flowManager.Execute(flow);
-
-                    _logger.LogDebug("Flow {FlowId} executed successfully", flow.Id);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to build and execute flow {BuilderId}", flowBuilder.Id);
-                }
-            }
-
-            foreach (var flowFactory in _flowFactories)
-            {
-                try
-                {
-                    _logger.LogDebug("Creating flow from factory");
-
-                    var flow = await flowFactory.Create(_serviceProvider);
-
-                    _logger.LogDebug("Flow {FlowId} built successfully", flow.Id);
-
-                    _logger.LogDebug("Executing flow {FlowId}", flow.Id);
-
-                    await _flowManager.Execute(flow);
-
-                    _logger.LogDebug("Flow {FlowId} executed successfully", flow.Id);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to create and execute flow from factory");
-                }
-            }
+            return services;
         }
     }
 }

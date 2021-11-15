@@ -39,6 +39,7 @@ namespace Weikio.EventFramework.EventSource.Abstractions
         {
             return new EventSourceDefinition(nameAndVersion.Name, Version.Parse(nameAndVersion.Version));
         }
+        
         private string GetMoreVersionDetails()
         {
             if (string.IsNullOrWhiteSpace(Description) && string.IsNullOrWhiteSpace(ProductVersion))

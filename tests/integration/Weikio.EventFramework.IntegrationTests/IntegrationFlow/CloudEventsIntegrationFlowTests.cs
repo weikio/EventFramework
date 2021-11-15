@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using EventFrameworkTestBed;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.EventSource.Abstractions;
@@ -40,27 +37,6 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             // {
             //     EventSourceDefinition = "TestEventSource", PollingFrequency = TimeSpan.FromSeconds(1),
             // };
-        }
-    }
-
-    public class TestComponent : CloudEventsComponent
-    {
-        public TestComponent()
-        {
-            Func = ModifyEv;
-        }
-
-        private static Task<CloudEvent> ModifyEv(CloudEvent ev)
-        {
-            return Task.FromResult(ev);
-        }
-    }
-    
-    public class ChannelEndpoint : CloudEventsEndpoint
-    {
-        public ChannelEndpoint()
-        {
-            
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Weikio.EventFramework.Channels.CloudEvents.Abstractions
         {
             var builder = new SequentialLayerBuilder<CloudEvent>();
 
-            return builder.Build(options.Components);
+            return builder.Build(options.Components, options.Interceptors);
         }
     }
 }

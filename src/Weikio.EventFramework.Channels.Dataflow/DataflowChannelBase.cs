@@ -83,7 +83,7 @@ namespace Weikio.EventFramework.Channels.Dataflow
             AdapterLayer = InterceptLayout(builtAdapterLayer, InterceptorTypeEnum.PreAdapters, InterceptorTypeEnum.PostAdapters); 
             
             var builtComponentLayer = Options.ComponentLayerBuilder.Invoke(Options);
-            ComponentLayer = InterceptLayout(builtComponentLayer, InterceptorTypeEnum.PreComponents, InterceptorTypeEnum.PostComponent); 
+            ComponentLayer = InterceptLayout(builtComponentLayer, InterceptorTypeEnum.PreComponents, InterceptorTypeEnum.PostComponents); 
 
             Input.LinkTo(AdapterLayer.Input, new DataflowLinkOptions() { PropagateCompletion = false });
             AdapterLayer.Output.LinkTo(ComponentLayer.Input, new DataflowLinkOptions() { PropagateCompletion = false });

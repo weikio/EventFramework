@@ -9,12 +9,6 @@ using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
-    public enum Filter
-    {
-        Continue, 
-        Skip
-    }
-    
     public static class IntegrationFlowBuilderExtensions
     {
         public static IntegrationFlowBuilder Channel(this IntegrationFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null)
@@ -180,15 +174,5 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return builder;
         }
-    }
-
-    public class UnknownIntegrationFlowSourceException : Exception
-    {
-        
-    }
-    
-    public class NotSupportedChannelTypeForIntegrationFlow : Exception
-    {
-        
     }
 }

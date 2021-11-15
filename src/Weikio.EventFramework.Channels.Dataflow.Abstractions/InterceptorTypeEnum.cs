@@ -7,6 +7,8 @@
         PreAdapters,
         PostAdapters,
         PreComponents,
+        PreComponent,
+        PostComponents,
         PostComponent,
         PreEndpoints
     }
