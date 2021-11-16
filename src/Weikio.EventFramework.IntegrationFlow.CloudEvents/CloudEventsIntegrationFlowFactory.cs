@@ -5,14 +5,14 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
     public class CloudEventsIntegrationFlowFactory
     {
-        private readonly Func<IServiceProvider, Task<CloudEventsIntegrationFlow>> _flowFactory;
+        private readonly Func<IServiceProvider, Task<IntegrationFlowInstance>> _flowFactory;
 
-        public CloudEventsIntegrationFlowFactory(Func<IServiceProvider, Task<CloudEventsIntegrationFlow>> flowFactory)
+        public CloudEventsIntegrationFlowFactory(Func<IServiceProvider, Task<IntegrationFlowInstance>> flowFactory)
         {
             _flowFactory = flowFactory;
         }
 
-        public async Task<CloudEventsIntegrationFlow> Create(IServiceProvider serviceProvider)
+        public async Task<IntegrationFlowInstance> Create(IServiceProvider serviceProvider)
         {
             var result = await _flowFactory.Invoke(serviceProvider);
 

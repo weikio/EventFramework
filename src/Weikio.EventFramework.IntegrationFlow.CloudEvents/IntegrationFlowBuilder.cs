@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
-using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
-    public class IntegrationFlowBuilder : IBuilder<CloudEventsIntegrationFlow>
+    public class IntegrationFlowBuilder : IBuilder<IntegrationFlowInstance>
     {
         private ArrayList _flow = new ArrayList();
         private List<Func<IServiceProvider, Task<CloudEventsComponent>>> _components = new List<Func<IServiceProvider, Task<CloudEventsComponent>>>();
@@ -78,30 +79,23 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return this;
         }
 
-        public async Task<CloudEventsIntegrationFlow> Build(IServiceProvider serviceProvider)
+        public async Task<IntegrationFlowInstance> Build(IServiceProvider serviceProvider)
         {
-            var result = new CloudEventsIntegrationFlow
+            var options = new IntegrationFlowInstanceOptions()
             {
-                Id = Id, 
-                Description = Description, 
+                Id = Id,
+                Description = Description,
                 ConfigureEventSourceInstanceOptions = _configureEventSourceInstance,
-                EventSourceType = _eventSourceType,
-                Source = Source,
                 Configuration = Configuration,
-                Interceptors = Interceptors
+                Interceptors = Interceptors,
+                ComponentFactories = _components
             };
-            
-            // Insert a component which adds a IntegrationFlowExtension to the event's attributes
-            var extensionComponent = new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(Id));
-            
-            result.Components.Add(extensionComponent);
 
-            foreach (var componentBuilder in _components)
-            {
-                var component = await componentBuilder(serviceProvider);
-                result.Components.Add(component);
-            }
-            
+            var integrationFlow = new Abstractions.IntegrationFlow("test", _eventSourceType, Source);
+
+            var factory = serviceProvider.GetRequiredService<IIntegrationFlowInstanceFactory>();
+            var result = await factory.Create(integrationFlow, options);
+
             return result;
         }
 

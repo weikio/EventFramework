@@ -35,10 +35,10 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return builder;
         }
 
-        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, CloudEventsIntegrationFlow flow)
+        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, IntegrationFlowInstance flowInstance)
         {
             var services = builder.Services;
-            services.AddIntegrationFlow(flow);
+            services.AddIntegrationFlow(flowInstance);
 
             return builder;
         }
@@ -135,10 +135,10 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return services;
         }
 
-        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, CloudEventsIntegrationFlow flow)
+        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, IntegrationFlowInstance flowInstance)
         {
             services.AddIntegrationFlows();
-            services.AddSingleton(flow);
+            services.AddSingleton(flowInstance);
 
             return services;
         }

@@ -13,7 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj"/>
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.IntegrationFlow.Abstractions\Weikio.EventFramework.IntegrationFlow.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
