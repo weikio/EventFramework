@@ -78,6 +78,49 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return builder;
         }
+        
+        public static IntegrationFlowBuilder Subflow(this IntegrationFlowBuilder builder, Func<CloudEvent, 
+            Action<IntegrationFlowBuilder>> configure, 
+            Predicate<CloudEvent> predicate)
+        {
+            Task<CloudEventsComponent> Handler(IServiceProvider provider)
+            {
+                var subflowComponent = new CloudEventsComponent(async ev =>
+                {
+                    var aggr = provider.GetRequiredService<ICloudEventAggregator>();
+                    await aggr.Publish(ev);
+
+                    return ev;
+                });
+
+                return Task.FromResult(subflowComponent);
+            }
+
+            builder.Register(Handler);
+
+            return builder;
+        }
+        
+        public static IntegrationFlowBuilder Branch(this IntegrationFlowBuilder builder, params (Predicate<CloudEvent>, Func<CloudEvent, 
+            Action<IntegrationFlowBuilder>>)[] branches )
+        {
+            Task<CloudEventsComponent> Handler(IServiceProvider provider)
+            {
+                var subflowComponent = new CloudEventsComponent(async ev =>
+                {
+                    var aggr = provider.GetRequiredService<ICloudEventAggregator>();
+                    await aggr.Publish(ev);
+
+                    return ev;
+                });
+
+                return Task.FromResult(subflowComponent);
+            }
+
+            builder.Register(Handler);
+
+            return builder;
+        }
 
         public static IntegrationFlowBuilder Handle<THandlerType>(this IntegrationFlowBuilder builder, Predicate<CloudEvent> predicate = null,
             Action<THandlerType> configure = null)

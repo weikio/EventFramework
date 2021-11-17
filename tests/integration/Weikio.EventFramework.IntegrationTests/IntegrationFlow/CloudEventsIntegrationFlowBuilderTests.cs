@@ -88,7 +88,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             await ContinueWhen(() => msgReceived, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanCreateFlowUsingExistingChannel()
         {
@@ -447,6 +447,53 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             await channel.Send(new CustomerCreatedEvent());
 
             await ContinueWhen(() => counter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task CanRunSubflow()
+        {
+            var server = Init();
+            var handlerCounter = new Counter();
+
+            var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
+                .Subflow(ev => builder =>
+                {
+                })
+                .Filter(ev => ev.Type != "CounterEvent")
+                .Handle<FlowHandler>(configure: handler =>
+                {
+                    handler.Counter = handlerCounter;
+                });
+
+            var flow = await flowBuilder.Build(server);
+
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+            await manager.Execute(flow);
+
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task CanBranch()
+        {
+            var server = Init();
+            var handlerCounter = new Counter();
+
+            var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
+                .Branch((ev => ev.Type == "ok", ev => okflow =>
+                    {
+                        
+                    }),
+                    (ev => ev.Type == "error", ev => errorflow =>
+                    {
+                    }));
+
+            var flow = await flowBuilder.Build(server);
+
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+            await manager.Execute(flow);
+
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
     }
 }
