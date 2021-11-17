@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventAggregator.Core;
@@ -13,9 +15,9 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     {
         public static IntegrationFlowBuilder Channel(this IntegrationFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null)
         {
-            Task<CloudEventsComponent> Handler(IServiceProvider provider)
+            Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
-                var channelManager = provider.GetRequiredService<ICloudEventsChannelManager>();
+                var channelManager = context.ServiceProvider.GetRequiredService<ICloudEventsChannelManager>();
 
                 var channel =
                     channelManager.Channels.FirstOrDefault(x => string.Equals(channelName, x.Name, StringComparison.InvariantCultureIgnoreCase)) as
@@ -83,11 +85,11 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             Action<IntegrationFlowBuilder>> configure, 
             Predicate<CloudEvent> predicate)
         {
-            Task<CloudEventsComponent> Handler(IServiceProvider provider)
+            Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
                 var subflowComponent = new CloudEventsComponent(async ev =>
                 {
-                    var aggr = provider.GetRequiredService<ICloudEventAggregator>();
+                    var aggr = context.ServiceProvider.GetRequiredService<ICloudEventAggregator>();
                     await aggr.Publish(ev);
 
                     return ev;
@@ -101,20 +103,61 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return builder;
         }
         
-        public static IntegrationFlowBuilder Branch(this IntegrationFlowBuilder builder, params (Predicate<CloudEvent>, Func<CloudEvent, 
-            Action<IntegrationFlowBuilder>>)[] branches )
+        public static IntegrationFlowBuilder Branch(this IntegrationFlowBuilder builder, params (Predicate<CloudEvent> Predicate, Action<IntegrationFlowBuilder> BuildBranch)[] branches )
         {
-            Task<CloudEventsComponent> Handler(IServiceProvider provider)
+            async Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
-                var subflowComponent = new CloudEventsComponent(async ev =>
+                var instanceManager = context.ServiceProvider.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+                var channelManager = context.ServiceProvider.GetRequiredService<IChannelManager>();
+
+                var createdFlows = new List<(Predicate<CloudEvent> Predicate, string ChannelId)>();
+
+                for (var index = 0; index < branches.Length; index++)
                 {
-                    var aggr = provider.GetRequiredService<ICloudEventAggregator>();
-                    await aggr.Publish(ev);
+                    var branchChannelName = $"system/flows/{builder.Id}/branches/input_{context.CurrentComponentIndex}/{index}";
+                    var branchChannelOptions = new CloudEventsChannelOptions() { Name = branchChannelName };
+                    var branchInputChannel = new CloudEventsChannel(branchChannelOptions);
+                    channelManager.Add(branchInputChannel);
+                    
+                    var branch = branches[index];
+                    var flowBuilder = IntegrationFlowBuilder.From(branchChannelName);
+                    branch.BuildBranch(flowBuilder);
+
+                    flowBuilder.WithId($"{builder.Id}/branches/{context.CurrentComponentIndex}/{index}");
+
+                    var branchFlow = await flowBuilder.Build(context.ServiceProvider);
+                    
+                    await instanceManager.Execute(branchFlow);
+
+                    createdFlows.Add((branch.Predicate, branchChannelName));
+                }
+
+                var branchComponent = new CloudEventsComponent(async ev =>
+                {
+                    var branched = false;
+                    
+                    foreach (var createdFlow in createdFlows)
+                    {
+                        var shouldBranch = createdFlow.Predicate(ev);
+
+                        if (shouldBranch)
+                        {
+                            var channel = channelManager.Get(createdFlow.ChannelId);
+                            await channel.Send(ev);
+                            
+                            branched = true;
+                        }
+                    }
+
+                    if (branched)
+                    {
+                        return null;
+                    }
 
                     return ev;
                 });
 
-                return Task.FromResult(subflowComponent);
+                return branchComponent;
             }
 
             builder.Register(Handler);
@@ -162,10 +205,10 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         public static IntegrationFlowBuilder Handle(this IntegrationFlowBuilder builder, Func<CloudEvent, Task> handler,
             Func<CloudEvent, Task<bool>> predicate = null, Type handlerType = null, MulticastDelegate configureHandler = null)
         {
-            Task<CloudEventsComponent> Handler(IServiceProvider provider)
+            Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
-                var eventLinkInitializer = provider.GetRequiredService<EventLinkInitializer>();
-                var typeToEventLinksConverter = provider.GetRequiredService<ITypeToEventLinksConverter>();
+                var eventLinkInitializer = context.ServiceProvider.GetRequiredService<EventLinkInitializer>();
+                var typeToEventLinksConverter = context.ServiceProvider.GetRequiredService<ITypeToEventLinksConverter>();
 
                 if (predicate == null)
                 {
@@ -188,7 +231,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
                 if (handlerType != null)
                 {
-                    var links = typeToEventLinksConverter.Create(provider, handlerType, predicate, configureHandler);
+                    var links = typeToEventLinksConverter.Create(context.ServiceProvider, handlerType, predicate, configureHandler);
 
                     foreach (var eventLink in links)
                     {
@@ -204,7 +247,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
                 var aggregatorComponent = new CloudEventsComponent(async ev =>
                 {
-                    var aggr = provider.GetRequiredService<ICloudEventAggregator>();
+                    var aggr = context.ServiceProvider.GetRequiredService<ICloudEventAggregator>();
                     await aggr.Publish(ev);
 
                     return ev;

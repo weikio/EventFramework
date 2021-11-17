@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
@@ -180,25 +178,11 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             _logger.LogInformation("Creating Integration Flow using registered flow with definition {Definition}", flowDefinition);
 
             var flowType = _integrationFlowProvider.Get(flowDefinition);
-            //
-            // CloudEventsIntegrationFlowBase flow;
-            //
-            // if (configuration != null)
-            // {
-            //     flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType, new object[] { configuration });
-            // }
-            // else
-            // {
-            //     flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType);
-            // }
 
             var integrationFlow = new Abstractions.IntegrationFlow(flowDefinition, flowType, null);
             var options = new IntegrationFlowInstanceOptions() { Id = id, Configuration = configuration, Description = description };
 
             var result = await _instanceFactory.Create(integrationFlow, options);// await flow.Flow.Build(_serviceProvider);
-            // result.Id = id;
-            // result.Description = description;
-            // result.Configuration = configuration;
 
             return result;
         }

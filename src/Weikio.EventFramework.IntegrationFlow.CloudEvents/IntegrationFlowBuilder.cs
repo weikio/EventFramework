@@ -13,7 +13,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     public class IntegrationFlowBuilder : IBuilder<IntegrationFlowInstance>
     {
         private ArrayList _flow = new ArrayList();
-        private List<Func<IServiceProvider, Task<CloudEventsComponent>>> _components = new List<Func<IServiceProvider, Task<CloudEventsComponent>>>();
+        private List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>> _components = new List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>>();
         private Action<EventSourceInstanceOptions> _configureEventSourceInstance;
         private Type _eventSourceType;
         public string Source { get; private set; }
@@ -79,6 +79,13 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return this;
         }
 
+        public IntegrationFlowBuilder WithSource(string source)
+        {
+            Source = source;
+
+            return this;
+        }
+        
         public async Task<IntegrationFlowInstance> Build(IServiceProvider serviceProvider)
         {
             var options = new IntegrationFlowInstanceOptions()
@@ -106,7 +113,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return this;
         }
 
-        public IntegrationFlowBuilder Register(Func<IServiceProvider, Task<CloudEventsComponent>> componentBuilder)
+        public IntegrationFlowBuilder Register(Func<ComponentFactoryContext, Task<CloudEventsComponent>> componentBuilder)
         {
             _components.Add(componentBuilder);
 
