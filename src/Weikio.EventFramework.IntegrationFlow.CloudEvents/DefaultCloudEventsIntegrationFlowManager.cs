@@ -97,6 +97,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 {
                     options.Components.AddRange(flowInstance.Components);
                     options.Interceptors.AddRange(flowInstance.Interceptors);
+                    options.Endpoints.AddRange(flowInstance.Endpoints);
                 };
 
                 await _eventSourceInstanceManager.Create(esOptions);
@@ -140,6 +141,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
             flowChannelOptions.Components.AddRange(flowInstance.Components);
             flowChannelOptions.Interceptors.AddRange(flowInstance.Interceptors);
+            flowChannelOptions.Endpoints.AddRange(flowInstance.Endpoints);
 
             var flowChannel = new CloudEventsChannel(flowChannelOptions);
 

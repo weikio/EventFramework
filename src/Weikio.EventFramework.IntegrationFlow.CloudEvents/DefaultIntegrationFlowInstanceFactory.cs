@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.Abstractions;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Components;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
@@ -29,6 +34,28 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 var component = await componentFactory(context);
                 options.Components.Add(component);
             }
+            
+            // Insert an endpoint which transfer the event to the desired channel if event has attribute eventFramework_integrationFlow_endpoint
+            options.Endpoints.Add(new CloudEventsEndpoint(async ev =>
+            {
+                var attrs = ev.GetAttributes();
+
+                if (attrs.ContainsKey(EventFrameworkIntegrationFlowEndpointEventExtension.EventFrameworkIntegrationFlowEndpointAttributeName) == false)
+                {
+                    return;
+                }
+
+                var targetChannel = attrs[EventFrameworkIntegrationFlowEndpointEventExtension.EventFrameworkIntegrationFlowEndpointAttributeName] as string;
+
+                if (string.IsNullOrWhiteSpace(targetChannel))
+                {
+                    return;
+                }
+
+                var channel = _serviceProvider.GetRequiredService<IChannelManager>().Get(targetChannel);
+                await channel.Send(ev);
+            }));
+            
             
             var result = new IntegrationFlowInstance(integrationFlow, options);
             
