@@ -34,6 +34,22 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             // var flowBuilder = IntegrationFlowBuilder.From("hello");
         }
+        
+        [Fact]
+        public async Task CanCreateFlowWithoutSource()
+        {
+            var counter = new Counter();
+            
+            var server = Init();
+
+            var flowBuilder = IntegrationFlowBuilder.From()
+                .Handle(ev => counter.Increment());
+            
+            var flow = await flowBuilder.Build(server);
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+            
+            await manager.Execute(flow);
+        }
 
         [Fact]
         public async Task CanCreateFlowBuilderUsingNewEventSource()
@@ -508,7 +524,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         }
 
         [Fact]
-        public async Task CanRunSubflow()
+        public async Task CanRunSubflowWithName()
         {
             throw new NotImplementedException();
 

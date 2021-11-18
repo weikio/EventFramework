@@ -10,5 +10,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             object configuration = null);
 
         List<IntegrationFlowInstance> List();
+        IntegrationFlowInstance Get(string id);
     }
 }

@@ -50,6 +50,14 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
         public string Source => _integrationFlow.Source;
 
+        public string InputChannel
+        {
+            get
+            {
+                return $"system/flows/{Id}";
+            }
+        }
+
         public IntegrationFlowInstance(Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options)
         {
             _integrationFlow = integrationFlow;

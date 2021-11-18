@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Channels;
@@ -38,9 +39,28 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         {
             _logger.LogInformation("Executing integration flow with ID {Id}", flowInstance.Id);
 
+            // We always want to create a channel for our flow instance.
+            // If the flow is based on event source, we deliver events from the source to this new flow channel.
+            // If the flow is based on another channel, we subscribe source channel to the flow channel.
+            // If the flow doesn't have source, we just create the flow channel and wait for something to get delivered to it. 
+            _logger.LogDebug(
+                "Creating a new channel for integration flow with Id {FlowId}", flowInstance.Id);
+
+            var channelName = flowInstance.InputChannel;
+            var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
+            flowChannelOptions.Components.AddRange(flowInstance.Components);
+            flowChannelOptions.Interceptors.AddRange(flowInstance.Interceptors);
+            flowChannelOptions.Endpoints.AddRange(flowInstance.Endpoints);
+
+            var flowChannel = new CloudEventsChannel(flowChannelOptions);
+
+            _channelManager.Add(flowChannel);
+
+            _logger.LogInformation("Created new input channel for flow {FlowId} with name {ChannelId}", flowInstance.Id, channelName);
+            
             // Create event source instance and a channel based on the input
             // But only create event source instance if needed. If source is defined, try to find existing event source instance or channel
-            if (string.IsNullOrWhiteSpace(flowInstance.Source))
+            if (string.IsNullOrWhiteSpace(flowInstance.Source) && flowInstance.EventSourceType != null)
             {
                 _logger.LogDebug("Integration flow with ID {Id} requires a new event source", flowInstance.Id);
 
@@ -69,7 +89,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                     esOptions.EventSourceDefinition = definition.Name;
                 }
 
-                esOptions.PublishToChannel = false;
+                esOptions.PublishToChannel = true;
 
                 // Make sure we have registered the event source defined in the integration flow
                 var isDefinitionKnown = true;
@@ -93,17 +113,14 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                     _logger.LogDebug("Event source definition {Definition} registered", esOptions.EventSourceDefinition);
                 }
 
-                esOptions.ConfigureChannel = options =>
-                {
-                    options.Components.AddRange(flowInstance.Components);
-                    options.Interceptors.AddRange(flowInstance.Interceptors);
-                    options.Endpoints.AddRange(flowInstance.Endpoints);
-                };
+                esOptions.TargetChannelName = flowInstance.InputChannel;
 
                 await _eventSourceInstanceManager.Create(esOptions);
 
                 _logger.LogDebug("New Event source with Id {EsId} created for Integration flow with Id {Id}", esOptions.Id, flowInstance.Id);
 
+                _logger.LogInformation("Executed flow with id {FlowId}. Source: New Event Source with id {EsId}", flowInstance.Id, esOptions.Id);
+                
                 Add(flowInstance);
                 
                 return;
@@ -116,7 +133,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             CloudEventsChannel sourceChannel = null;
 
-            if (existingEsInstance == null)
+            if (existingEsInstance == null && !string.IsNullOrWhiteSpace(flowInstance.Source))
             {
                 _logger.LogDebug("No existing Event Source Instance found with Id {Source}. Trying to find an existing channel", flowInstance.Source);
 
@@ -134,21 +151,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 _logger.LogDebug("Found existing channel {ChannelName} as a source for integration flow with Id {Source}", flowInstance.Source, flowInstance.Source);
             }
 
-            _logger.LogDebug(
-                "Creating a new channel for integration flow with Id {FlowId}", flowInstance.Id);
-
-            var channelName = $"system/flows/{flowInstance.Id}";
-            var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
-            flowChannelOptions.Components.AddRange(flowInstance.Components);
-            flowChannelOptions.Interceptors.AddRange(flowInstance.Interceptors);
-            flowChannelOptions.Endpoints.AddRange(flowInstance.Endpoints);
-
-            var flowChannel = new CloudEventsChannel(flowChannelOptions);
-
-            _channelManager.Add(flowChannel);
-
-            _logger.LogDebug("Created new channel for flow {FlowId} with name {ChannelId}", flowInstance.Id, channelName);
-
             if (sourceChannel == null && existingEsInstance != null)
             {
                 _logger.LogDebug("Using event source instances {EsInstanceId} internal channel as the source channel for flow {FlowId}",
@@ -158,18 +160,33 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 sourceChannel = _channelManager.Get(esInstanceChannelName);
             }
 
-            if (sourceChannel == null)
+            if (sourceChannel != null)
             {
-                throw new UnknownIntegrationFlowSourceException();
+                if (sourceChannel.IsPubSub == false)
+                {
+                    // TODO: We could actually add a new endpoint to the source channel to get around this issue
+                    throw new NotSupportedChannelTypeForIntegrationFlow();
+                }
+            
+                sourceChannel.Subscribe(flowChannel);
+            }
+            else
+            {
+                _logger.LogDebug("Flow {FlowId} does not have source. To run the flow, event must be delivered to its input channel {ChannelId}", flowInstance.Id, flowInstance.InputChannel);
             }
 
-            if (sourceChannel.IsPubSub == false)
+            if (existingEsInstance != null)
             {
-                // TODO: We could actually add a new endpoint to the source channel to get around this issue
-                throw new NotSupportedChannelTypeForIntegrationFlow();
+                _logger.LogInformation("Executed flow with id {FlowId}. Source: Existing Event Source with id {EsId}", flowInstance.Id, existingEsInstance.Id);
             }
-            
-            sourceChannel.Subscribe(flowChannel);
+            else if (sourceChannel != null)
+            {
+                _logger.LogInformation("Executed flow with id {FlowId}. Source: Channel with name {SourceChannel}", flowInstance.Id, sourceChannel.Name);
+            }
+            else
+            {
+                _logger.LogInformation("Executed flow with id {FlowId}. Source: None", flowInstance.Id);
+            }
             
             Add(flowInstance);
         }
@@ -192,6 +209,29 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         public List<IntegrationFlowInstance> List()
         {
             return this;
+        }
+
+        public IntegrationFlowInstance Get(string id)
+        {
+            var result = this.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.InvariantCultureIgnoreCase));
+
+            if (result != null)
+            {
+                return result;
+            }
+
+            throw new UnknownIntegrationFlowInstance(id,
+                $"Could not find Integration Flow Instance with ID: {id}.{Environment.NewLine}{Environment.NewLine}Available flows:{Environment.NewLine}{string.Join(",", this.Select(x => x.Id))}");
+        }
+    }
+
+    public class UnknownIntegrationFlowInstance : Exception
+    {
+        public string Id { get; }
+
+        public UnknownIntegrationFlowInstance(string id, string message) : base(message)
+        {
+            Id = id;
         }
     }
 }

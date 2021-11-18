@@ -81,21 +81,62 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return builder;
         }
         
-        public static IntegrationFlowBuilder Subflow(this IntegrationFlowBuilder builder, Func<CloudEvent, 
-            Action<IntegrationFlowBuilder>> configure, 
+        public static IntegrationFlowBuilder Flow(this IntegrationFlowBuilder builder, Action<IntegrationFlowBuilder> buildFlow, 
             Predicate<CloudEvent> predicate)
         {
             Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
-                var subflowComponent = new CloudEventsComponent(async ev =>
+                var instanceManager = context.ServiceProvider.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+                var channelManager = context.ServiceProvider.GetRequiredService<IChannelManager>();
+                
+                var flowComponent = new CloudEventsComponent(async ev =>
                 {
+                    if (!string.IsNullOrWhiteSpace(context.NextComponentChannelName))
+                    {
+                        var ext = new EventFrameworkIntegrationFlowEndpointEventExtension(context.NextComponentChannelName);
+                        ext.Attach(ev);
+                    }
+                    
                     var aggr = context.ServiceProvider.GetRequiredService<ICloudEventAggregator>();
                     await aggr.Publish(ev);
 
                     return ev;
                 });
 
-                return Task.FromResult(subflowComponent);
+                return Task.FromResult(flowComponent);
+            }
+
+            builder.Register(Handler);
+
+            return builder;
+        }
+        
+        public static IntegrationFlowBuilder Flow(this IntegrationFlowBuilder builder, string flowId, 
+            Predicate<CloudEvent> predicate)
+        {
+            Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
+            {
+                var instanceManager = context.ServiceProvider.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+                var channelManager = context.ServiceProvider.GetRequiredService<IChannelManager>();
+                
+                var flowComponent = new CloudEventsComponent(async ev =>
+                {
+                    if (!string.IsNullOrWhiteSpace(context.NextComponentChannelName))
+                    {
+                        var ext = new EventFrameworkIntegrationFlowEndpointEventExtension(context.NextComponentChannelName);
+                        ext.Attach(ev);
+                    }
+
+                    var targetFlow = instanceManager.Get(flowId);
+                    var targetFlowInputChannel = targetFlow.InputChannel;
+
+                    var targetChannel = channelManager.Get(targetFlowInputChannel);
+                    await targetChannel.Send(ev);
+
+                    return null;
+                });
+
+                return Task.FromResult(flowComponent);
             }
 
             builder.Register(Handler);

@@ -27,14 +27,29 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             var extensionComponent = new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(options.Id));
             options.Components.Add(extensionComponent);
 
-            foreach (var componentFactory in options.ComponentFactories)
+            for (var index = 0; index < options.ComponentFactories.Count; index++)
             {
-                var context = new ComponentFactoryContext(_serviceProvider, integrationFlow, options, options.Components.Count);
+                var componentFactory = options.ComponentFactories[index];
                 
+                var componentChannelName = $"system/flows/{options.Id}/componentchannels/{index}";
+
+                var hasNextComponent = options.Components.Count > index + 1;
+
+                string nextComponentChannelName = null;
+
+                if (hasNextComponent)
+                {
+                    nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{index + 1}";
+                }
+                
+                var context = new ComponentFactoryContext(_serviceProvider, integrationFlow, options, options.Components.Count, 
+                    componentChannelName, 
+                    nextComponentChannelName);
+
                 var component = await componentFactory(context);
                 options.Components.Add(component);
             }
-            
+
             // Insert an endpoint which transfer the event to the desired channel if event has attribute eventFramework_integrationFlow_endpoint
             options.Endpoints.Add(new CloudEventsEndpoint(async ev =>
             {
@@ -55,10 +70,9 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 var channel = _serviceProvider.GetRequiredService<IChannelManager>().Get(targetChannel);
                 await channel.Send(ev);
             }));
-            
-            
+
             var result = new IntegrationFlowInstance(integrationFlow, options);
-            
+
             return result;
         }
     }
@@ -67,15 +81,20 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     {
         public IServiceProvider ServiceProvider { get; }
         public Abstractions.IntegrationFlow IntegrationFlow { get; }
-        public IntegrationFlowInstanceOptions Options { get;  }
-        public int CurrentComponentIndex { get;  }
-        
-        public ComponentFactoryContext(IServiceProvider serviceProvider, Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options, int currentComponentIndex)
+        public IntegrationFlowInstanceOptions Options { get; }
+        public int CurrentComponentIndex { get; }
+        public string CurrentComponentChannelName { get; set; }
+        public string NextComponentChannelName { get; set; }
+
+        public ComponentFactoryContext(IServiceProvider serviceProvider, Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options,
+            int currentComponentIndex, string currentComponentChannelName, string nextComponentChannelName)
         {
             ServiceProvider = serviceProvider;
             IntegrationFlow = integrationFlow;
             Options = options;
             CurrentComponentIndex = currentComponentIndex;
+            CurrentComponentChannelName = currentComponentChannelName;
+            NextComponentChannelName = nextComponentChannelName;
         }
     }
 }
