@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Components;
@@ -22,10 +23,12 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         private readonly ICloudEventsChannelManager _channelManager;
         private readonly IntegrationFlowProvider _integrationFlowProvider;
         private readonly IIntegrationFlowInstanceFactory _instanceFactory;
+        private readonly IOptions<IntegrationFlowChannelDefaultComponents> _options;
 
         public DefaultCloudEventsIntegrationFlowManager(IServiceProvider serviceProvider, IEventSourceInstanceManager eventSourceInstanceManager,
             IEventSourceProvider eventSourceProvider, ILogger<DefaultCloudEventsIntegrationFlowManager> logger,
-            ICloudEventsChannelManager channelManager, IntegrationFlowProvider integrationFlowProvider, IIntegrationFlowInstanceFactory instanceFactory)
+            ICloudEventsChannelManager channelManager, IntegrationFlowProvider integrationFlowProvider, IIntegrationFlowInstanceFactory instanceFactory,
+            IOptions<IntegrationFlowChannelDefaultComponents> options)
         {
             _serviceProvider = serviceProvider;
             _eventSourceInstanceManager = eventSourceInstanceManager;
@@ -34,6 +37,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             _channelManager = channelManager;
             _integrationFlowProvider = integrationFlowProvider;
             _instanceFactory = instanceFactory;
+            _options = options;
         }
 
         public async Task Execute(IntegrationFlowInstance flowInstance)
@@ -53,16 +57,37 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             // Each component channel has an endpoint which points to the next component channel 
             var channelName = flowInstance.InputChannel;
             var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
-            var flowChannelExtensionComponent = new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(flowInstance.Id));
-            flowChannelOptions.Components.Add(flowChannelExtensionComponent);
+
+            var defaultComponents = _options.Value.ComponentsFactory(flowInstance.IntegrationFlow, flowInstance.FlowInstanceOptions);
+
+            if (defaultComponents?.Any() == true)
+            {
+                foreach (var defaultComponent in defaultComponents)
+                {
+                    flowChannelOptions.Components.Add(defaultComponent);
+                }
+            }
 
             var createdComponentChannels = new List<string>();
+
             for (var index = 0; index < flowInstance.Components.Count; index++)
             {
                 var component = flowInstance.Components[index];
+
                 // TODO: Find a place for this
                 var componentChannelName = $"system/flows/{flowInstance.Id}/componentchannels/{index}";
                 var componentChannelOptions = new CloudEventsChannelOptions() { Name = componentChannelName };
+
+                // Insert a component which adds a IntegrationFlowExtension to the event's attributes
+                // The idea is that when events moves around flows and sub flows, it always knows the context
+                if (defaultComponents?.Any() == true)
+                {
+                    foreach (var defaultComponent in defaultComponents)
+                    {
+                        componentChannelOptions.Components.Add(defaultComponent);
+                    }
+                }
+
                 componentChannelOptions.Components.Add(component);
                 componentChannelOptions.Interceptors.AddRange(flowInstance.Interceptors);
 
@@ -82,26 +107,21 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                         var nextComponentChannel = _channelManager.Get(nextComponentChannelName);
                         await nextComponentChannel.Send(ev);
                     });
-                    
+
                     componentChannelOptions.Endpoints.Add(nextChannelEndpoint);
                 }
 
-                // Insert a component which adds a IntegrationFlowExtension to the event's attributes
-                // The idea is that when events moves around flows and sub flows, it always knows the context
-                var extensionComponent = new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(flowInstance.Id));
-                componentChannelOptions.Components.Add(extensionComponent);
-                
                 var componentChannel = new CloudEventsChannel(componentChannelOptions);
 
                 _channelManager.Add(componentChannel);
-                
+
                 createdComponentChannels.Add(componentChannel.Name);
             }
 
             if (createdComponentChannels.Any())
             {
                 var firstComponentChannelId = createdComponentChannels.First();
-                
+
                 var firstComponentEndpoint = new CloudEventsEndpoint(async ev =>
                 {
                     var nextComponentChannel = _channelManager.Get(firstComponentChannelId);
@@ -110,7 +130,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
                 flowChannelOptions.Endpoints.Add(firstComponentEndpoint);
             }
-            
+
             var flowChannel = new CloudEventsChannel(flowChannelOptions);
 
             _channelManager.Add(flowChannel);
@@ -266,7 +286,11 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             var flowType = _integrationFlowProvider.Get(flowDefinition);
 
             var integrationFlow = new Abstractions.IntegrationFlow(flowDefinition, flowType, null);
-            var options = new IntegrationFlowInstanceOptions() { Id = id, Configuration = configuration, Description = description };
+
+            var options = new IntegrationFlowInstanceOptions()
+            {
+                Id = id ?? Guid.NewGuid().ToString(), Configuration = configuration, Description = description
+            };
 
             var result = await _instanceFactory.Create(integrationFlow, options); // await flow.Flow.Build(_serviceProvider);
 

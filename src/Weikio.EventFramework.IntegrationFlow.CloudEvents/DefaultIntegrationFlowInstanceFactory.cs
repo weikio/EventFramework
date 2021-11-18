@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
@@ -14,15 +16,21 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<DefaultIntegrationFlowInstanceFactory> _logger;
+        private readonly IOptions<IntegrationFlowChannelDefaultComponents> _options;
 
-        public DefaultIntegrationFlowInstanceFactory(IServiceProvider serviceProvider, ILogger<DefaultIntegrationFlowInstanceFactory> logger)
+        public DefaultIntegrationFlowInstanceFactory(IServiceProvider serviceProvider, ILogger<DefaultIntegrationFlowInstanceFactory> logger, IOptions<IntegrationFlowChannelDefaultComponents> options)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _options = options;
         }
 
         public async Task<IntegrationFlowInstance> Create(Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options)
         {
+            // Component channel names are created based on the index, so 0, 1, 2 etc.
+            // Is there any use for the fact that we use index numbers? Maybe just give Guid to the component and use that as channel name.
+            // Or, why we create the components at this point? Why doesn't the DefaultCloudEventsIntegrationFlowManager create them?
+            // Or maybe the channels should be created here
             for (var index = 0; index < options.ComponentFactories.Count; index++)
             {
                 var componentFactory = options.ComponentFactories[index];
@@ -77,6 +85,17 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return result;
         }
+    }
+
+    public class IntegrationFlowChannelDefaultComponents
+    {
+        public Func<Abstractions.IntegrationFlow, IntegrationFlowInstanceOptions, List<CloudEventsComponent>> ComponentsFactory { get; set; } =
+            (flow, options) =>
+            {
+                var result = new List<CloudEventsComponent> { new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(options.Id)) };
+
+                return result;
+            };
     }
 
     public class ComponentFactoryContext

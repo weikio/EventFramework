@@ -82,13 +82,23 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         }
         
         public static IntegrationFlowBuilder Flow(this IntegrationFlowBuilder builder, Action<IntegrationFlowBuilder> buildFlow, 
-            Predicate<CloudEvent> predicate)
+            Predicate<CloudEvent> predicate = null)
         {
-            Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
+            async Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
                 var instanceManager = context.ServiceProvider.GetRequiredService<ICloudEventsIntegrationFlowManager>();
                 var channelManager = context.ServiceProvider.GetRequiredService<IChannelManager>();
-                
+
+                var flowBuilder = IntegrationFlowBuilder.From();
+                buildFlow(flowBuilder);
+
+                var subflowId = $"system/flows/{builder.Id}/subflows/{context.CurrentComponentIndex}";
+                flowBuilder.WithId(subflowId);
+
+                var subflow = await flowBuilder.Build(context.ServiceProvider);
+                    
+                await instanceManager.Execute(subflow);
+
                 var flowComponent = new CloudEventsComponent(async ev =>
                 {
                     if (!string.IsNullOrWhiteSpace(context.NextComponentChannelName))
@@ -96,14 +106,17 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                         var ext = new EventFrameworkIntegrationFlowEndpointEventExtension(context.NextComponentChannelName);
                         ext.Attach(ev);
                     }
-                    
-                    var aggr = context.ServiceProvider.GetRequiredService<ICloudEventAggregator>();
-                    await aggr.Publish(ev);
 
-                    return ev;
-                });
+                    var targetFlow = instanceManager.Get(subflowId);
+                    var targetFlowInputChannel = targetFlow.InputChannel;
 
-                return Task.FromResult(flowComponent);
+                    var targetChannel = channelManager.Get(targetFlowInputChannel);
+                    await targetChannel.Send(ev);
+
+                    return null;
+                }, predicate);
+
+                return flowComponent;
             }
 
             builder.Register(Handler);

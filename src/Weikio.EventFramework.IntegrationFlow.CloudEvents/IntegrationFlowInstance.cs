@@ -10,6 +10,17 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     {
         private readonly Abstractions.IntegrationFlow _integrationFlow;
         private readonly IntegrationFlowInstanceOptions _options;
+
+        public IntegrationFlowInstanceOptions FlowInstanceOptions
+        {
+            get => _options;
+        }
+        
+        public Abstractions.IntegrationFlow IntegrationFlow
+        {
+            get => _integrationFlow;
+        }
+        
         public string Id
         {
             get => _options.Id;
