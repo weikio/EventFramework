@@ -112,7 +112,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         }
         
         public static IntegrationFlowBuilder Flow(this IntegrationFlowBuilder builder, string flowId, 
-            Predicate<CloudEvent> predicate)
+            Predicate<CloudEvent> predicate = null)
         {
             Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
@@ -134,7 +134,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                     await targetChannel.Send(ev);
 
                     return null;
-                });
+                }, predicate);
 
                 return Task.FromResult(flowComponent);
             }

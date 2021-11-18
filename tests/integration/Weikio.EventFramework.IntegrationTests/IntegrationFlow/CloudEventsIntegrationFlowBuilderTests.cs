@@ -526,27 +526,100 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         [Fact]
         public async Task CanRunSubflowWithName()
         {
-            throw new NotImplementedException();
+            var server = Init();
+            var handlerCounter = new Counter();
+            var subflowCounter = new Counter();
 
-            // var server = Init();
-            // var handlerCounter = new Counter();
-            //
-            // var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
-            //     .Subflow(ev => builder =>
-            //     {
-            //     })
-            //     .Filter(ev => ev.Type != "CounterEvent")
-            //     .Handle<FlowHandler>(configure: handler =>
-            //     {
-            //         handler.Counter = handlerCounter;
-            //     });
-            //
-            // var flow = await flowBuilder.Build(server);
-            //
-            // var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
-            // await manager.Execute(flow);
-            //
-            // await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+            var subflowBuilder = IntegrationFlowBuilder.From()
+                .WithId("mysub")
+                .Handle(ev =>
+                {
+                    subflowCounter.Increment();
+                });
+            
+            var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
+                .Flow("mysub")
+                .Transform(ev =>
+                {
+                    return ev;
+                })
+                .Handle(ev =>
+                {
+                    handlerCounter.Increment();
+                });
+
+            var subflow = await subflowBuilder.Build(server);
+            var flow = await flowBuilder.Build(server);
+            
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+
+            await manager.Execute(subflow);
+            await manager.Execute(flow);
+            
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+            
+            Assert.Equal(handlerCounter.Get(), subflowCounter.Get());
+        }
+        
+        [Fact]
+        public async Task CanRunSubflowWithNameAndPredicate()
+        {
+            var server = Init(services =>
+            {
+                services.AddChannel("local");
+            });
+            
+            var handlerCounter = new Counter();
+            var subflowCounter = new Counter();
+
+            var subflowBuilder = IntegrationFlowBuilder.From()
+                .WithId("mysub")
+                .Handle(ev =>
+                {
+                    subflowCounter.Increment();
+                });
+            
+            var flowBuilder = IntegrationFlowBuilder.From("local")
+                .Flow("mysub", ev =>
+                {
+                    var number = ev.To<CounterEvent>().Object.CurrentCount;
+
+                    if ((decimal)number % 2 == 0)
+                    {
+                        return true;
+                    }
+
+                    return false;
+                })
+                .Transform(ev =>
+                {
+                    return ev;
+                })
+                .Handle(ev =>
+                {
+                    handlerCounter.Increment();
+                });
+
+            var subflow = await subflowBuilder.Build(server);
+            var flow = await flowBuilder.Build(server);
+            
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+
+            await manager.Execute(subflow);
+            await manager.Execute(flow);
+
+            var localChannel = server.GetRequiredService<IChannelManager>().Get("local");
+
+            for (var i = 0; i < 10; i++)
+            {
+                var counterEvent = new CounterEvent() { CurrentCount = i };
+
+                await localChannel.Send(counterEvent);
+            }
+            
+            await ContinueWhen(() => handlerCounter.Get() == 10, timeout: TimeSpan.FromSeconds(5));
+            
+            Assert.Equal(5, subflowCounter.Get());
         }
 
         [Fact]

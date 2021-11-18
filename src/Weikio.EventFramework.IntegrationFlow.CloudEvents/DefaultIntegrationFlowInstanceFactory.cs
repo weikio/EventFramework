@@ -23,23 +23,21 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
         public async Task<IntegrationFlowInstance> Create(Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options)
         {
-            // Insert a component which adds a IntegrationFlowExtension to the event's attributes
-            var extensionComponent = new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(options.Id));
-            options.Components.Add(extensionComponent);
-
             for (var index = 0; index < options.ComponentFactories.Count; index++)
             {
                 var componentFactory = options.ComponentFactories[index];
                 
-                var componentChannelName = $"system/flows/{options.Id}/componentchannels/{index}";
+                // TODO: Find a place for this
+                var componentChannelName = $"system/flows/{options.Id}/componentchannels/{options.Components.Count}";
 
-                var hasNextComponent = options.Components.Count > index + 1;
+                var hasNextComponent = options.ComponentFactories.Count > index + 1;
 
                 string nextComponentChannelName = null;
 
                 if (hasNextComponent)
                 {
-                    nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{index + 1}";
+                    // TODO: Find a place for this
+                    nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{ options.Components.Count + 1}";
                 }
                 
                 var context = new ComponentFactoryContext(_serviceProvider, integrationFlow, options, options.Components.Count, 
@@ -68,6 +66,10 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 }
 
                 var channel = _serviceProvider.GetRequiredService<IChannelManager>().Get(targetChannel);
+                
+                // After a transfer, we want to remove the attribute so that the event doesn't get stuck in a loop
+                attrs.Remove(EventFrameworkIntegrationFlowEndpointEventExtension.EventFrameworkIntegrationFlowEndpointAttributeName);
+                
                 await channel.Send(ev);
             }));
 
