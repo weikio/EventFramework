@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -9,10 +10,12 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     public class IntegrationFlowProvider : List<IIntegrationFlowCatalog>
     {
         private readonly ILogger<IntegrationFlowProvider> _logger;
+        private readonly IEnumerable<MyFlow> _flows;
 
-        public IntegrationFlowProvider(IEnumerable<IIntegrationFlowCatalog> catalogs, ILogger<IntegrationFlowProvider> logger)
+        public IntegrationFlowProvider(IEnumerable<IIntegrationFlowCatalog> catalogs, ILogger<IntegrationFlowProvider> logger, IEnumerable<MyFlow> flows)
         {
             _logger = logger;
+            _flows = flows;
             AddRange(catalogs);
         }
 
@@ -28,33 +31,26 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         {
             var result = new List<IntegrationFlowDefinition>();
 
-            foreach (var catalog in this)
+            foreach (var catalog in _flows)
             {
-                var definitionsInCatalog = catalog.List();
-                result.AddRange(definitionsInCatalog);
+                result.Add(catalog.Definition);
             }
 
             return result;
         }
 
-        public Type Get(IntegrationFlowDefinition definition)
+        public CloudEventsIntegrationFlowFactory Get(IntegrationFlowDefinition definition)
         {
-            foreach (var catalog in this)
+            foreach (var catalog in _flows)
             {
-                var integrationFlow = catalog.Get(definition);
-
-                if (integrationFlow == null)
+                if (catalog.Definition.Equals( definition))
                 {
-                    continue;
+                    return catalog.Factory;
                 }
-
-                return integrationFlow;
             }
 
-            var allDefinitions = List();
-
             throw new UnknownIntegrationFlowException(
-                $"No integration flow found with definition {definition}. Available definitions:{Environment.NewLine}{string.Join(Environment.NewLine, allDefinitions)}");
+                $"No integration flow found with definition {definition}. Available definitions:{Environment.NewLine}{string.Join(Environment.NewLine, _flows.Select(x => x.Definition.Name))}");
         }
 
 

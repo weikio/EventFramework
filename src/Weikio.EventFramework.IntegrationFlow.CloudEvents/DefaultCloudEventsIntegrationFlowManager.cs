@@ -289,21 +289,25 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             _logger.LogInformation("Creating Integration Flow using registered flow with definition {Definition}", flowDefinition);
 
             var flowType = _integrationFlowProvider.Get(flowDefinition);
-            
-            CloudEventsIntegrationFlowBase flow;
 
-            if (configuration != null)
-            {
-                flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType, new object[] { configuration });
-            }
-            else
-            {
-                flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType);
-            }
+            var flowInstance = await flowType.Create(_serviceProvider);
 
-            var result = await flow.Flow.Build(_serviceProvider);
+            return flowInstance;
 
-            return result;
+            // CloudEventsIntegrationFlowBase flow;
+            //
+            // if (configuration != null)
+            // {
+            //     flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType, new object[] { configuration });
+            // }
+            // else
+            // {
+            //     flow = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(_serviceProvider, flowType);
+            // }
+            //
+            // var result = await flow.Flow.Build(_serviceProvider);
+            //
+            // return result;
         }
 
         public List<IntegrationFlowInstance> List()

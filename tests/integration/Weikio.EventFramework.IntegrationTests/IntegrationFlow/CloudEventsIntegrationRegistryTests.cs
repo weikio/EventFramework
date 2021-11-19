@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
@@ -32,7 +33,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             Assert.NotNull(flow);
         }
-        
+
         [Fact]
         public void BuiltFlowsAreRegistered()
         {
@@ -45,6 +46,41 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             var flows = provider.List();
 
             Assert.NotEmpty(flows);
+        }
+        
+        [Fact]
+        public void CanBuiltFlowWithId()
+        {
+            var server = Init(services =>
+            {
+                services.AddIntegrationFlow(IntegrationFlowBuilder
+                    .From()
+                    .Channel("test")
+                    .WithId("myflow")
+                    .);
+            });
+
+            var provider = server.GetRequiredService<IntegrationFlowProvider>();
+            var flows = provider.List();
+
+            Assert.NotEmpty(flows);
+        }
+
+        [Fact]
+        public async Task CanCreateAnotherInstanceOfRunningFlow()
+        {
+            var server = Init(services =>
+            {
+                services.AddIntegrationFlow(IntegrationFlowBuilder.From().Channel("test"));
+            });
+
+            var provider = server.GetRequiredService<IntegrationFlowProvider>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+
+            var flow = provider.List().First();
+
+            var anotherFlow = await manager.Create(flow, "anotherinstance");
+            await manager.Execute(anotherFlow);
         }
 
         [Fact]

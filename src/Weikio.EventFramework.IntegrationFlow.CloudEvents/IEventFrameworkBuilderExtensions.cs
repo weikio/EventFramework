@@ -130,8 +130,17 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             services.AddCloudEventIntegrationFlows();
 
             services.AddSingleton<CloudEventsIntegrationFlowFactory>(factory);
+            services.RegisterMyflow(factory);
             
             return services;
+        }
+        
+        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, CloudEventsIntegrationFlowFactory factory)
+        {
+            var services = builder.Services;
+            services.AddIntegrationFlow(factory);
+            
+            return builder;
         }
 
         public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, IntegrationFlowInstance flowInstance)
@@ -164,5 +173,30 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return services;
         }
+        
+        public static IServiceCollection RegisterMyflow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory)
+        {
+            // How can we generate the definition if no details is given? I suppose we could just use the guid for now
+            var definition = new IntegrationFlowDefinition(Guid.NewGuid().ToString(), new Version(1, 0, 0));
+
+            services.RegisterMyflow(factory, definition);
+
+            return services;
+        }
+        
+        public static IServiceCollection RegisterMyflow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory, IntegrationFlowDefinition definition)
+        {
+            var myFlow = new MyFlow() { Definition = definition, Factory = factory };
+
+            services.AddSingleton(myFlow);
+
+            return services;
+        }
+    }
+
+    public class MyFlow
+    {
+        public CloudEventsIntegrationFlowFactory Factory { get; set; }
+        public IntegrationFlowDefinition Definition { get; set; }
     }
 }

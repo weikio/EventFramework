@@ -18,6 +18,8 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         private Type _eventSourceType;
         public string Source { get; private set; }
         public string Id { get; private set; } = "flow_" + Guid.NewGuid();
+        public Version Version { get; private set; } = new Version(1, 0, 0);
+
         public string Description { get; private set; } = "";
         public object Configuration { get; private set; } = null;
         public List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)> Interceptors { get; set; } =
@@ -82,6 +84,13 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         public IntegrationFlowBuilder WithSource(string source)
         {
             Source = source;
+
+            return this;
+        }
+        
+        public IntegrationFlowBuilder WithVersion(Version version)
+        {
+            Version = version;
 
             return this;
         }
