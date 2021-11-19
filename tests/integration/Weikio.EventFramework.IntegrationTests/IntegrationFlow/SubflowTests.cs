@@ -153,27 +153,24 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         [Fact]
         public async Task SubflowReturnsToMainFlow()
         {
-            throw new NotImplementedException();
-
-            // var server = Init();
-            // var handlerCounter = new Counter();
-            //
-            // var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
-            //     .Subflow(ev => builder =>
-            //     {
-            //     })
-            //     .Filter(ev => ev.Type != "CounterEvent")
-            //     .Handle<FlowHandler>(configure: handler =>
-            //     {
-            //         handler.Counter = handlerCounter;
-            //     });
-            //
-            // var flow = await flowBuilder.Build(server);
-            //
-            // var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
-            // await manager.Execute(flow);
-            //
-            // await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+            var server = Init();
+            var handlerCounter = new Counter();
+            
+            var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
+                .Flow(builder =>
+                {
+                })
+                .Handle<FlowHandler>(configure: handler =>
+                {
+                    handler.Counter = handlerCounter;
+                });
+            
+            var flow = await flowBuilder.Build(server);
+            
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+            await manager.Execute(flow);
+            
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
         }
     }
 }

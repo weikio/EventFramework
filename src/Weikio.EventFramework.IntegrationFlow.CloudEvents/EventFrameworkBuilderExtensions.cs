@@ -10,6 +10,13 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         {
             var services = builder.Services;
 
+            services.AddCloudEventIntegrationFlows();
+            
+            return builder;
+        }
+        
+        public static IServiceCollection AddCloudEventIntegrationFlows(this IServiceCollection services)
+        {
             services.AddSingleton<DefaultCloudEventsIntegrationFlowManager>();
             services.AddHostedService<IntegrationFlowProviderStartupHandler>();
             services.AddHostedService<IntegrationFlowStartupService>();
@@ -17,7 +24,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             services.TryAddSingleton<IntegrationFlowProvider>();
             services.TryAddSingleton<IIntegrationFlowInstanceFactory, DefaultIntegrationFlowInstanceFactory>();
             
-            return builder;
+            return services;
         }
     }
 }

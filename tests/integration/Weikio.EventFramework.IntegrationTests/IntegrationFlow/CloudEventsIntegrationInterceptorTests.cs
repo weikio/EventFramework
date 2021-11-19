@@ -49,7 +49,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
             await ContinueWhen(() => counter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
 
             // The automatically added EventFrameworkIntegrationFlowEventExtension counts as one
-            Assert.Equal(4, counterInterceptor.Counter);
+            Assert.Equal(6, counterInterceptor.Counter);
         }
     }
     

@@ -32,6 +32,20 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
 
             Assert.NotNull(flow);
         }
+        
+        [Fact]
+        public void BuiltFlowsAreRegistered()
+        {
+            var server = Init(services =>
+            {
+                services.AddIntegrationFlow(IntegrationFlowBuilder.From().Channel("test"));
+            });
+
+            var provider = server.GetRequiredService<IntegrationFlowProvider>();
+            var flows = provider.List();
+
+            Assert.NotEmpty(flows);
+        }
 
         [Fact]
         public void UnknownIntegrationFlowThrows()

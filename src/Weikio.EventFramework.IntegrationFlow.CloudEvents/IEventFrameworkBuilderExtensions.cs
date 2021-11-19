@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
@@ -11,22 +12,6 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
     public static class IEventFrameworkBuilderExtensions
     {
-        public static IEventFrameworkBuilder AddIntegrationFlows(this IEventFrameworkBuilder builder)
-        {
-            var services = builder.Services;
-            services.AddIntegrationFlows();
-
-            return builder;
-        }
-
-        public static IServiceCollection AddIntegrationFlows(this IServiceCollection services)
-        {
-            services.AddHostedService<IntegrationFlowStartupService>();
-            services.TryAddSingleton<ICloudEventsIntegrationFlowManager, DefaultCloudEventsIntegrationFlowManager>();
-
-            return services;
-        }
-
         public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, IntegrationFlowBuilder flowBuilder)
         {
             var services = builder.Services;
@@ -45,9 +30,17 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
         public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, IntegrationFlowBuilder flowBuilder)
         {
-            services.AddIntegrationFlows();
-            services.AddSingleton(flowBuilder);
+            services.AddCloudEventIntegrationFlows();
+            
+            var factory = new CloudEventsIntegrationFlowFactory(async serviceProvider =>
+            {
+                var flow = await flowBuilder.Build(serviceProvider);
 
+                return flow;
+            });
+
+            services.AddIntegrationFlow(factory);
+            
             return services;
         }
 
@@ -107,46 +100,59 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, Type flowType, MulticastDelegate configure = null,
             object configuration = null)
         {
-            services.AddIntegrationFlows();
+            services.AddCloudEventIntegrationFlows();
 
-            services.AddSingleton<CloudEventsIntegrationFlowFactory>(provider =>
+            var factory = new CloudEventsIntegrationFlowFactory(serviceProvider =>
             {
-                var result = new CloudEventsIntegrationFlowFactory(serviceProvider =>
+                CloudEventsIntegrationFlowBase instance;
+
+                if (configuration != null)
                 {
-                    CloudEventsIntegrationFlowBase instance;
+                    instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType, new object[] { configuration });
+                }
+                else
+                {
+                    instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType);
+                }
 
-                    if (configuration != null)
-                    {
-                        instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType, new object[] { configuration });
-                    }
-                    else
-                    {
-                        instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(provider, flowType);
-                    }
+                configure?.DynamicInvoke(instance);
 
-                    configure?.DynamicInvoke(instance);
-
-                    return instance.Flow.Build(serviceProvider);
-                });
-
-                return result;
+                return instance.Flow.Build(serviceProvider);
             });
 
+            services.AddIntegrationFlow(factory);
+            
+            return services;
+        }
+        
+        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory)
+        {
+            services.AddCloudEventIntegrationFlows();
+
+            services.AddSingleton<CloudEventsIntegrationFlowFactory>(factory);
+            
             return services;
         }
 
         public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, IntegrationFlowInstance flowInstance)
         {
-            services.AddIntegrationFlows();
-            services.AddSingleton(flowInstance);
+            services.AddCloudEventIntegrationFlows();
 
+            var factory = new CloudEventsIntegrationFlowFactory(provider => Task.FromResult(flowInstance));
+            services.AddIntegrationFlow(factory);
+            
             return services;
         }
 
         public static IServiceCollection RegisterIntegrationFlow<TFlowType>(this IServiceCollection services)
         {
-            var typeOfIntegrationFlow = typeof(TFlowType);
-    
+            services.RegisterIntegrationFlow(typeof(TFlowType));
+
+            return services;
+        }
+        
+        public static IServiceCollection RegisterIntegrationFlow(this IServiceCollection services, Type typeOfIntegrationFlow)
+        {
             var typePluginCatalog = new TypePluginCatalog(typeOfIntegrationFlow);
 
             services.AddSingleton<IIntegrationFlowCatalog>(provider =>
