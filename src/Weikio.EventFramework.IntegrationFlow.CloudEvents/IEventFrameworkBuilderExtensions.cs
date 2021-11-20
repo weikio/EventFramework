@@ -39,7 +39,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 return flow;
             });
 
-            services.AddIntegrationFlow(factory);
+            services.AddIntegrationFlow(factory, new IntegrationFlowDefinition(flowBuilder.Id, flowBuilder.Description, flowBuilder.Version));
             
             return services;
         }
@@ -125,12 +125,12 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return services;
         }
         
-        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory)
+        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory, IntegrationFlowDefinition definition = null)
         {
             services.AddCloudEventIntegrationFlows();
 
             services.AddSingleton<CloudEventsIntegrationFlowFactory>(factory);
-            services.RegisterMyflow(factory);
+            services.RegisterMyflow(factory, definition);
             
             return services;
         }

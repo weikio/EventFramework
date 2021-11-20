@@ -87,7 +87,14 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return this;
         }
-        
+
+        public IntegrationFlowBuilder WithVersion(string version)
+        {
+            WithVersion(System.Version.Parse(version));
+
+            return this;
+        }
+
         public IntegrationFlowBuilder WithVersion(Version version)
         {
             Version = version;

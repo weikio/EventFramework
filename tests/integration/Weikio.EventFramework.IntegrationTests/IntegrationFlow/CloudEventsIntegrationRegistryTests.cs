@@ -56,14 +56,66 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                 services.AddIntegrationFlow(IntegrationFlowBuilder
                     .From()
                     .Channel("test")
-                    .WithId("myflow")
-                    .);
+                    .WithId("myflow"));
             });
 
             var provider = server.GetRequiredService<IntegrationFlowProvider>();
-            var flows = provider.List();
+            var flow = provider.Get("myflow");
+            
+            Assert.NotNull(flow);
+        }
+        
+        [Fact]
+        public void CanBuiltFlowWithIdAndVersion()
+        {
+            var server = Init(services =>
+            {
+                services.AddIntegrationFlow(IntegrationFlowBuilder
+                    .From()
+                    .Channel("test")
+                    .WithId("myflow")
+                    .WithVersion("1.2.5"));
+            });
 
-            Assert.NotEmpty(flows);
+            var provider = server.GetRequiredService<IntegrationFlowProvider>();
+            var flow = provider.Get(("myflow", "1.2.5"));
+            
+            Assert.NotNull(flow);
+        }
+        
+        [Fact]
+        public async Task CanCreateInstanceOfFlowWithId()
+        {
+            var executed = false;
+            var server = Init(services =>
+            {
+                services.AddChannel("local");
+
+                services.AddChannel("test", (serviceProvider, options) =>
+                {
+                    options.Endpoint = ev => executed = true;
+                });
+                
+                services.AddIntegrationFlow(IntegrationFlowBuilder
+                    .From("local")
+                    .Channel("test")
+                    .WithId("myflow"));
+            });
+
+            var provider = server.GetRequiredService<IntegrationFlowProvider>();
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+            var flow = provider.Get("myflow");
+
+            var flowInstance = await flow.Create(server);
+
+            await manager.Execute(flowInstance);
+
+            var msg = "hello";
+            var inputChannel = server.GetRequiredService<IChannelManager>().Get("local");
+
+            await inputChannel.Send(msg);
+
+            await ContinueWhen(() => executed);
         }
 
         [Fact]

@@ -30,7 +30,7 @@ namespace Weikio.EventFramework.IntegrationFlow
         
         public static implicit operator IntegrationFlowDefinition(string name)
         {
-            return new IntegrationFlowDefinition(name, Version.Parse("1.0.0.0"));
+            return new IntegrationFlowDefinition(name, Version.Parse("1.0.0"));
         }
         
         public static implicit operator IntegrationFlowDefinition((string Name, Version Version) nameAndVersion)
