@@ -13,10 +13,10 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<IntegrationFlowStartupService> _logger;
         private readonly ICloudEventsIntegrationFlowManager _flowManager;
-        private readonly List<CloudEventsIntegrationFlowFactory> _flowFactories;
+        private readonly List<IntegrationFlowInstanceFactory> _flowFactories;
 
         public IntegrationFlowStartupService(IServiceProvider serviceProvider, ILogger<IntegrationFlowStartupService> logger, ICloudEventsIntegrationFlowManager flowManager,
-            IEnumerable<CloudEventsIntegrationFlowFactory> flowFactories)
+            IEnumerable<IntegrationFlowInstanceFactory> flowFactories)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;

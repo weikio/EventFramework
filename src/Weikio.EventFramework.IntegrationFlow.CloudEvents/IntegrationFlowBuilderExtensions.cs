@@ -92,12 +92,14 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                 var flowBuilder = IntegrationFlowBuilder.From();
                 buildFlow(flowBuilder);
 
-                var subflowId = $"system/flows/{builder.Id}/subflows/{context.CurrentComponentIndex}";
-                flowBuilder.WithId(subflowId);
+                var subflowId = $"system/flows/{context.Options.Id}/subflows/{context.CurrentComponentIndex}";
 
                 var subflow = await flowBuilder.Build(context.ServiceProvider);
                     
-                await instanceManager.Execute(subflow);
+                await instanceManager.Execute(new IntegrationFlowInstance(subflow, new IntegrationFlowInstanceOptions()
+                {
+                    Id = subflowId
+                }));
 
                 var flowComponent = new CloudEventsComponent(async ev =>
                 {
@@ -168,7 +170,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
                 for (var index = 0; index < branches.Length; index++)
                 {
-                    var branchChannelName = $"system/flows/{builder.Id}/branches/input_{context.CurrentComponentIndex}/{index}";
+                    var branchChannelName = $"system/flows/{context.Options.Id}/branches/input_{context.CurrentComponentIndex}/{index}";
                     var branchChannelOptions = new CloudEventsChannelOptions() { Name = branchChannelName };
                     var branchInputChannel = new CloudEventsChannel(branchChannelOptions);
                     channelManager.Add(branchInputChannel);
@@ -177,11 +179,13 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                     var flowBuilder = IntegrationFlowBuilder.From(branchChannelName);
                     branch.BuildBranch(flowBuilder);
 
-                    flowBuilder.WithId($"{builder.Id}/branches/{context.CurrentComponentIndex}/{index}");
-
+                    var branchId = $"{context.Options.Id}/branches/{context.CurrentComponentIndex}/{index}"; 
                     var branchFlow = await flowBuilder.Build(context.ServiceProvider);
                     
-                    await instanceManager.Execute(branchFlow);
+                    await instanceManager.Execute(new IntegrationFlowInstance(branchFlow, new IntegrationFlowInstanceOptions()
+                    {
+                        Id = branchId
+                    }));
 
                     createdFlows.Add((branch.Predicate, branchChannelName));
                 }
@@ -280,7 +284,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
                     var flowId = attrs[EventFrameworkIntegrationFlowEventExtension.EventFrameworkIntegrationFlowAttributeName] as string;
 
-                    return Task.FromResult(string.Equals(builder.Id, flowId));
+                    return Task.FromResult(string.Equals(context.Options.Id, flowId));
                 });
 
                 if (handlerType != null)

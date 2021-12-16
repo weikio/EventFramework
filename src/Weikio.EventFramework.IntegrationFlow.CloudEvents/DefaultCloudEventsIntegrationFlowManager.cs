@@ -41,6 +41,20 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             _options = options;
         }
 
+        public async Task Execute(IntegrationFlow integrationFlow)
+        {
+            var options = new IntegrationFlowInstanceOptions() { Id = "flowinstance_" + Guid.NewGuid() };
+
+            await Execute(integrationFlow, options);
+        }
+        
+        public async Task Execute(IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions instanceOptions)
+        {
+            var instance = await _instanceFactory.Create(integrationFlow, instanceOptions);
+
+            await Execute(instance);
+        }
+        
         public async Task Execute(IntegrationFlowInstance flowInstance)
         {
             _logger.LogInformation("Executing integration flow with ID {Id}", flowInstance.Id);

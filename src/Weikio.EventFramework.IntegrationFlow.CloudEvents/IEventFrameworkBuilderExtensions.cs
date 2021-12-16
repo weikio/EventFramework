@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -31,16 +33,24 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, IntegrationFlowBuilder flowBuilder)
         {
             services.AddCloudEventIntegrationFlows();
-            
-            var factory = new CloudEventsIntegrationFlowFactory(async serviceProvider =>
+
+            var factory = new IntegrationFlowInstanceFactory(async serviceProvider =>
             {
                 var flow = await flowBuilder.Build(serviceProvider);
 
-                return flow;
+                var options = new IntegrationFlowInstanceOptions()
+                {
+                    Id = "flowinstance_" + Guid.NewGuid()
+                };
+                
+                var instanceFactory = serviceProvider.GetRequiredService<IIntegrationFlowInstanceFactory>();
+                var result = await instanceFactory.Create(flow, options);
+
+                return result;
             });
 
-            services.AddIntegrationFlow(factory, new IntegrationFlowDefinition(flowBuilder.Id, flowBuilder.Description, flowBuilder.Version));
-            
+            services.AddIntegrationFlow(factory, new IntegrationFlowDefinition(flowBuilder.Name, flowBuilder.Description, flowBuilder.Version));
+
             return services;
         }
 
@@ -102,44 +112,56 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         {
             services.AddCloudEventIntegrationFlows();
 
-            var factory = new CloudEventsIntegrationFlowFactory(serviceProvider =>
+            var factory = new IntegrationFlowInstanceFactory(async serviceProvider =>
             {
-                CloudEventsIntegrationFlowBase instance;
+                CloudEventsIntegrationFlowBase flowBase;
 
                 if (configuration != null)
                 {
-                    instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType, new object[] { configuration });
+                    flowBase = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType, new object[] { configuration });
                 }
                 else
                 {
-                    instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType);
+                    flowBase = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType);
                 }
 
-                configure?.DynamicInvoke(instance);
+                configure?.DynamicInvoke(flowBase);
 
-                return instance.Flow.Build(serviceProvider);
+                var flow = await flowBase.Flow.Build(serviceProvider);
+                var instanceFactory = serviceProvider.GetRequiredService<IIntegrationFlowInstanceFactory>();
+
+                var options = new IntegrationFlowInstanceOptions()
+                {
+                    Id = "flowinstance_" + Guid.NewGuid(), Configuration = configuration, Configure = configure
+                };
+                
+                var result = await instanceFactory.Create(flow, options);
+
+                return result;
+                // return instance.Flow.Build(serviceProvider);
             });
 
             services.AddIntegrationFlow(factory);
-            
+
             return services;
         }
-        
-        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory, IntegrationFlowDefinition definition = null)
+
+        public static IServiceCollection AddIntegrationFlow(this IServiceCollection services, IntegrationFlowInstanceFactory instanceFactory,
+            IntegrationFlowDefinition definition = null)
         {
             services.AddCloudEventIntegrationFlows();
 
-            services.AddSingleton<CloudEventsIntegrationFlowFactory>(factory);
-            services.RegisterMyflow(factory, definition);
-            
+            services.AddSingleton<IntegrationFlowInstanceFactory>(instanceFactory);
+            services.RegisterMyflow(instanceFactory, definition);
+
             return services;
         }
-        
-        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, CloudEventsIntegrationFlowFactory factory)
+
+        public static IEventFrameworkBuilder AddIntegrationFlow(this IEventFrameworkBuilder builder, IntegrationFlowInstanceFactory instanceFactory)
         {
             var services = builder.Services;
-            services.AddIntegrationFlow(factory);
-            
+            services.AddIntegrationFlow(instanceFactory);
+
             return builder;
         }
 
@@ -147,9 +169,9 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
         {
             services.AddCloudEventIntegrationFlows();
 
-            var factory = new CloudEventsIntegrationFlowFactory(provider => Task.FromResult(flowInstance));
+            var factory = new IntegrationFlowInstanceFactory(provider => Task.FromResult(flowInstance));
             services.AddIntegrationFlow(factory);
-            
+
             return services;
         }
 
@@ -159,10 +181,44 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return services;
         }
-        
+
         public static IServiceCollection RegisterIntegrationFlow(this IServiceCollection services, Type typeOfIntegrationFlow)
         {
             var typePluginCatalog = new TypePluginCatalog(typeOfIntegrationFlow);
+
+            // Task<IntegrationFlowInstance> CreateInstance(IServiceProvider serviceProvider)
+            // {
+            //     
+            // }
+            //
+            // async Task<IntegrationFlowDefinition> CreateDefinition(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+            // {
+            //     var catalog = new PluginFrameworkIntegrationFlowCatalog(typePluginCatalog);
+            //     await catalog.Initialize(cancellationToken);
+            //
+            //     var plugin = catalog.Single();
+            //
+            //     var result = new IntegrationFlowDefinition(plugin.Name, plugin.Version);
+            //
+            //     var factory = new IntegrationFlowInstanceFactory(provider =>
+            //     {
+            //         CloudEventsIntegrationFlowBase instance;
+            //
+            //         if (configuration != null)
+            //         {
+            //             instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType, new object[] { configuration });
+            //         }
+            //         else
+            //         {
+            //             instance = (CloudEventsIntegrationFlowBase)ActivatorUtilities.CreateInstance(serviceProvider, flowType);
+            //         }
+            //
+            //         configure?.DynamicInvoke(instance);
+            //
+            //         return instance.Flow.Build(serviceProvider);
+            //     });
+            //     return result;
+            // }
 
             services.AddSingleton<IIntegrationFlowCatalog>(provider =>
             {
@@ -173,22 +229,24 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return services;
         }
-        
-        public static IServiceCollection RegisterMyflow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory)
+
+        public static IServiceCollection RegisterMyflow(this IServiceCollection services, IntegrationFlowInstanceFactory instanceFactory)
         {
             // How can we generate the definition if no details is given? I suppose we could just use the guid for now
             var definition = new IntegrationFlowDefinition(Guid.NewGuid().ToString(), new Version(1, 0, 0));
 
-            services.RegisterMyflow(factory, definition);
+            services.RegisterMyflow(instanceFactory, definition);
 
             return services;
         }
-        
-        public static IServiceCollection RegisterMyflow(this IServiceCollection services, CloudEventsIntegrationFlowFactory factory, IntegrationFlowDefinition definition)
+
+        public static IServiceCollection RegisterMyflow(this IServiceCollection services, IntegrationFlowInstanceFactory instanceFactory,
+            IntegrationFlowDefinition definition)
         {
-            var myFlow = new MyFlow() { Definition = definition, Factory = factory };
+            var myFlow = new MyFlow() { Definition = definition, InstanceFactory = instanceFactory };
 
             services.AddSingleton(myFlow);
+            services.AddSingleton(definition);
 
             return services;
         }
@@ -196,7 +254,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
     public class MyFlow
     {
-        public CloudEventsIntegrationFlowFactory Factory { get; set; }
+        public IntegrationFlowInstanceFactory InstanceFactory { get; set; }
         public IntegrationFlowDefinition Definition { get; set; }
     }
 }

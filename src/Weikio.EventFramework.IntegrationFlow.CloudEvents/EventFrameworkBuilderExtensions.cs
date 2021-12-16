@@ -23,6 +23,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             services.TryAddSingleton<ICloudEventsIntegrationFlowManager, DefaultCloudEventsIntegrationFlowManager>();
             services.TryAddSingleton<IntegrationFlowProvider>();
             services.TryAddSingleton<IIntegrationFlowInstanceFactory, DefaultIntegrationFlowInstanceFactory>();
+            services.TryAddSingleton<IntegrationFlowDefinitionProvider>();
             
             return services;
         }

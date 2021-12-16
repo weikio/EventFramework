@@ -49,14 +49,14 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         }
         
         [Fact]
-        public void CanBuiltFlowWithId()
+        public void CanBuiltFlowWithName()
         {
             var server = Init(services =>
             {
                 services.AddIntegrationFlow(IntegrationFlowBuilder
                     .From()
                     .Channel("test")
-                    .WithId("myflow"));
+                    .WithName("myflow"));
             });
 
             var provider = server.GetRequiredService<IntegrationFlowProvider>();
@@ -66,14 +66,14 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         }
         
         [Fact]
-        public void CanBuiltFlowWithIdAndVersion()
+        public void CanBuiltFlowWithNameAndVersion()
         {
             var server = Init(services =>
             {
                 services.AddIntegrationFlow(IntegrationFlowBuilder
                     .From()
                     .Channel("test")
-                    .WithId("myflow")
+                    .WithName("myflow")
                     .WithVersion("1.2.5"));
             });
 
@@ -84,7 +84,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         }
         
         [Fact]
-        public async Task CanCreateInstanceOfFlowWithId()
+        public async Task CanCreateInstanceOfFlowWithName()
         {
             var executed = false;
             var server = Init(services =>
@@ -99,7 +99,7 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
                 services.AddIntegrationFlow(IntegrationFlowBuilder
                     .From("local")
                     .Channel("test")
-                    .WithId("myflow"));
+                    .WithName("myflow"));
             });
 
             var provider = server.GetRequiredService<IntegrationFlowProvider>();

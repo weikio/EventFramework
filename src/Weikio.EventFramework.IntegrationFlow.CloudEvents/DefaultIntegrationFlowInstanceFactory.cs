@@ -25,39 +25,39 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             _options = options;
         }
 
-        public async Task<IntegrationFlowInstance> Create(Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options)
+        public async Task<IntegrationFlowInstance> Create(IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options)
         {
             // Component channel names are created based on the index, so 0, 1, 2 etc.
             // Is there any use for the fact that we use index numbers? Maybe just give Guid to the component and use that as channel name.
             // Or, why we create the components at this point? Why doesn't the DefaultCloudEventsIntegrationFlowManager create them?
             // Or maybe the channels should be created here
-            for (var index = 0; index < options.ComponentFactories.Count; index++)
+            for (var index = 0; index < integrationFlow.ComponentFactories.Count; index++)
             {
-                var componentFactory = options.ComponentFactories[index];
+                var componentFactory = integrationFlow.ComponentFactories[index];
                 
                 // TODO: Find a place for this
-                var componentChannelName = $"system/flows/{options.Id}/componentchannels/{options.Components.Count}";
+                var componentChannelName = $"system/flows/{options.Id}/componentchannels/{integrationFlow.Components.Count}";
 
-                var hasNextComponent = options.ComponentFactories.Count > index + 1;
+                var hasNextComponent = integrationFlow.ComponentFactories.Count > index + 1;
 
                 string nextComponentChannelName = null;
 
                 if (hasNextComponent)
                 {
                     // TODO: Find a place for this
-                    nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{ options.Components.Count + 1}";
+                    nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{ integrationFlow.Components.Count + 1}";
                 }
                 
-                var context = new ComponentFactoryContext(_serviceProvider, integrationFlow, options, options.Components.Count, 
+                var context = new ComponentFactoryContext(_serviceProvider, integrationFlow, options, integrationFlow.Components.Count, 
                     componentChannelName, 
                     nextComponentChannelName);
 
                 var component = await componentFactory(context);
-                options.Components.Add(component);
+                integrationFlow.Components.Add(component);
             }
 
             // Insert an endpoint which transfer the event to the desired channel if event has attribute eventFramework_integrationFlow_endpoint
-            options.Endpoints.Add(new CloudEventsEndpoint(async ev =>
+            integrationFlow.Endpoints.Add(new CloudEventsEndpoint(async ev =>
             {
                 var attrs = ev.GetAttributes();
 
@@ -89,7 +89,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
     public class IntegrationFlowChannelDefaultComponents
     {
-        public Func<Abstractions.IntegrationFlow, IntegrationFlowInstanceOptions, List<CloudEventsComponent>> ComponentsFactory { get; set; } =
+        public Func<IntegrationFlow, IntegrationFlowInstanceOptions, List<CloudEventsComponent>> ComponentsFactory { get; set; } =
             (flow, options) =>
             {
                 var result = new List<CloudEventsComponent> { new AddExtensionComponent(ev => new EventFrameworkIntegrationFlowEventExtension(options.Id)) };
@@ -101,13 +101,13 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
     public class ComponentFactoryContext
     {
         public IServiceProvider ServiceProvider { get; }
-        public Abstractions.IntegrationFlow IntegrationFlow { get; }
+        public IntegrationFlow IntegrationFlow { get; }
         public IntegrationFlowInstanceOptions Options { get; }
         public int CurrentComponentIndex { get; }
         public string CurrentComponentChannelName { get; set; }
         public string NextComponentChannelName { get; set; }
 
-        public ComponentFactoryContext(IServiceProvider serviceProvider, Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options,
+        public ComponentFactoryContext(IServiceProvider serviceProvider, IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options,
             int currentComponentIndex, string currentComponentChannelName, string nextComponentChannelName)
         {
             ServiceProvider = serviceProvider;

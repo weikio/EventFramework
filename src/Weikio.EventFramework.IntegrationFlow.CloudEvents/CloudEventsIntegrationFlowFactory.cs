@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
-    public class CloudEventsIntegrationFlowFactory
+    public class IntegrationFlowInstanceFactory
     {
         private readonly Func<IServiceProvider, Task<IntegrationFlowInstance>> _flowFactory;
 
-        public CloudEventsIntegrationFlowFactory(Func<IServiceProvider, Task<IntegrationFlowInstance>> flowFactory)
+        public IntegrationFlowInstanceFactory(Func<IServiceProvider, Task<IntegrationFlowInstance>> flowFactory)
         {
             _flowFactory = flowFactory;
         }

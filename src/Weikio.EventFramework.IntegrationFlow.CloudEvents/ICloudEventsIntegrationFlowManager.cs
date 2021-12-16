@@ -11,5 +11,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
         List<IntegrationFlowInstance> List();
         IntegrationFlowInstance Get(string id);
+        Task Execute(IntegrationFlow integrationFlow);
+        Task Execute(IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions instanceOptions);
     }
 }

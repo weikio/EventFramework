@@ -10,14 +10,15 @@ using Weikio.EventFramework.EventSource.Abstractions;
 
 namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
-    public class IntegrationFlowBuilder : IBuilder<IntegrationFlowInstance>
+    public class IntegrationFlowBuilder 
     {
         private ArrayList _flow = new ArrayList();
         private List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>> _components = new List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>>();
         private Action<EventSourceInstanceOptions> _configureEventSourceInstance;
         private Type _eventSourceType;
         public string Source { get; private set; }
-        public string Id { get; private set; } = "flow_" + Guid.NewGuid();
+        // public string Id { get; private set; } = "flowinstance_" + Guid.NewGuid();
+        public string Name { get; private set; } = "flow_" + Guid.NewGuid();
         public Version Version { get; private set; } = new Version(1, 0, 0);
 
         public string Description { get; private set; } = "";
@@ -53,10 +54,17 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return builder;
         }
 
+        public IntegrationFlowBuilder WithName(string name)
+        {
+            Name = name;
+
+            return this;
+        }
+        
         public IntegrationFlowBuilder WithId(string id)
         {
-            Id = id;
-
+            // Id = id;
+        
             return this;
         }
         
@@ -66,7 +74,16 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
             return this;
         }
-        
+
+        public IntegrationFlowBuilder WithDefinition(IntegrationFlowDefinition definition)
+        {
+            Definition = definition;
+
+            return this;
+        }
+
+        public IntegrationFlowDefinition Definition { get; set; }
+
         public IntegrationFlowBuilder WithInterceptor(InterceptorTypeEnum interceptorType, IChannelInterceptor interceptor)
         {
             Interceptors.Add((interceptorType, interceptor));
@@ -102,24 +119,32 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return this;
         }
         
-        public async Task<IntegrationFlowInstance> Build(IServiceProvider serviceProvider)
+        public Task<IntegrationFlow> Build(IServiceProvider serviceProvider)
         {
-            var options = new IntegrationFlowInstanceOptions()
+            if (Definition == null)
             {
-                Id = Id,
-                Description = Description,
+                Definition = new IntegrationFlowDefinition { Name = Name, Version = Version, Description = Description };
+            }
+            
+            var integrationFlow = new IntegrationFlow(Definition, _eventSourceType, Source)
+            {
                 ConfigureEventSourceInstanceOptions = _configureEventSourceInstance,
-                Configuration = Configuration,
+                // Configuration = Configuration,
                 Interceptors = Interceptors,
                 ComponentFactories = _components
             };
 
-            var integrationFlow = new Abstractions.IntegrationFlow("test", _eventSourceType, Source);
-
-            var factory = serviceProvider.GetRequiredService<IIntegrationFlowInstanceFactory>();
-            var result = await factory.Create(integrationFlow, options);
-
-            return result;
+            return Task.FromResult(integrationFlow);
+            // var options = new IntegrationFlowInstanceOptions()
+            // {
+            //     Id = Id,
+            //     Description = Description,
+            // };
+            //
+            // var factory = serviceProvider.GetRequiredService<IIntegrationFlowInstanceFactory>();
+            // var result = await factory.Create(integrationFlow, options);
+            //
+            // return result;
         }
 
         public IntegrationFlowBuilder Register(CloudEventsComponent component)

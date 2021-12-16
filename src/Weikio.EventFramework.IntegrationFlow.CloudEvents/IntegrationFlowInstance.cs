@@ -8,7 +8,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 {
     public class IntegrationFlowInstance 
     {
-        private readonly Abstractions.IntegrationFlow _integrationFlow;
+        private readonly IntegrationFlow _integrationFlow;
         private readonly IntegrationFlowInstanceOptions _options;
 
         public IntegrationFlowInstanceOptions FlowInstanceOptions
@@ -16,7 +16,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             get => _options;
         }
         
-        public Abstractions.IntegrationFlow IntegrationFlow
+        public IntegrationFlow IntegrationFlow
         {
             get => _integrationFlow;
         }
@@ -28,27 +28,27 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
         public string Description
         {
-            get => _options.Description;
+            get => _integrationFlow.FlowDefinition.Description;
         }
 
         public Action<EventSourceInstanceOptions> ConfigureEventSourceInstanceOptions
         {
-            get => _options.ConfigureEventSourceInstanceOptions;
+            get => _integrationFlow.ConfigureEventSourceInstanceOptions;
         }
 
         public List<ChannelComponent<CloudEvent>> Components
         {
-            get => _options.Components;
+            get => _integrationFlow.Components;
         }
 
         public List<Endpoint<CloudEvent>> Endpoints
         {
-            get => _options.Endpoints;
+            get => _integrationFlow.Endpoints;
         }
 
         public List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)> Interceptors
         {
-            get => _options.Interceptors;
+            get => _integrationFlow.Interceptors;
         }
 
         public object Configuration
@@ -56,7 +56,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             get => _options.Configuration;
         }
 
-        public IntegrationFlowDefinition FlowDefinition => _options.FlowDefinition;
+        public IntegrationFlowDefinition FlowDefinition => _integrationFlow.FlowDefinition;
         public Type EventSourceType => _integrationFlow.EventSourceType;
 
         public string Source => _integrationFlow.Source;
@@ -69,7 +69,7 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             }
         }
 
-        public IntegrationFlowInstance(Abstractions.IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options)
+        public IntegrationFlowInstance(IntegrationFlow integrationFlow, IntegrationFlowInstanceOptions options)
         {
             _integrationFlow = integrationFlow;
             _options = options;
