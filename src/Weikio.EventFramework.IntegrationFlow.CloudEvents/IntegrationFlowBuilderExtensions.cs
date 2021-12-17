@@ -96,10 +96,10 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
 
                 var subflow = await flowBuilder.Build(context.ServiceProvider);
                     
-                await instanceManager.Execute(new IntegrationFlowInstance(subflow, new IntegrationFlowInstanceOptions()
+                await instanceManager.Execute(subflow, new IntegrationFlowInstanceOptions()
                 {
                     Id = subflowId
-                }));
+                });
 
                 var flowComponent = new CloudEventsComponent(async ev =>
                 {
@@ -126,8 +126,8 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             return builder;
         }
         
-        public static IntegrationFlowBuilder Flow(this IntegrationFlowBuilder builder, string flowId, 
-            Predicate<CloudEvent> predicate = null)
+        public static IntegrationFlowBuilder Flow(this IntegrationFlowBuilder builder, IntegrationFlowDefinition flowDefinition, 
+            Predicate<CloudEvent> predicate = null, string flowId = null)
         {
             Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
@@ -142,7 +142,22 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                         ext.Attach(ev);
                     }
 
-                    var targetFlow = instanceManager.Get(flowId);
+                    IntegrationFlowInstance targetFlow;
+                    if (!string.IsNullOrWhiteSpace(flowId))
+                    {
+                        targetFlow = instanceManager.Get(flowId);
+                    }
+                    else
+                    {
+                        var allFlows = instanceManager.List();
+                        targetFlow = allFlows.FirstOrDefault(x => Equals(x.FlowDefinition, flowDefinition));
+                    }
+
+                    if (targetFlow == null)
+                    {
+                        throw new UnknownIntegrationFlowInstance("", "Couldn't locate target flow using id or flow definition");
+                    }
+                    
                     var targetFlowInputChannel = targetFlow.InputChannel;
 
                     var targetChannel = channelManager.Get(targetFlowInputChannel);
@@ -179,13 +194,12 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
                     var flowBuilder = IntegrationFlowBuilder.From(branchChannelName);
                     branch.BuildBranch(flowBuilder);
 
-                    var branchId = $"{context.Options.Id}/branches/{context.CurrentComponentIndex}/{index}"; 
                     var branchFlow = await flowBuilder.Build(context.ServiceProvider);
                     
-                    await instanceManager.Execute(new IntegrationFlowInstance(branchFlow, new IntegrationFlowInstanceOptions()
+                    await instanceManager.Execute(branchFlow, new IntegrationFlowInstanceOptions()
                     {
-                        Id = branchId
-                    }));
+                        Id = $"{context.Options.Id}/branches/{context.CurrentComponentIndex}/{index}"
+                    });
 
                     createdFlows.Add((branch.Predicate, branchChannelName));
                 }

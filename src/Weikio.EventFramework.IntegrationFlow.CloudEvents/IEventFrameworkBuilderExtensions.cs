@@ -246,7 +246,11 @@ namespace Weikio.EventFramework.IntegrationFlow.CloudEvents
             var myFlow = new MyFlow() { Definition = definition, InstanceFactory = instanceFactory };
 
             services.AddSingleton(myFlow);
-            services.AddSingleton(definition);
+
+            if (definition != null)
+            {
+                services.AddSingleton(definition);
+            }
 
             return services;
         }

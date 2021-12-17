@@ -23,46 +23,44 @@ namespace Weikio.EventFramework.IntegrationTests.IntegrationFlow
         [Fact]
         public async Task CanRunSubflowWithName()
         {
-            throw new NotImplementedException();
-            // var server = Init();
-            // var handlerCounter = new Counter();
-            // var subflowCounter = new Counter();
-            //
-            // var subflowBuilder = IntegrationFlowBuilder.From()
-            //     .WithId("mysub")
-            //     .Handle(ev =>
-            //     {
-            //         subflowCounter.Increment();
-            //     });
-            //
-            // var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
-            //     .Flow("mysub")
-            //     .Transform(ev =>
-            //     {
-            //         return ev;
-            //     })
-            //     .Handle(ev =>
-            //     {
-            //         handlerCounter.Increment();
-            //     });
-            //
-            // var subflow = await subflowBuilder.Build(server);
-            // var flow = await flowBuilder.Build(server);
-            //
-            // var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
-            //
-            // await manager.Execute(subflow);
-            // await manager.Execute(flow);
-            //
-            // await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
-            //
-            // Assert.Equal(handlerCounter.Get(), subflowCounter.Get());
+            var server = Init();
+            var handlerCounter = new Counter();
+            var subflowCounter = new Counter();
+            
+            var subflowBuilder = IntegrationFlowBuilder.From()
+                .WithName("mysub")
+                .Handle(ev =>
+                {
+                    subflowCounter.Increment();
+                });
+            
+            var flowBuilder = IntegrationFlowBuilder.From<NumberEventSource>()
+                .Flow("mysub")
+                .Transform(ev =>
+                {
+                    return ev;
+                })
+                .Handle(ev =>
+                {
+                    handlerCounter.Increment();
+                });
+            
+            var subflow = await subflowBuilder.Build(server);
+            var flow = await flowBuilder.Build(server);
+            
+            var manager = server.GetRequiredService<ICloudEventsIntegrationFlowManager>();
+            
+            await manager.Execute(subflow);
+            await manager.Execute(flow);
+            
+            await ContinueWhen(() => handlerCounter.Get() > 0, timeout: TimeSpan.FromSeconds(5));
+            
+            Assert.Equal(handlerCounter.Get(), subflowCounter.Get());
         }
 
         [Fact]
         public async Task CanRunSubflowWithNameAndPredicate()
         {
-            throw new NotImplementedException();
             var server = Init(services =>
             {
                 services.AddChannel("local");
