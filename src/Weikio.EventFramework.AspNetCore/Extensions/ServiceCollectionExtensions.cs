@@ -11,7 +11,7 @@ using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Extensions;
-using Weikio.EventFramework.IntegrationFlow.CloudEvents;
+using Weikio.EventFramework.EventFlow.CloudEvents;
 using Weikio.EventFramework.Router;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions

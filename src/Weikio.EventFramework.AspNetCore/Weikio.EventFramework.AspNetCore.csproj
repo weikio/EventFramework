@@ -35,7 +35,7 @@
     <ProjectReference Include="..\Weikio.EventFramework.EventGateway\Weikio.EventFramework.EventGateway.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventPublisher\Weikio.EventFramework.EventPublisher.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
-    <ProjectReference Include="..\Weikio.EventFramework.IntegrationFlow.CloudEvents\Weikio.EventFramework.IntegrationFlow.CloudEvents.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventFlow.CloudEvents\Weikio.EventFramework.EventFlow.CloudEvents.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
   </ItemGroup>
