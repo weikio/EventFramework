@@ -299,7 +299,19 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                     var flowId = attrs[EventFrameworkEventFlowEventExtension.EventFrameworkEventFlowAttributeName] as string;
 
-                    return Task.FromResult(string.Equals(context.Options.Id, flowId));
+                    if (string.Equals(context.Options.Id, flowId) == false)
+                    {
+                        return Task.FromResult(false);
+                    }
+                    
+                    if (attrs.ContainsKey(EventFrameworkEventFlowCurrentChanneEventExtension.EventFrameworkEventFlowCurrentChannelAttributeName) == false)
+                    {
+                        return Task.FromResult(false);
+                    }
+
+                    var channelId = attrs[EventFrameworkEventFlowCurrentChanneEventExtension.EventFrameworkEventFlowCurrentChannelAttributeName] as string;
+                    
+                    return Task.FromResult(string.Equals(context.CurrentComponentChannelName, channelId));
                 });
 
                 if (handlerType != null)

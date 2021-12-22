@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
+using Weikio.EventFramework.Channels.Dataflow;
+using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventFlow.Abstractions;
 using Weikio.EventFramework.EventSource;
@@ -50,14 +53,14 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
             return await Execute(eventFlow, options);
         }
-        
+
         public async Task<EventFlowInstance> Execute(EventFlow eventFlow, EventFlowInstanceOptions instanceOptions)
         {
             var instance = await _instanceFactory.Create(eventFlow, instanceOptions);
 
             return await Execute(instance);
         }
-        
+
         public async Task<EventFlowInstance> Execute(EventFlowInstance flowInstance)
         {
             _logger.LogInformation("Executing integration flow with ID {Id}", flowInstance.Id);
@@ -81,13 +84,13 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             // We want every flow to have a output channel where every event ends up
             var endpointChannel = new CloudEventsChannel(flowInstance.OutputChannel);
             _channelManager.Add(endpointChannel);
-            
+
             var outputChannelEndpoint = new CloudEventsEndpoint(async ev =>
             {
                 var nextComponentChannel = _channelManager.Get(flowInstance.OutputChannel);
                 await nextComponentChannel.Send(ev);
             });
-            
+
             flowChannelOptions.Endpoints.Add(outputChannelEndpoint);
 
             if (defaultComponents?.Any() == true)
@@ -107,6 +110,8 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 // TODO: Find a place for this
                 var componentChannelName = $"system/flows/{flowInstance.Id}/componentchannels/{index}";
                 var componentChannelOptions = new CloudEventsChannelOptions() { Name = componentChannelName };
+
+                componentChannelOptions.Interceptors.Add((InterceptorTypeEnum.PreComponents, new CurrentFlowChannelInterceptor(componentChannelName)));
 
                 // Insert a component which adds a IntegrationFlowExtension to the event's attributes
                 // The idea is that when event moves around flows and sub flows, it always knows the context
@@ -164,7 +169,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             {
                 flowChannelOptions.Endpoints.AddRange(flowInstance.Endpoints);
             }
-       
+
             var flowChannel = new CloudEventsChannel(flowChannelOptions);
             _channelManager.Add(flowChannel);
 
@@ -248,7 +253,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             {
                 existingFlow = this.FirstOrDefault(x => string.Equals(x.FlowDefinition.Name, flowInstance.Source));
             }
-            
+
             CloudEventsChannel sourceChannel = null;
 
             if (existingEsInstance == null && existingFlow == null && !string.IsNullOrWhiteSpace(flowInstance.Source))
@@ -271,7 +276,8 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                     if (_eventFlowOptions.AutoCreateSourceChannel)
                     {
-                        _logger.LogDebug("Based on options creating new source channel {ChannelName} automatically for Flow with Id {FlowId}", flowInstance.Source, flowInstance.Id);
+                        _logger.LogDebug("Based on options creating new source channel {ChannelName} automatically for Flow with Id {FlowId}",
+                            flowInstance.Source, flowInstance.Id);
                         var newSourceChannel = new CloudEventsChannel(flowInstance.Source);
                         _channelManager.Add(newSourceChannel);
 
@@ -301,7 +307,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             {
                 _logger.LogDebug("Using Even Flow {EventFlowId} as the source for flow {FlowId}",
                     existingFlow.Id, flowInstance.Id);
-                
+
                 var existingFlowOutputChannelName = existingFlow.OutputChannel;
                 sourceChannel = _channelManager.Get(existingFlowOutputChannelName);
             }
@@ -383,6 +389,26 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
             throw new UnknownEventFlowInstance(id,
                 $"Could not find Event Flow Instance with ID: {id}.{Environment.NewLine}{Environment.NewLine}Available flows:{Environment.NewLine}{string.Join(",", this.Select(x => x.Id))}");
+        }
+    }
+
+    public class CurrentFlowChannelInterceptor : IChannelInterceptor
+    {
+        private readonly string _channel;
+
+        public CurrentFlowChannelInterceptor(string channel)
+        {
+            _channel = channel;
+        }
+
+        public Task<object> Intercept(object obj)
+        {
+            var ev = (CloudEvent)obj;
+            var ext = new EventFrameworkEventFlowCurrentChanneEventExtension(_channel);
+
+            ext.Attach(ev);
+
+            return Task.FromResult<object>(ev);
         }
     }
 }

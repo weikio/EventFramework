@@ -46,7 +46,10 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                     nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{ eventFlow.Components.Count + 1}";
                 }
                 
-                var context = new ComponentFactoryContext(_serviceProvider, eventFlow, options, eventFlow.Components.Count, 
+                var context = new ComponentFactoryContext(_serviceProvider, 
+                    eventFlow, 
+                    options, 
+                    eventFlow.Components.Count, 
                     componentChannelName, 
                     nextComponentChannelName);
 

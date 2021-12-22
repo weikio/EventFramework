@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using EventFrameworkTestBed;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.EventFlow.CloudEvents;
 using Weikio.EventFramework.IntegrationTests.EventSource.Sources;
@@ -218,6 +220,75 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
                 Assert.NotEqual(0, (decimal)i % 2);
                 Assert.NotEqual(0, (decimal)i % 3);
             }
+        }
+
+        [Fact]
+        public async Task CanRunComplexFlowWithBranch()
+        {
+            var server = Init();
+            var logger = server.GetRequiredService<ILogger<BranchTests>>();
+            var allRun = false;
+            var okbranchCount = 0;
+            var mainBranchCount = 0;
+
+            var flowBuilder = EventFlowBuilder.From<NumberEventSource>(options =>
+                {
+                    options.Autostart = true;
+                    options.PollingFrequency = TimeSpan.FromSeconds(1);
+                })
+                .Branch((ev =>
+                {
+                    var status = ev.To<CounterEvent>();
+
+                    logger.LogInformation($"Should branch? {status.Id}: {status.Object.CurrentCount} ");
+                    return status.Object.CurrentCount == 2;
+                }, okBranch =>
+                {
+                    okBranch.Handle(ev =>
+                        {
+                            var status = ev.To<CounterEvent>();
+
+                            logger.LogInformation($"Running OK branch: {status.Id}: {status.Object.CurrentCount} ");
+                        })
+                        .Transform(ev =>
+                        {
+                            var status = ev.To<CounterEvent>();
+
+                            logger.LogInformation($"OK branch transform: {status.Id}: {status.Object.CurrentCount} ");
+
+                            return ev;
+                        })
+                        .Handle(ev =>
+                        {
+                            okbranchCount += 1;
+
+                            var status = ev.To<CounterEvent>();
+
+                            logger.LogInformation($"OK branch last handle: {status.Id}: {status.Object.CurrentCount} ");
+                        });
+                }))
+                .Transform(ev =>
+                {
+                    mainBranchCount += 1;
+                    var status = ev.To<CounterEvent>();
+
+                    logger.LogInformation($"Running main branch: {status.Id}: {status.Object.CurrentCount} ");
+
+                    return ev;
+                })
+                .Handle(ev =>
+                {
+                    var status = ev.To<CounterEvent>();
+
+                    logger.LogInformation($"End of main branch: {status.Id}: {status.Object.CurrentCount} ");
+                });
+            var flow = await flowBuilder.Build(server);
+            var manager = server.GetRequiredService<ICloudEventFlowManager>();
+            await manager.Execute(flow);
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            
+            Assert.Equal(1, okbranchCount);
         }
     }
 }

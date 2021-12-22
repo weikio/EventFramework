@@ -596,6 +596,38 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
             await ContinueWhen(() => testChannelCounter.Get() > 0 && anotherTestChannelCounter.Get() > 0 && handlerCounter.Get() == 4,
                 timeout: TimeSpan.FromSeconds(5));
         }
+        
+        [Fact]
+        public async Task CanHandleMessagesInOrder()
+        {
+            var server = Init();
+            var handlerCounter = new Counter();
+            var msgCount = 0;
+            var flowBuilder = EventFlowBuilder.From<NumberEventSource>()
+                .Transform(ev =>
+                {
+                    msgCount += 1;
+                    return ev;
+                })
+                .Handle(ev =>
+                {
+                    handlerCounter.Increment();
+                })
+                .Transform(ev => ev)
+                .Handle(ev =>
+                {
+                    handlerCounter.Increment();
+                });
+
+            var flow = await flowBuilder.Build(server);
+
+            var manager = server.GetRequiredService<ICloudEventFlowManager>();
+            await manager.Execute(flow);
+
+            await ContinueWhen(() => msgCount == 1, timeout: TimeSpan.FromSeconds(5));
+            
+            Assert.Equal(2, handlerCounter.Get());
+        }
 
     }
 }
