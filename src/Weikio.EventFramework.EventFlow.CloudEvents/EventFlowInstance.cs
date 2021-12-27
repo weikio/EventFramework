@@ -42,6 +42,8 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             get => _eventFlow.Components;
         }
 
+        public List<(int ComponentId, string ChannelName)> ComponentChannelNames { get; } = new List<(int, string)>();
+        
         public List<Endpoint<CloudEvent>> Endpoints
         {
             get => _eventFlow.Endpoints;
@@ -61,22 +63,10 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         public Type EventSourceType => _eventFlow.EventSourceType;
 
         public string Source => _eventFlow.Source;
-
-        public string InputChannel
-        {
-            get
-            {
-                return $"system/flows/{Id}";
-            }
-        }
         
-        public string OutputChannel
-        {
-            get
-            {
-                return $"system/flows/{Id}/channels/out";
-            }
-        }
+        public string InputChannel => _options.InputChannel;
+
+        public string OutputChannel => _options.OutputChannel;
 
         public EventFlowInstance(EventFlow eventFlow, EventFlowInstanceOptions options)
         {

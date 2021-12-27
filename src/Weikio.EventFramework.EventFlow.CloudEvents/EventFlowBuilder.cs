@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
+using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.EventFlow.Abstractions;
@@ -18,12 +20,10 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         private Action<EventSourceInstanceOptions> _configureEventSourceInstance;
         private Type _eventSourceType;
         public string Source { get; private set; }
-        // public string Id { get; private set; } = "flowinstance_" + Guid.NewGuid();
         public string Name { get; private set; } = "flow_" + Guid.NewGuid();
         public Version Version { get; private set; } = new Version(1, 0, 0);
 
         public string Description { get; private set; } = "";
-        public object Configuration { get; private set; } = null;
         public List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)> Interceptors { get; set; } =
             new List<(InterceptorTypeEnum InterceptorType, IChannelInterceptor Interceptor)>();
 
@@ -92,13 +92,6 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return this;
         }
         
-        public EventFlowBuilder WithConfiguration(object configuration)
-        {
-            Configuration = configuration;
-
-            return this;
-        }
-
         public EventFlowBuilder WithSource(string source)
         {
             Source = source;
@@ -137,14 +130,14 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return Task.FromResult(integrationFlow);
         }
 
-        public EventFlowBuilder Register(CloudEventsComponent component)
+        public EventFlowBuilder Component(CloudEventsComponent component)
         {
-            _components.Add(provider => Task.FromResult(component));
+            _components.Add(context => Task.FromResult(component));
 
             return this;
         }
 
-        public EventFlowBuilder Register(Func<ComponentFactoryContext, Task<CloudEventsComponent>> componentBuilder)
+        public EventFlowBuilder Component(Func<ComponentFactoryContext, Task<CloudEventsComponent>> componentBuilder)
         {
             _components.Add(componentBuilder);
 

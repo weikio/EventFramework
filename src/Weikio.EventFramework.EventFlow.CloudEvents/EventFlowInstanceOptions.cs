@@ -15,6 +15,22 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         public object Configuration { get; set; }
         public MulticastDelegate Configure { get; set; }
 
+        public string InputChannel
+        {
+            get
+            {
+                return $"system/flows/{Id}/channels/in";
+            }
+        }
+        
+        public string OutputChannel
+        {
+            get
+            {
+                return $"system/flows/{Id}/channels/out";
+            }
+        }
+
         // public Action<EventSourceInstanceOptions> ConfigureEventSourceInstanceOptions { get; set; }
         // public List<ChannelComponent<CloudEvent>> Components { get; set; } = new List<ChannelComponent<CloudEvent>>();
         // public List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>> ComponentFactories = new List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>>();

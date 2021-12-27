@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using EventFrameworkTestBed;
@@ -34,20 +35,20 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
 
             // var flowBuilder = IntegrationFlowBuilder.From("hello");
         }
-        
+
         [Fact]
         public async Task CanCreateFlowWithoutSource()
         {
             var counter = new Counter();
-            
+
             var server = Init();
 
             var flowBuilder = EventFlowBuilder.From()
                 .Handle(ev => counter.Increment());
-            
+
             var flow = await flowBuilder.Build(server);
             var manager = server.GetRequiredService<ICloudEventFlowManager>();
-            
+
             await manager.Execute(flow);
         }
 
@@ -152,7 +153,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
                 {
                     msgReceived = true;
                 });
-            
+
             var server = Init(services =>
             {
                 services.AddChannel("local");
@@ -163,10 +164,10 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
             var testChannel = server.GetRequiredService<IChannelManager>().Get("local");
 
             await testChannel.Send(new CustomerCreatedEvent());
-            
+
             await ContinueWhen(() => msgReceived, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanCreateSourceChannelAutomatically()
         {
@@ -240,7 +241,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
 
             await ContinueWhen(() => extensionFound, timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task EventFlowHasOutputChannel()
         {
@@ -262,11 +263,12 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
 
             // Create a new channel
             var received = false;
+
             var testChannel = new CloudEventsChannel("test", ev =>
             {
                 received = true;
             });
-            
+
             server.GetRequiredService<ICloudEventsChannelManager>().Add(testChannel);
 
             // Subscribe new channel to flow's output channel
@@ -275,6 +277,49 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
             outputChannel.Subscribe(testChannel);
 
             await ContinueWhen(() => received, timeout: TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task EventFlowOutputsTheFlowsEndResult()
+        {
+            var server = Init();
+
+            // Create flow
+            var flowBuilder = EventFlowBuilder.From<NumberEventSource>(options =>
+            {
+                options.Autostart = true;
+                options.PollingFrequency = TimeSpan.FromSeconds(1);
+            }).Transform(ev =>
+            {
+                var e = CloudEventCreator.Create(new CustomerCreatedEvent());
+
+                return e;
+            });
+
+            var flow = await flowBuilder.Build(server);
+
+            var manager = server.GetRequiredService<ICloudEventFlowManager>();
+
+            // Run the flow
+            var runningFlow = await manager.Execute(flow);
+
+            // Create a new channel
+            CloudEvent receivedEv = null;
+
+            var testChannel = new CloudEventsChannel("test", ev =>
+            {
+                receivedEv = ev;
+            });
+
+            server.GetRequiredService<ICloudEventsChannelManager>().Add(testChannel);
+
+            // Subscribe new channel to flow's output channel
+            var outputChannelName = runningFlow.OutputChannel;
+            var outputChannel = server.GetRequiredService<ICloudEventsChannelManager>().Get(outputChannelName);
+            outputChannel.Subscribe(testChannel);
+
+            await ContinueWhen(() => receivedEv != null, timeout: TimeSpan.FromSeconds(5));
+            Assert.Equal("CustomerCreatedEvent", receivedEv.Type);
         }
 
         [Fact]
@@ -596,17 +641,19 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
             await ContinueWhen(() => testChannelCounter.Get() > 0 && anotherTestChannelCounter.Get() > 0 && handlerCounter.Get() == 4,
                 timeout: TimeSpan.FromSeconds(5));
         }
-        
+
         [Fact]
         public async Task CanHandleMessagesInOrder()
         {
             var server = Init();
             var handlerCounter = new Counter();
             var msgCount = 0;
+
             var flowBuilder = EventFlowBuilder.From<NumberEventSource>()
                 .Transform(ev =>
                 {
                     msgCount += 1;
+
                     return ev;
                 })
                 .Handle(ev =>
@@ -625,9 +672,8 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
             await manager.Execute(flow);
 
             await ContinueWhen(() => msgCount == 1, timeout: TimeSpan.FromSeconds(5));
-            
+
             Assert.Equal(2, handlerCounter.Get());
         }
-
     }
 }

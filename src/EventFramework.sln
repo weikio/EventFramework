@@ -95,6 +95,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Compo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventFlow.Abstractions", "Weikio.EventFramework.EventFlow.Abstractions\Weikio.EventFramework.EventFlow.Abstractions.csproj", "{6C163C7C-2203-4749-AA3A-34074AEE1622}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.CosmosDB", "Weikio.EventFramework.EventSource.CosmosDB\Weikio.EventFramework.EventSource.CosmosDB.csproj", "{0C35A14E-0329-4426-9D4B-BA06DC4E2E8B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Samples.EventSource.CosmosDB", "..\samples\Weikio.EventFramework.Samples.EventSource.CosmosDB\Weikio.EventFramework.Samples.EventSource.CosmosDB.csproj", "{C7303390-733E-463F-82AB-65909E2E61C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -261,6 +265,14 @@ Global
 		{6C163C7C-2203-4749-AA3A-34074AEE1622}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C163C7C-2203-4749-AA3A-34074AEE1622}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C163C7C-2203-4749-AA3A-34074AEE1622}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C35A14E-0329-4426-9D4B-BA06DC4E2E8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C35A14E-0329-4426-9D4B-BA06DC4E2E8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C35A14E-0329-4426-9D4B-BA06DC4E2E8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C35A14E-0329-4426-9D4B-BA06DC4E2E8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7303390-733E-463F-82AB-65909E2E61C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7303390-733E-463F-82AB-65909E2E61C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7303390-733E-463F-82AB-65909E2E61C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7303390-733E-463F-82AB-65909E2E61C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
@@ -279,5 +291,6 @@ Global
 		{25525962-45A3-40B3-A6F0-5E9542B37000} = {30403192-0863-4425-AD5E-B218C34615CD}
 		{44D9EB66-49FA-45A6-BDD2-32B2F0E3EF80} = {25525962-45A3-40B3-A6F0-5E9542B37000}
 		{0533F0CE-003C-4E0C-9577-B348C5115C66} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
+		{C7303390-733E-463F-82AB-65909E2E61C2} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
 	EndGlobalSection
 EndGlobal

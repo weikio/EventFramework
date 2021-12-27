@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Channels;
+using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
-using Weikio.EventFramework.Components;
 using Weikio.EventFramework.EventAggregator.Core;
-using Weikio.EventFramework.EventFlow.Abstractions;
 
 namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
@@ -16,166 +14,39 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
     {
         public static EventFlowBuilder Channel(this EventFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null)
         {
-            Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
-            {
-                var channelManager = context.ServiceProvider.GetRequiredService<ICloudEventsChannelManager>();
-
-                var channel =
-                    channelManager.Channels.FirstOrDefault(x => string.Equals(channelName, x.Name, StringComparison.InvariantCultureIgnoreCase)) as
-                        CloudEventsChannel;
-
-                if (channel == null)
-                {
-                    channel = new CloudEventsChannel(channelName);
-                    channelManager.Add(channel);
-                }
-
-                var result = new ChannelComponent(channel, predicate);
-
-                return Task.FromResult<CloudEventsComponent>(result);
-            }
-
-            builder.Register(Handler);
+            var component = new ChannelComponentBuilder(channelName, predicate);
+            
+            builder.Component(component.Build);
 
             return builder;
         }
 
-        public static EventFlowBuilder Transform(this EventFlowBuilder builder, Func<CloudEvent, CloudEvent> transform)
+        public static EventFlowBuilder Transform(this EventFlowBuilder builder, Func<CloudEvent, CloudEvent> transform, Predicate<CloudEvent> predicate = null)
         {
-            var component = new CloudEventsComponent(transform);
-            builder.Register(component);
+            var component = new CloudEventsComponent(transform, predicate);
+            builder.Component(component);
 
             return builder;
         }
 
         public static EventFlowBuilder Filter(this EventFlowBuilder builder, Func<CloudEvent, Filter> filter)
         {
-            var component = new CloudEventsComponent(ev =>
-            {
-                if (filter(ev) == CloudEvents.Filter.Skip)
-                {
-                    return null;
-                }
-                
-                return ev;
-            });
-            
-            builder.Register(component);
+            var componentBuilder = new FilterComponentBuilder(filter);
+            builder.Component(componentBuilder.Build);
 
             return builder;
         }
-        
+
         public static EventFlowBuilder Filter(this EventFlowBuilder builder, Predicate<CloudEvent> filter)
         {
-            var component = new CloudEventsComponent(ev =>
-            {
-                if (filter(ev))
-                {
-                    return null;
-                }
-                
-                return ev;
-            });
-            
-            builder.Register(component);
+            var componentBuilder = new FilterComponentBuilder(filter);
+            builder.Component(componentBuilder.Build);
 
             return builder;
         }
-        
-        public static EventFlowBuilder Flow(this EventFlowBuilder builder, Action<EventFlowBuilder> buildFlow, 
-            Predicate<CloudEvent> predicate = null)
-        {
-            async Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
-            {
-                var instanceManager = context.ServiceProvider.GetRequiredService<ICloudEventFlowManager>();
-                var channelManager = context.ServiceProvider.GetRequiredService<IChannelManager>();
 
-                var flowBuilder = EventFlowBuilder.From();
-                buildFlow(flowBuilder);
-
-                var subflowId = $"system/flows/{context.Options.Id}/subflows/{context.CurrentComponentIndex}";
-
-                var subflow = await flowBuilder.Build(context.ServiceProvider);
-                    
-                await instanceManager.Execute(subflow, new EventFlowInstanceOptions()
-                {
-                    Id = subflowId
-                });
-
-                var flowComponent = new CloudEventsComponent(async ev =>
-                {
-                    if (!string.IsNullOrWhiteSpace(context.NextComponentChannelName))
-                    {
-                        var ext = new EventFrameworkEventFlowEndpointEventExtension(context.NextComponentChannelName);
-                        ext.Attach(ev);
-                    }
-
-                    var targetFlow = instanceManager.Get(subflowId);
-                    var targetFlowInputChannel = targetFlow.InputChannel;
-
-                    var targetChannel = channelManager.Get(targetFlowInputChannel);
-                    await targetChannel.Send(ev);
-
-                    return null;
-                }, predicate);
-
-                return flowComponent;
-            }
-
-            builder.Register(Handler);
-
-            return builder;
-        }
-        
-        public static EventFlowBuilder Flow(this EventFlowBuilder builder, EventFlowDefinition flowDefinition, 
-            Predicate<CloudEvent> predicate = null, string flowId = null)
-        {
-            Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
-            {
-                var instanceManager = context.ServiceProvider.GetRequiredService<ICloudEventFlowManager>();
-                var channelManager = context.ServiceProvider.GetRequiredService<IChannelManager>();
-                
-                var flowComponent = new CloudEventsComponent(async ev =>
-                {
-                    if (!string.IsNullOrWhiteSpace(context.NextComponentChannelName))
-                    {
-                        var ext = new EventFrameworkEventFlowEndpointEventExtension(context.NextComponentChannelName);
-                        ext.Attach(ev);
-                    }
-
-                    EventFlowInstance targetFlow;
-                    if (!string.IsNullOrWhiteSpace(flowId))
-                    {
-                        targetFlow = instanceManager.Get(flowId);
-                    }
-                    else
-                    {
-                        var allFlows = instanceManager.List();
-                        targetFlow = allFlows.FirstOrDefault(x => Equals(x.FlowDefinition, flowDefinition));
-                    }
-
-                    if (targetFlow == null)
-                    {
-                        throw new UnknownEventFlowInstance("", "Couldn't locate target flow using id or flow definition");
-                    }
-                    
-                    var targetFlowInputChannel = targetFlow.InputChannel;
-
-                    var targetChannel = channelManager.Get(targetFlowInputChannel);
-                    await targetChannel.Send(ev);
-
-                    return null;
-                }, predicate);
-
-                return Task.FromResult(flowComponent);
-            }
-
-            builder.Register(Handler);
-
-            return builder;
-        }
-        
-        public static EventFlowBuilder Branch(this EventFlowBuilder builder, params (Predicate<CloudEvent> Predicate, Action<EventFlowBuilder> BuildBranch)[] branches )
+        public static EventFlowBuilder Branch(this EventFlowBuilder builder,
+            params (Predicate<CloudEvent> Predicate, Action<EventFlowBuilder> BuildBranch)[] branches)
         {
             async Task<CloudEventsComponent> Handler(ComponentFactoryContext context)
             {
@@ -186,21 +57,19 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 for (var index = 0; index < branches.Length; index++)
                 {
-                    var branchChannelName = $"system/flows/{context.Options.Id}/branches/input_{context.CurrentComponentIndex}/{index}";
+                    var branchChannelName = $"system/flows/branches/{Guid.NewGuid()}/in";
                     var branchChannelOptions = new CloudEventsChannelOptions() { Name = branchChannelName };
                     var branchInputChannel = new CloudEventsChannel(branchChannelOptions);
                     channelManager.Add(branchInputChannel);
-                    
+
                     var branch = branches[index];
                     var flowBuilder = EventFlowBuilder.From(branchChannelName);
                     branch.BuildBranch(flowBuilder);
 
                     var branchFlow = await flowBuilder.Build(context.ServiceProvider);
-                    
-                    await instanceManager.Execute(branchFlow, new EventFlowInstanceOptions()
-                    {
-                        Id = $"{context.Options.Id}/branches/{context.CurrentComponentIndex}/{index}"
-                    });
+
+                    await instanceManager.Execute(branchFlow,
+                        new EventFlowInstanceOptions() { Id = $"system/flows/branches/{Guid.NewGuid()}" });
 
                     createdFlows.Add((branch.Predicate, branchChannelName));
                 }
@@ -208,7 +77,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 var branchComponent = new CloudEventsComponent(async ev =>
                 {
                     var branched = false;
-                    
+
                     foreach (var createdFlow in createdFlows)
                     {
                         var shouldBranch = createdFlow.Predicate(ev);
@@ -217,7 +86,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                         {
                             var channel = channelManager.Get(createdFlow.ChannelId);
                             await channel.Send(ev);
-                            
+
                             branched = true;
                         }
                     }
@@ -233,7 +102,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 return branchComponent;
             }
 
-            builder.Register(Handler);
+            builder.Component(Handler);
 
             return builder;
         }
@@ -245,7 +114,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             {
                 predicate = ev => true;
             }
-            
+
             var taskPredicate = new Func<CloudEvent, Task<bool>>(ev => Task.FromResult(predicate(ev)));
 
             return builder.Handle(null, taskPredicate, typeof(THandlerType), configure);
@@ -269,7 +138,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             {
                 predicate = ev => true;
             }
-            
+
             var taskPredicate = new Func<CloudEvent, Task<bool>>(ev => Task.FromResult(predicate(ev)));
 
             return builder.Handle(handler, taskPredicate);
@@ -297,21 +166,14 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                         return Task.FromResult(false);
                     }
 
-                    var flowId = attrs[EventFrameworkEventFlowEventExtension.EventFrameworkEventFlowAttributeName] as string;
-
-                    if (string.Equals(context.Options.Id, flowId) == false)
-                    {
-                        return Task.FromResult(false);
-                    }
-                    
                     if (attrs.ContainsKey(EventFrameworkEventFlowCurrentChanneEventExtension.EventFrameworkEventFlowCurrentChannelAttributeName) == false)
                     {
                         return Task.FromResult(false);
                     }
 
                     var channelId = attrs[EventFrameworkEventFlowCurrentChanneEventExtension.EventFrameworkEventFlowCurrentChannelAttributeName] as string;
-                    
-                    return Task.FromResult(string.Equals(context.CurrentComponentChannelName, channelId));
+
+                    return Task.FromResult(string.Equals(context.ComponentChannelName, channelId));
                 });
 
                 if (handlerType != null)
@@ -341,7 +203,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 return Task.FromResult(aggregatorComponent);
             }
 
-            builder.Register(Handler);
+            builder.Component(Handler);
 
             return builder;
         }
