@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
+using Weikio.EventFramework.EventFlow.CloudEvents;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.IntegrationTests.EventSource.Sources;
@@ -20,6 +21,25 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
     {
         public ChannelTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory, output)
         {
+        }
+
+        [Fact]
+        public async Task CanCreateChannelUsingBuilder()
+        {
+            var server = Init();
+
+            var channel = CloudEventsChannelBuilder.From()
+                .WithName("testchannel")
+                .Component(new FilterComponentBuilder(ev =>
+                {
+                    if (string.Equals(ev.Type, "CustomerCreatedEvent"))
+                    {
+                        return Filter.Continue;
+                    }
+
+                    return Filter.Skip;
+                }).Build)
+                .Build(server);
         }
         
         [Fact]

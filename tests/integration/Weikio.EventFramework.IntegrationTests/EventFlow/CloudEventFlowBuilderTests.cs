@@ -206,22 +206,6 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
         }
 
         [Fact]
-        public async Task ThrowsSourceUnknownIfNoSuitableSourceFound()
-        {
-            var server = Init();
-
-            var flowBuilder = EventFlowBuilder.From("unknown");
-            var flow = await flowBuilder.Build(server);
-
-            var manager = server.GetRequiredService<ICloudEventFlowManager>();
-
-            await Assert.ThrowsAsync<UnknownIntegrationFlowSourceException>(async () =>
-            {
-                await manager.Execute(flow);
-            });
-        }
-
-        [Fact]
         public async Task IntegrationFlowExtensionIsAddedToEvent()
         {
             var server = Init();

@@ -29,9 +29,4 @@ namespace Weikio.EventFramework.Components
             Predicate = predicate;
         }
     }
-
-    public class BranchComponent
-    {
-        
-    }
 }

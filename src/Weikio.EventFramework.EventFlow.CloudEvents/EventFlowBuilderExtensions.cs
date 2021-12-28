@@ -173,7 +173,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                     var channelId = attrs[EventFrameworkEventFlowCurrentChanneEventExtension.EventFrameworkEventFlowCurrentChannelAttributeName] as string;
 
-                    return Task.FromResult(string.Equals(context.ComponentChannelName, channelId));
+                    return Task.FromResult(string.Equals(context.ChannelName, channelId));
                 });
 
                 if (handlerType != null)

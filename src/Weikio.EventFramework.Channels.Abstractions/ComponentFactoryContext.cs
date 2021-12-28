@@ -7,14 +7,14 @@ namespace Weikio.EventFramework.Channels.Abstractions
     {
         public IServiceProvider ServiceProvider { get; }
         public int ComponentIndex { get; }
-        public string ComponentChannelName { get;  }
+        public string ChannelName { get;  }
         public List<(string Key, object Value)> Tags { get; }
 
-        public ComponentFactoryContext(IServiceProvider serviceProvider, int componentIndex, string componentChannelName, List<(string, object)> tags = null)
+        public ComponentFactoryContext(IServiceProvider serviceProvider, int componentIndex, string channelName, List<(string, object)> tags = null)
         {
             ServiceProvider = serviceProvider;
             ComponentIndex = componentIndex;
-            ComponentChannelName = componentChannelName;
+            ChannelName = channelName;
             Tags = tags ?? new List<(string, object)>();
         }
     }
