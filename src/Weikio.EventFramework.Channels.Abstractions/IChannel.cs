@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Weikio.EventFramework.Channels.Abstractions
 {
@@ -6,5 +7,6 @@ namespace Weikio.EventFramework.Channels.Abstractions
     {
         string Name { get; }
         Task<bool> Send(object cloudEvent);
+        List<(string Key, object Value)> Tags => new List<(string, object)>();
     }
 }

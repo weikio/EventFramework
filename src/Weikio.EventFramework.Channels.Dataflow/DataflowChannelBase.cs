@@ -31,6 +31,11 @@ namespace Weikio.EventFramework.Channels.Dataflow
             get => Options.Interceptors;
         }
 
+        public List<(string Key, object Value)> Tags
+        {
+            get => Options.Tags;
+        }
+
         public string Name
         {
             get

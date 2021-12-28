@@ -155,19 +155,19 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                         throw new UnknownEventFlowInstance("", "Couldn't locate target flow using id or flow definition");
                     }
 
-                    var targetFlowInputChannel = targetFlow.InputChannel;
+                    var nextChannel = context.Tags.FirstOrDefault(x => string.Equals(x.Key, "nextchannelname"));
+                    var hasNext = nextChannel != default;
 
-                    var targetChannel = channelManager.Get(targetFlowInputChannel);
-
-                    var hasNextComponent = targetFlow.Components.Skip(context.ComponentIndex + 1).FirstOrDefault() != null;
-
-                    if (hasNextComponent)
+                    if (hasNext)
                     {
-                        var nextInputChannel = targetFlow.ComponentChannelNames.Single(x => x.Item1 == context.ComponentIndex + 1).Item2;
+                        var nextInputChannel = nextChannel.Value.ToString();
                         var ext = new EventFrameworkEventFlowEndpointEventExtension(nextInputChannel);
                         ext.Attach(ev);
                     }
 
+                    var targetFlowInputChannel = targetFlow.InputChannel;
+
+                    var targetChannel = channelManager.Get(targetFlowInputChannel);
                     await targetChannel.Send(ev);
 
                     return null;

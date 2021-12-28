@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Xunit;
 
@@ -46,6 +48,20 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             var options = new CloudEventsChannelOptions() { Name = null };
 
             Assert.Throws<ArgumentNullException>(() => _builder.Create(options));
+        }
+        
+        [Fact]
+        public void CanCreateChannelWithTags()
+        {
+            var options = new CloudEventsChannelOptions() { Name = "test", Tags = new List<(string, object)>()
+            {
+                ("testtag", "value")
+            }};
+            
+            var channel = _builder.Create(options);
+            
+            Assert.NotEmpty(channel.Tags);
+            Assert.Equal("testtag", channel.Tags.Single().Key);
         }
     }
 }

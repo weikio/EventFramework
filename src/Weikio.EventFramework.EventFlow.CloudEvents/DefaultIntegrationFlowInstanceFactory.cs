@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
@@ -17,8 +19,8 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         private readonly IOptions<EventFlowChannelDefaultComponents> _options;
         private readonly ICloudEventsChannelManager _channelManager;
 
-        public DefaultEventFlowInstanceFactory(IServiceProvider serviceProvider, 
-            ILogger<DefaultEventFlowInstanceFactory> logger, 
+        public DefaultEventFlowInstanceFactory(IServiceProvider serviceProvider,
+            ILogger<DefaultEventFlowInstanceFactory> logger,
             IOptions<EventFlowChannelDefaultComponents> options, ICloudEventsChannelManager channelManager)
         {
             _serviceProvider = serviceProvider;
@@ -26,32 +28,6 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             _options = options;
             _channelManager = channelManager;
         }
-        
-        //
-        // // Insert an endpoint which transfer the event to the desired channel if event has attribute eventFramework_eventFlow_endpoint
-        // eventFlow.Endpoints.Add(new CloudEventsEndpoint(async ev =>
-        // {
-        //     var attrs = ev.GetAttributes();
-        //
-        //     if (attrs.ContainsKey(EventFrameworkEventFlowEndpointEventExtension.EventFrameworkEventFlowEndpointAttributeName) == false)
-        //     {
-        //         return;
-        //     }
-        //
-        //     var targetChannel = attrs[EventFrameworkEventFlowEndpointEventExtension.EventFrameworkEventFlowEndpointAttributeName] as string;
-        //
-        //     if (string.IsNullOrWhiteSpace(targetChannel))
-        //     {
-        //         return;
-        //     }
-        //
-        //     var channel = _serviceProvider.GetRequiredService<IChannelManager>().Get(targetChannel);
-        //     
-        //     // After a transfer, we want to remove the attribute so that the event doesn't get stuck in a loop
-        //     attrs.Remove(EventFrameworkEventFlowEndpointEventExtension.EventFrameworkEventFlowEndpointAttributeName);
-        //     
-        //     await channel.Send(ev);
-        // }));
 
         public async Task<EventFlowInstance> Create(EventFlow eventFlow, EventFlowInstanceOptions options)
         {
@@ -64,9 +40,37 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             var createdComponentChannels = new List<string>();
 
             // We want every flow to have a output channel where every event ends up
-            var endpointChannel = new CloudEventsChannel(options.OutputChannel);
+            var outputChannelOptions = new CloudEventsChannelOptions() { Name = options.OutputChannel };
+
+            outputChannelOptions.Endpoints.Add(new CloudEventsEndpoint(async ev =>
+            {
+                // Insert an endpoint which transfer the event to the desired channel if event has attribute eventFramework_eventFlow_endpoint
+                var attrs = ev.GetAttributes();
+
+                if (attrs.ContainsKey(EventFrameworkEventFlowEndpointEventExtension.EventFrameworkEventFlowEndpointAttributeName) == false)
+                {
+                    return;
+                }
+
+                var targetChannel = attrs[EventFrameworkEventFlowEndpointEventExtension.EventFrameworkEventFlowEndpointAttributeName] as string;
+
+                if (string.IsNullOrWhiteSpace(targetChannel))
+                {
+                    return;
+                }
+
+                var channel = _serviceProvider.GetRequiredService<IChannelManager>().Get(targetChannel);
+
+                // After a transfer, we want to remove the attribute so that the event doesn't get stuck in a loop
+                attrs.Remove(EventFrameworkEventFlowEndpointEventExtension.EventFrameworkEventFlowEndpointAttributeName);
+
+                await channel.Send(ev);
+            }));
+
+            var endpointChannel = new CloudEventsChannel(outputChannelOptions);
+
             _channelManager.Add(endpointChannel);
-            
+
             var outputChannelEndpoint = new CloudEventsEndpoint(async ev =>
             {
                 var flowOutputChannel = _channelManager.Get(options.OutputChannel);
@@ -74,7 +78,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             });
 
             eventFlow.Endpoints.Add(outputChannelEndpoint);
-            
+
             // We don't actually create a single channel for the flow but a single channel for each component in the flow
             // Interceptors are added to each channel
             // Endpoints are added only to the last channel
@@ -82,17 +86,31 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             for (var index = 0; index < eventFlow.ComponentFactories.Count; index++)
             {
                 var componentFactory = eventFlow.ComponentFactories[index];
-                
+
                 // TODO: Find a place for this
                 var componentChannelName = $"system/flows/{options.Id}/componentchannels/{index}";
+                var isLastComponent = eventFlow.ComponentFactories.Count <= index + 1;
 
-                var context = new ComponentFactoryContext(_serviceProvider, 
-                    index, 
-                    componentChannelName);
+                string nextComponentChannelName = null;
+
+                if (!isLastComponent)
+                {
+                    nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{index + 1}";
+                }
+
+                var tags = new List<(string, object)>
+                {
+                    ("flowid", options.Id), 
+                    ("nextchannelname", nextComponentChannelName)
+                };
+
+                var context = new ComponentFactoryContext(_serviceProvider,
+                    index,
+                    componentChannelName, tags);
 
                 var component = await componentFactory(context);
                 eventFlow.Components.Add(component);
-                
+
                 var componentChannelOptions = new CloudEventsChannelOptions() { Name = componentChannelName };
 
                 componentChannelOptions.Interceptors.Add((InterceptorTypeEnum.PreComponents, new CurrentFlowChannelInterceptor(componentChannelName)));
@@ -110,8 +128,6 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 componentChannelOptions.Components.Add(component);
                 componentChannelOptions.Interceptors.AddRange(eventFlow.Interceptors);
 
-                var isLastComponent = eventFlow.ComponentFactories.Count <= index + 1;
-
                 if (isLastComponent)
                 {
                     componentChannelOptions.Endpoints.AddRange(eventFlow.Endpoints);
@@ -119,7 +135,6 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 else
                 {
                     // TODO: Find a place for this
-                    var nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{index + 1}";
 
                     var nextChannelEndpoint = new CloudEventsEndpoint(async ev =>
                     {
@@ -136,7 +151,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 createdComponentChannels.Add(componentChannel.Name);
             }
-            
+
             var flowInstance = new EventFlowInstance(eventFlow, options);
 
             _logger.LogDebug(
