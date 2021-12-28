@@ -5,6 +5,7 @@ using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventFlow.CloudEvents;
@@ -26,10 +27,30 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
         [Fact]
         public async Task CanCreateChannelUsingBuilder()
         {
-            var server = Init();
+            var server = Init(services =>
+            {
+                services.AddEventFramework();
+            });
 
-            var channel = CloudEventsChannelBuilder.From()
+            var firstCounter = 0;
+            var secondCounter = 0;
+            var channel = await CloudEventsChannelBuilder.From()
                 .WithName("testchannel")
+                .Component(ev =>
+                {
+                    return ev;
+                })
+                .Component(context =>
+                {
+                    var comp = new CloudEventsComponent(ev =>
+                    {
+                        firstCounter += 1;
+
+                        return ev;
+                    });
+
+                    return Task.FromResult(comp);
+                })
                 .Component(new FilterComponentBuilder(ev =>
                 {
                     if (string.Equals(ev.Type, "CustomerCreatedEvent"))
@@ -38,8 +59,34 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
                     }
 
                     return Filter.Skip;
-                }).Build)
+                }))
+                .Component(context =>
+                {
+                    var comp = new CloudEventsComponent(ev =>
+                    {
+                        secondCounter += 1;
+
+                        return ev;
+                    });
+
+                    return Task.FromResult(comp);
+                })
                 .Build(server);
+            
+            server.GetRequiredService<IChannelManager>().Add(channel);
+
+            var msg1 = new CustomerCreatedEvent();
+            var msg2 = new CustomerDeletedEvent();
+            var msg3 = new CustomerCreatedEvent();
+
+            await channel.Send(msg1);
+            await channel.Send(msg2);
+            await channel.Send(msg3);
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            
+            Assert.Equal(3, firstCounter);
+            Assert.Equal(2, secondCounter);
         }
         
         [Fact]

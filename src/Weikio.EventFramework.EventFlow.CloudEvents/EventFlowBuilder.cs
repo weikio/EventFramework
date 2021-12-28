@@ -130,18 +130,42 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return Task.FromResult(integrationFlow);
         }
 
-        public EventFlowBuilder Component(CloudEventsComponent component)
+        public EventFlowBuilder Component(Func<CloudEvent, CloudEvent> func, Predicate<CloudEvent> predicate = null)
         {
-            _components.Add(context => Task.FromResult(component));
+            var cloudEventsComponent = new CloudEventsComponent(func, predicate);
 
-            return this;
-        }
+            Task<CloudEventsComponent> Get(ComponentFactoryContext context)
+            {
+                return Task.FromResult(cloudEventsComponent);
+            }
 
+            return Component(Get);
+        } 
+        
+        public EventFlowBuilder Component(Func<CloudEvent, Task<CloudEvent>> func, Predicate<CloudEvent> predicate = null)
+        {
+            var cloudEventsComponent = new CloudEventsComponent(func, predicate);
+
+            Task<CloudEventsComponent> Get(ComponentFactoryContext context)
+            {
+                return Task.FromResult(cloudEventsComponent);
+            }
+
+            return Component(Get);
+        } 
+        
         public EventFlowBuilder Component(Func<ComponentFactoryContext, Task<CloudEventsComponent>> componentBuilder)
         {
             _components.Add(componentBuilder);
 
             return this;
-        }
+        }        
+        
+        public EventFlowBuilder Component(IComponentBuilder componentBuilder)
+        {
+            _components.Add(componentBuilder.Build);
+
+            return this;
+        }  
     }
 }

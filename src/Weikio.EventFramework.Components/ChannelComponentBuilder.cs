@@ -9,7 +9,7 @@ using Weikio.EventFramework.Components;
 
 namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
-    public class ChannelComponentBuilder
+    public class ChannelComponentBuilder : IComponentBuilder
     {
         private readonly string _channelName;
         private readonly Predicate<CloudEvent> _predicate;

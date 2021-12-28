@@ -7,6 +7,7 @@ using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventFlow.CloudEvents;
+using Weikio.EventFramework.EventFlow.CloudEvents.Components;
 using Weikio.EventFramework.IntegrationTests.EventFlow.ComponentsHandlers;
 using Weikio.EventFramework.IntegrationTests.EventSource.Sources;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;

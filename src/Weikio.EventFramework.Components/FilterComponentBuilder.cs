@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
+using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
-    public interface IComponentBuilder
-    {
-        Task<CloudEventsComponent> Build(ComponentFactoryContext context);
-    }
-
     public class FilterComponentBuilder : IComponentBuilder
     {
         private readonly Func<CloudEvent, Filter> _filter;

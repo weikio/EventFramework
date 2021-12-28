@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
+using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels.Abstractions;
 
 namespace Weikio.EventFramework.Channels.CloudEvents
@@ -23,6 +25,30 @@ namespace Weikio.EventFramework.Channels.CloudEvents
             return this;
         }
         
+        public CloudEventsChannelBuilder Component(Func<CloudEvent, CloudEvent> func, Predicate<CloudEvent> predicate = null)
+        {
+            var cloudEventsComponent = new CloudEventsComponent(func, predicate);
+
+            Task<CloudEventsComponent> Get(ComponentFactoryContext context)
+            {
+                return Task.FromResult(cloudEventsComponent);
+            }
+
+            return Component(Get);
+        } 
+        
+        public CloudEventsChannelBuilder Component(Func<CloudEvent, Task<CloudEvent>> func, Predicate<CloudEvent> predicate = null)
+        {
+            var cloudEventsComponent = new CloudEventsComponent(func, predicate);
+
+            Task<CloudEventsComponent> Get(ComponentFactoryContext context)
+            {
+                return Task.FromResult(cloudEventsComponent);
+            }
+
+            return Component(Get);
+        } 
+        
         public CloudEventsChannelBuilder Component(Func<ComponentFactoryContext, Task<CloudEventsComponent>> componentBuilder)
         {
             _components.Add(componentBuilder);
@@ -30,12 +56,33 @@ namespace Weikio.EventFramework.Channels.CloudEvents
             return this;
         }        
         
+        public CloudEventsChannelBuilder Component(IComponentBuilder componentBuilder)
+        {
+            _components.Add(componentBuilder.Build);
+
+            return this;
+        }   
+        
         public CloudEventsChannelBuilder Endpoint(Func<ComponentFactoryContext, Task<CloudEventsEndpoint>> endpointBuilder)
         {
             _endpoints.Add(endpointBuilder);
 
             return this;
         }     
+        
+        public CloudEventsChannelBuilder Endpoint(Func<CloudEvent, Task> func, Predicate<CloudEvent> predicate = null)
+        {
+            var endpoint = new CloudEventsEndpoint(func, predicate);
+            
+            Task<CloudEventsEndpoint> Get(ComponentFactoryContext context)
+            {
+                return Task.FromResult(endpoint);
+            }
+            
+            _endpoints.Add(Get);
+
+            return this;
+        }  
         
         public static CloudEventsChannelBuilder From(CloudEventsChannelOptions options)
         {
