@@ -10,6 +10,9 @@ namespace Weikio.EventFramework.Channels.CloudEvents
     {
         protected CloudEventsEndpoint() { }
 
+        public CloudEventsEndpoint(Action<CloudEvent> func, Predicate<CloudEvent> predicate = null) : base(func, predicate)
+        {
+        }
         public CloudEventsEndpoint(Func<CloudEvent, Task> func, Predicate<CloudEvent> predicate = null) : base(func, predicate)
         {
         }
@@ -32,6 +35,11 @@ namespace Weikio.EventFramework.Channels.CloudEvents
         public static implicit operator CloudEventsEndpoint((Func<CloudEvent, Task> Func, Predicate<CloudEvent> Predicate) def)
         {
             return new CloudEventsEndpoint(def.Func, def.Predicate);
+        }
+        
+        public static implicit operator CloudEventsEndpoint(CloudEventsComponent component)
+        {
+            return new CloudEventsEndpoint(component.Func, component.Predicate);
         }
     }
 }

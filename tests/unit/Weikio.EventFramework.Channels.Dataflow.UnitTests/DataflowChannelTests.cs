@@ -1234,5 +1234,51 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
 
             Assert.Equal(50000, counter);
         }
+        
+        [Fact]
+        public async Task CanUseComponentAsEndpoint()
+        {
+            var options = new CloudEventsChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            var counter = 0;
+
+            var cloudEventsComponent = new CloudEventsComponent(ev =>
+            {
+                counter += 1;
+
+                return ev;
+            });
+
+            options.Endpoints.Add(cloudEventsComponent);
+
+            using (var channel = new CloudEventsChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(2, counter);
+        }
+        
+        [Fact]
+        public async Task CanUseEndpointAsComponent()
+        {
+            var options = new CloudEventsChannelOptions() { Name = "name", LoggerFactory = _loggerFactory };
+
+            var counter = 0;
+
+            var cloudEventsEndpoint = new CloudEventsEndpoint(ev =>
+            {
+                counter += 1;
+            });
+
+            options.Endpoints.Add(cloudEventsComponent);
+
+            using (var channel = new CloudEventsChannel(options))
+            {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+            }
+
+            Assert.Equal(2, counter);
+        }
     }
 }

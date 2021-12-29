@@ -12,6 +12,22 @@ namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
         {
         }
 
+        public Endpoint(Action<TOutput> func, Predicate<TOutput> predicate = null)
+        {
+            if (func == null)
+            {
+                throw new ArgumentNullException(nameof(func));
+            }
+
+            Func = output =>
+            {
+                func(output);
+                return Task.CompletedTask;
+            };
+
+            Predicate = predicate ?? (ev => true);
+        }
+
         public Endpoint(Func<TOutput, Task> func, Predicate<TOutput> predicate = null)
         {
             if (func == null)
