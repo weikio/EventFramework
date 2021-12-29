@@ -1,6 +1,6 @@
 using System;
 
-namespace Weikio.EventFramework.Samples.EventSource.CosmosDB
+namespace Weikio.EventFramework.EventSource.AzureServiceBus.Sample
 {
     public class WeatherForecast
     {

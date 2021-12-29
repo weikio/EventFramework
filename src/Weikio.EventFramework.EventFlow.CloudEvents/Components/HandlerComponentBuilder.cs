@@ -10,12 +10,12 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 {
     public class HandlerComponentBuilder : IComponentBuilder
     {
-        private readonly Func<CloudEvent, Task> _handler;
+        private readonly Func<CloudEvent, IServiceProvider, Task> _handler;
         private readonly Type _handlerType;
         private readonly MulticastDelegate _configureHandler;
         private readonly Func<CloudEvent, Task<bool>> _predicate;
 
-        public HandlerComponentBuilder(Func<CloudEvent, Task> handler,
+        public HandlerComponentBuilder(Func<CloudEvent, IServiceProvider, Task> handler,
             Func<CloudEvent, Task<bool>> predicate = null, Type handlerType = null, MulticastDelegate configureHandler = null)
         {
             _handler = handler;

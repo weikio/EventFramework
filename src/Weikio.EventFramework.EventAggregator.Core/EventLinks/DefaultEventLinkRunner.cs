@@ -33,7 +33,7 @@ namespace Weikio.EventFramework.EventAggregator.Core.EventLinks
             _guardMethod = guardMethod;
         }
 
-        public async Task Handle(CloudEvent cloudEvent)
+        public async Task Handle(CloudEvent cloudEvent, IServiceProvider serviceProvider)
         {
             try
             {

@@ -127,7 +127,7 @@ namespace Weikio.EventFramework.Extensions.EventAggregator
 
             services.AddTransient(provider =>
             {
-                var result = new EventLink(canHandle, handle);
+                var result = new EventLink(canHandle, (ev, serviceProvider) => handle(ev));
 
                 return result;
             });

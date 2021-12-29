@@ -57,7 +57,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 predicate = ev => true;
             }
             
-            var componentBuilder = new HandlerComponentBuilder(ev =>
+            var componentBuilder = new HandlerComponentBuilder((ev, provider) =>
             {
                 handler(ev);
                 return Task.CompletedTask;
@@ -67,7 +67,25 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
             return builder;
         }
+        
+        public static EventFlowBuilder Handle(this EventFlowBuilder builder, Action<CloudEvent, IServiceProvider> handler, Predicate<CloudEvent> predicate = null)
+        {
+            if (predicate == null)
+            {
+                predicate = ev => true;
+            }
+            
+            var componentBuilder = new HandlerComponentBuilder((ev, provider) =>
+            {
+                handler(ev, provider);
+                return Task.CompletedTask;
+            }, ev => Task.FromResult(predicate(ev)));
+            
+            builder.Component(componentBuilder);
 
+            return builder;
+        }
+        
         public static EventFlowBuilder Handle(this EventFlowBuilder builder, Func<CloudEvent, Task> handler, Predicate<CloudEvent> predicate = null)
         {
             if (predicate == null)
@@ -79,11 +97,11 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
             return builder.Handle(handler, taskPredicate);
         }
-
+        
         public static EventFlowBuilder Handle(this EventFlowBuilder builder, Func<CloudEvent, Task> handler,
             Func<CloudEvent, Task<bool>> predicate = null, Type handlerType = null, MulticastDelegate configureHandler = null)
         {
-            var componentBuilder = new HandlerComponentBuilder(ev =>
+            var componentBuilder = new HandlerComponentBuilder((ev, provider) =>
             {
                 handler(ev);
                 return Task.CompletedTask;

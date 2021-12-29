@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace Weikio.EventFramework.Samples.EventSource.CosmosDB.Controllers
+namespace Weikio.EventFramework.EventSource.AzureServiceBus.Sample.Controllers
 {
     [ApiController]
     [Route("[controller]")]

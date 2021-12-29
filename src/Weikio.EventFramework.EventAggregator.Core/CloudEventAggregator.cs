@@ -11,12 +11,14 @@ namespace Weikio.EventFramework.EventAggregator.Core
     {
         private readonly ILogger<CloudEventAggregator> _logger;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly IServiceProvider _serviceProvider;
         private readonly List<Handler> _handlers = new List<Handler>();
 
-        public CloudEventAggregator(ILogger<CloudEventAggregator> logger, ILoggerFactory loggerFactory)
+        public CloudEventAggregator(ILogger<CloudEventAggregator> logger, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _loggerFactory = loggerFactory;
+            _serviceProvider = serviceProvider;
         }
 
         public virtual void Subscribe(object subscriber)
@@ -77,7 +79,7 @@ namespace Weikio.EventFramework.EventAggregator.Core
 
             foreach (var handler in handlersToNotify)
             {
-                await handler.Handle(cloudEvent);
+                await handler.Handle(cloudEvent, _serviceProvider);
             }
         }
 
@@ -97,7 +99,7 @@ namespace Weikio.EventFramework.EventAggregator.Core
                 return _handler == instance;
             }
 
-            public async Task Handle(CloudEvent cloudEvent)
+            public async Task Handle(CloudEvent cloudEvent, IServiceProvider serviceProvider)
             {
                 var eventLink = _handler as EventLink;
 
@@ -114,7 +116,7 @@ namespace Weikio.EventFramework.EventAggregator.Core
                 }
 
                 _logger.LogDebug("Handler {Handler} can handle cloud event, handling", this);
-                await eventLink.Action(cloudEvent);
+                await eventLink.Action(cloudEvent, serviceProvider);
             }
         }
     }

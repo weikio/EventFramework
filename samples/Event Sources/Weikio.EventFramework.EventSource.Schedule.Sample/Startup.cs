@@ -1,27 +1,15 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
-using Weikio.EventFramework.EventFlow.CloudEvents;
-using Weikio.EventFramework.EventPublisher;
-using Weikio.EventFramework.EventSource;
-using Weikio.EventFramework.EventSource.CosmosDB;
 
-namespace Weikio.EventFramework.Samples.EventSource.CosmosDB
+namespace Weikio.EventFramework.EventSource.Schedule.Sample
 {
     public class Startup
     {
@@ -38,28 +26,25 @@ namespace Weikio.EventFramework.Samples.EventSource.CosmosDB
             services.AddControllers();
 
             services.AddEventFramework()
+                .AddScheduleEventSource(options =>
+                {
+                    options.Autostart = true;
+                    options.PollingFrequency = TimeSpan.FromSeconds(3);
+                    options.Id = "3secondPollerES";
+                })
                 .AddChannel("local", (provider, options) =>
                 {
-                    var logger = provider.GetRequiredService<ILogger<Startup>>();
-
                     options.Endpoint = ev =>
                     {
-                        logger.LogInformation("Received message {Msg}", ev.ToJson());
+                        var json = ev.ToJson();
+                        Console.WriteLine(json);
                     };
-                })
-                .AddEventFlow(EventFlowBuilder.From<CosmosDbEventSource>(options =>
-                    {
-                        options.Autostart = true;
+                });
 
-                        options.Configuration = new CosmosDBEventSourceConfiguration()
-                        {
-                            ConnectionString =
-                                "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-                            Container = "testdocuments",
-                            Database = "testdb",
-                        };
-                    })
-                    .Channel("local"));
+            services.Configure<DefaultChannelOptions>(options =>
+            {
+                options.DefaultChannelName = "local";
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -71,9 +56,7 @@ namespace Weikio.EventFramework.Samples.EventSource.CosmosDB
             }
 
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

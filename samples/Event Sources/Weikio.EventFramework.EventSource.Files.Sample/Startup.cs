@@ -1,30 +1,22 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
-using Weikio.EventFramework.EventFlow.CloudEvents;
-using Weikio.EventFramework.EventPublisher;
-using Weikio.EventFramework.EventSource;
-using Weikio.EventFramework.EventSource.CosmosDB;
+using Weikio.EventFramework.EventAggregator.Core;
+using Weikio.EventFramework.Extensions.EventAggregator;
 
-namespace Weikio.EventFramework.Samples.EventSource.CosmosDB
+namespace Weikio.EventFramework.EventSource.Files.Sample
 {
     public class Startup
     {
+        public const string FolderToMonitor = @"c:\temp\listen";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -38,28 +30,33 @@ namespace Weikio.EventFramework.Samples.EventSource.CosmosDB
             services.AddControllers();
 
             services.AddEventFramework()
+                .AddFileEventSource(options =>
+                {
+                    options.Configuration = new FileEventSourceConfiguration() { Filter = "*.txt", Folder = FolderToMonitor };
+                    options.Autostart = true;
+                    options.Id = "mylocalfiles";
+                })
                 .AddChannel("local", (provider, options) =>
                 {
-                    var logger = provider.GetRequiredService<ILogger<Startup>>();
+                    var aggregator = provider.GetRequiredService<ICloudEventAggregator>();
 
-                    options.Endpoint = ev =>
+                    var endpoint = new CloudEventsEndpoint(async ev =>
                     {
-                        logger.LogInformation("Received message {Msg}", ev.ToJson());
-                    };
+                        await aggregator.Publish(ev);
+                    });
+
+                    options.Endpoints.Add(endpoint);
                 })
-                .AddEventFlow(EventFlowBuilder.From<CosmosDbEventSource>(options =>
-                    {
-                        options.Autostart = true;
-
-                        options.Configuration = new CosmosDBEventSourceConfiguration()
-                        {
-                            ConnectionString =
-                                "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-                            Container = "testdocuments",
-                            Database = "testdb",
-                        };
-                    })
-                    .Channel("local"));
+                .AddHandler(ev =>
+                {
+                    var json = ev.ToJson();
+                    Console.WriteLine(json);
+                });
+            
+            services.Configure<DefaultChannelOptions>(options =>
+            {
+                options.DefaultChannelName = "local";
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -71,9 +68,7 @@ namespace Weikio.EventFramework.Samples.EventSource.CosmosDB
             }
 
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
