@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Weikio.ApiFramework.Core" Version="1.1.0" />
+    <PackageReference Include="Weikio.ApiFramework.SDK" Version="1.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Weikio.PluginFramework" Version="1.5.1" />
+    <PackageReference Include="Weikio.PluginFramework.Abstractions" Version="1.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj" />
+  </ItemGroup>
+  
+</Project>
