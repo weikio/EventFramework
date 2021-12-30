@@ -15,7 +15,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
     public static class IEventFrameworkBuilderExtensions
     {
-        public static IEventFrameworkBuilder AddEventFlow(this IEventFrameworkBuilder builder, EventFlowBuilder flowBuilder)
+        public static IEventFrameworkBuilder AddEventFlow(this IEventFrameworkBuilder builder, IEventFlowBuilder flowBuilder)
         {
             var services = builder.Services;
             services.AddEventFlow(flowBuilder);
@@ -31,7 +31,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
 
-        public static IServiceCollection AddEventFlow(this IServiceCollection services, EventFlowBuilder flowBuilder)
+        public static IServiceCollection AddEventFlow(this IServiceCollection services, IEventFlowBuilder flowBuilder)
         {
             services.AddCloudEventIntegrationFlows();
 

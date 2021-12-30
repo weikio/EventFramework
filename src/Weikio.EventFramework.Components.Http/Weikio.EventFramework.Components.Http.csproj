@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventFlow.Abstractions\Weikio.EventFramework.EventFlow.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Sdk\Weikio.EventFramework.Sdk.csproj" />
+  </ItemGroup>
+  
+</Project>

@@ -44,5 +44,16 @@ namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
         {
             return new ChannelComponent<TOutput>(def.Func, def.Predicate);
         }
+        
+        public static implicit operator ChannelComponent<TOutput>(Endpoint<TOutput> endpoint)
+        {
+            Func<TOutput, Task<TOutput>> func = async output =>
+            {
+                await endpoint.Func(output);
+                return output;
+            };
+            
+            return new ChannelComponent<TOutput>(func, endpoint.Predicate);
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
     public static class EventFlowBuilderExtensions
     {
-        public static EventFlowBuilder Channel(this EventFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null)
+        public static IEventFlowBuilder Channel(this IEventFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null)
         {
             var component = new ChannelComponentBuilder(channelName, predicate);
             
@@ -17,7 +17,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
 
-        public static EventFlowBuilder Transform(this EventFlowBuilder builder, Func<CloudEvent, CloudEvent> transform, Predicate<CloudEvent> predicate = null)
+        public static IEventFlowBuilder Transform(this IEventFlowBuilder builder, Func<CloudEvent, CloudEvent> transform, Predicate<CloudEvent> predicate = null)
         {
             var component = new CloudEventsComponent(transform, predicate);
             builder.Component(component);
@@ -25,7 +25,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
 
-        public static EventFlowBuilder Filter(this EventFlowBuilder builder, Func<CloudEvent, Filter> filter)
+        public static IEventFlowBuilder Filter(this IEventFlowBuilder builder, Func<CloudEvent, Filter> filter)
         {
             var componentBuilder = new FilterComponentBuilder(filter);
             builder.Component(componentBuilder.Build);
@@ -33,7 +33,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
 
-        public static EventFlowBuilder Filter(this EventFlowBuilder builder, Predicate<CloudEvent> filter)
+        public static IEventFlowBuilder Filter(this IEventFlowBuilder builder, Predicate<CloudEvent> filter)
         {
             var componentBuilder = new FilterComponentBuilder(filter);
             builder.Component(componentBuilder.Build);
@@ -41,7 +41,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
 
-        public static EventFlowBuilder Handle<THandlerType>(this EventFlowBuilder builder, Predicate<CloudEvent> predicate = null,
+        public static IEventFlowBuilder Handle<THandlerType>(this IEventFlowBuilder builder, Predicate<CloudEvent> predicate = null,
             Action<THandlerType> configure = null)
         {
             var componentBuilder = new HandlerComponentBuilder(null, null, typeof(THandlerType), configure);
@@ -50,7 +50,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
 
-        public static EventFlowBuilder Handle(this EventFlowBuilder builder, Action<CloudEvent> handler, Predicate<CloudEvent> predicate = null)
+        public static IEventFlowBuilder Handle(this IEventFlowBuilder builder, Action<CloudEvent> handler, Predicate<CloudEvent> predicate = null)
         {
             if (predicate == null)
             {
@@ -68,7 +68,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
         
-        public static EventFlowBuilder Handle(this EventFlowBuilder builder, Action<CloudEvent, IServiceProvider> handler, Predicate<CloudEvent> predicate = null)
+        public static IEventFlowBuilder Handle(this IEventFlowBuilder builder, Action<CloudEvent, IServiceProvider> handler, Predicate<CloudEvent> predicate = null)
         {
             if (predicate == null)
             {
@@ -86,7 +86,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
         
-        public static EventFlowBuilder Handle(this EventFlowBuilder builder, Func<CloudEvent, Task> handler, Predicate<CloudEvent> predicate = null)
+        public static IEventFlowBuilder Handle(this IEventFlowBuilder builder, Func<CloudEvent, Task> handler, Predicate<CloudEvent> predicate = null)
         {
             if (predicate == null)
             {
@@ -98,7 +98,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder.Handle(handler, taskPredicate);
         }
         
-        public static EventFlowBuilder Handle(this EventFlowBuilder builder, Func<CloudEvent, Task> handler,
+        public static IEventFlowBuilder Handle(this IEventFlowBuilder builder, Func<CloudEvent, Task> handler,
             Func<CloudEvent, Task<bool>> predicate = null, Type handlerType = null, MulticastDelegate configureHandler = null)
         {
             var componentBuilder = new HandlerComponentBuilder((ev, provider) =>

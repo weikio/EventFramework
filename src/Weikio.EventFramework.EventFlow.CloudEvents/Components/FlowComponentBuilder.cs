@@ -12,12 +12,12 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 {
     public class FlowComponentBuilder : IComponentBuilder
     {
-        private readonly Action<EventFlowBuilder> _buildFlow;
+        private readonly Action<IEventFlowBuilder> _buildFlow;
         private readonly EventFlowDefinition _flowDefinition;
         private readonly Predicate<CloudEvent> _predicate;
         private readonly string _flowId;
 
-        public FlowComponentBuilder(Action<EventFlowBuilder> buildFlow, Predicate<CloudEvent> predicate = null)
+        public FlowComponentBuilder(Action<IEventFlowBuilder> buildFlow, Predicate<CloudEvent> predicate = null)
         {
             _buildFlow = buildFlow;
             _predicate = predicate;

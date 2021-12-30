@@ -13,7 +13,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Components.Sdk\Weikio.EventFramework.Components.Sdk.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Components\Weikio.EventFramework.Components.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventFlow\Weikio.EventFramework.EventFlow.csproj" />
   </ItemGroup>

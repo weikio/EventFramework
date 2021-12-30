@@ -1254,6 +1254,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
             using (var channel = new CloudEventsChannel(options))
             {
                 await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
             }
 
             Assert.Equal(2, counter);
@@ -1271,10 +1272,11 @@ namespace Weikio.EventFramework.Channels.Dataflow.UnitTests
                 counter += 1;
             });
 
-            options.Endpoints.Add(cloudEventsComponent);
+            options.Components.Add(cloudEventsEndpoint);
 
             using (var channel = new CloudEventsChannel(options))
             {
+                await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
                 await channel.Send(CloudEventCreator.Create(new InvoiceCreated()));
             }
 

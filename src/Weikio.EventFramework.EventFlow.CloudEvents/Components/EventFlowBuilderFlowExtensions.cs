@@ -8,7 +8,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
     public static class EventFlowBuilderFlowExtensions
     {
-        public static EventFlowBuilder Flow(this EventFlowBuilder builder, Action<EventFlowBuilder> buildFlow,
+        public static IEventFlowBuilder Flow(this IEventFlowBuilder builder, Action<IEventFlowBuilder> buildFlow,
             Predicate<CloudEvent> predicate = null)
         {
             var flowComponent = new FlowComponentBuilder(buildFlow, predicate);
@@ -17,7 +17,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             return builder;
         }
 
-        public static EventFlowBuilder Flow(this EventFlowBuilder builder, EventFlowDefinition flowDefinition,
+        public static IEventFlowBuilder Flow(this IEventFlowBuilder builder, EventFlowDefinition flowDefinition,
             Predicate<CloudEvent> predicate = null, string flowId = null)
         {
             var flowComponent = new FlowComponentBuilder(flowDefinition, predicate, flowId);

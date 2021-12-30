@@ -2,6 +2,6 @@
 {
     public abstract class CloudEventFlowBase
     {
-        public EventFlowBuilder Flow { get; protected set; }
+        public IEventFlowBuilder Flow { get; protected set; }
     }
 }

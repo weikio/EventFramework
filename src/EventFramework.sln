@@ -121,6 +121,22 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.AzureServiceBus.Sample", "..\samples\Event Sources\Weikio.EventFramework.EventSource.AzureServiceBus.Sample\Weikio.EventFramework.EventSource.AzureServiceBus.Sample.csproj", "{8C273E9F-361E-4C67-8A51-6B267BB855DD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", "{0A1BE512-CDBF-4809-85D1-29B82828B898}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components.AzureServiceBus", "Weikio.EventFramework.Components.AzureServiceBus\Weikio.EventFramework.Components.AzureServiceBus.csproj", "{649CB4D6-D972-4400-977B-21B5EDA2EDDE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components.Http", "Weikio.EventFramework.Components.Http\Weikio.EventFramework.Components.Http.csproj", "{2318CAD3-A76D-4AC9-AF14-DF94B293B53F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Http", "Http", "{D84E324D-5872-483F-AE1D-3CFC20B28C42}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components.Http.Sample", "..\samples\Components\Weikio.EventFramework.Components.Http.Sample\Weikio.EventFramework.Components.Http.Sample.csproj", "{2FE6E1A4-E9C2-477E-B0B6-6CA241648C71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventFlow.CloudEvents.Abstractions", "Weikio.EventFramework.EventFlow.CloudEvents.Abstractions\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions.csproj", "{F0841313-A624-45E2-BC4D-7A7850B17FA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components.Sdk", "Weikio.EventFramework.Components.Sdk\Weikio.EventFramework.Components.Sdk.csproj", "{52D8006A-1A83-4E17-B5F8-CB0F6B4557A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Sdk", "Weikio.EventFramework.Sdk\Weikio.EventFramework.Sdk.csproj", "{C3969B6C-DA34-4732-B9A5-70C0F0A338A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -319,6 +335,30 @@ Global
 		{8C273E9F-361E-4C67-8A51-6B267BB855DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C273E9F-361E-4C67-8A51-6B267BB855DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C273E9F-361E-4C67-8A51-6B267BB855DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{649CB4D6-D972-4400-977B-21B5EDA2EDDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{649CB4D6-D972-4400-977B-21B5EDA2EDDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{649CB4D6-D972-4400-977B-21B5EDA2EDDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{649CB4D6-D972-4400-977B-21B5EDA2EDDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2318CAD3-A76D-4AC9-AF14-DF94B293B53F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2318CAD3-A76D-4AC9-AF14-DF94B293B53F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2318CAD3-A76D-4AC9-AF14-DF94B293B53F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2318CAD3-A76D-4AC9-AF14-DF94B293B53F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FE6E1A4-E9C2-477E-B0B6-6CA241648C71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FE6E1A4-E9C2-477E-B0B6-6CA241648C71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FE6E1A4-E9C2-477E-B0B6-6CA241648C71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FE6E1A4-E9C2-477E-B0B6-6CA241648C71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0841313-A624-45E2-BC4D-7A7850B17FA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0841313-A624-45E2-BC4D-7A7850B17FA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0841313-A624-45E2-BC4D-7A7850B17FA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0841313-A624-45E2-BC4D-7A7850B17FA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52D8006A-1A83-4E17-B5F8-CB0F6B4557A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52D8006A-1A83-4E17-B5F8-CB0F6B4557A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52D8006A-1A83-4E17-B5F8-CB0F6B4557A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52D8006A-1A83-4E17-B5F8-CB0F6B4557A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3969B6C-DA34-4732-B9A5-70C0F0A338A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3969B6C-DA34-4732-B9A5-70C0F0A338A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3969B6C-DA34-4732-B9A5-70C0F0A338A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3969B6C-DA34-4732-B9A5-70C0F0A338A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
@@ -349,5 +389,9 @@ Global
 		{C3F8B92B-E154-46BD-A0A6-EA8FEEDF3FB8} = {DFABB31F-CF94-4230-8CC3-1D4A2FA64EE5}
 		{8C273E9F-361E-4C67-8A51-6B267BB855DD} = {1564E1B3-247A-4A06-B2CF-E08718EF76C9}
 		{C7303390-733E-463F-82AB-65909E2E61C2} = {340835DD-AC42-4B38-BE55-20BDD64AFAAF}
+		{649CB4D6-D972-4400-977B-21B5EDA2EDDE} = {0A1BE512-CDBF-4809-85D1-29B82828B898}
+		{D84E324D-5872-483F-AE1D-3CFC20B28C42} = {0A1BE512-CDBF-4809-85D1-29B82828B898}
+		{2318CAD3-A76D-4AC9-AF14-DF94B293B53F} = {D84E324D-5872-483F-AE1D-3CFC20B28C42}
+		{2FE6E1A4-E9C2-477E-B0B6-6CA241648C71} = {D84E324D-5872-483F-AE1D-3CFC20B28C42}
 	EndGlobalSection
 EndGlobal

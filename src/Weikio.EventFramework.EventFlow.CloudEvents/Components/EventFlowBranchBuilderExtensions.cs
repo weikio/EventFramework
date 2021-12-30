@@ -7,7 +7,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
     public static class EventFlowBranchBuilderExtensions
     {
-        public static EventFlowBuilder Branch(this EventFlowBuilder builder,
+        public static IEventFlowBuilder Branch(this IEventFlowBuilder builder,
             params (Predicate<CloudEvent> Predicate, Action<EventFlowBuilder> BuildBranch)[] branches)
         {
             var componentBuilder = new BranchComponentBuilder(branches);
