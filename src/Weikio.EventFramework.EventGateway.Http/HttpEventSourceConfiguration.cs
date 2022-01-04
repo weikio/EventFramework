@@ -1,4 +1,4 @@
-namespace Weikio.EventFramework.EventGateway.Http
+﻿namespace Weikio.EventFramework.EventGateway.Http
 {
     public class HttpEventSourceConfiguration
     {

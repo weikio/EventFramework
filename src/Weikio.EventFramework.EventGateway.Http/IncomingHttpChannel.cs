@@ -38,10 +38,4 @@ namespace Weikio.EventFramework.EventGateway.Http
         public ChannelReader<CloudEvent> Reader { get; }
         public int ReaderCount { get; set; }
     }
-
-    public class HttpEventSourceConfiguration
-    {
-        public string Endpoint { get; set; } = "/events";
-        public string PolicyName { get; set; }
-    }
 }

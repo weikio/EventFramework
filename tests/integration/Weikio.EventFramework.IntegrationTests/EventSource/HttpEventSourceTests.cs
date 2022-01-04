@@ -37,7 +37,7 @@ namespace Weikio.EventFramework.IntegrationTests.EventSource
                 services.AddCloudEventPublisher();
                 services.AddHttpGateways();
 
-                services.AddEventSource<HttpEventSource>();
+                // services.AddEventSource<HttpEventSource>();
             });
 
             MyTestCloudEventPublisher.PublishedEvents = new List<CloudEvent>();

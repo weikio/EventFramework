@@ -2,11 +2,8 @@
 
 namespace Weikio.EventFramework.EventGateway.Http
 {
-    public class HttpCloudEventReceiverApiConfiguration
+    public class PublisherConfig
     {
-        public string GatewayName { get; set; }
-        public string PolicyName { get; set; }
-        
         public ICloudEventPublisher CloudEventPublisher { get; set; }
     }
 }
