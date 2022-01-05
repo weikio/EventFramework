@@ -9,7 +9,7 @@ using Weikio.ApiFramework.Core.Configuration;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.ApiFramework.Core.Infrastructure;
 
-namespace Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration
+namespace Weikio.EventFramework.EventSource.Api.SDK.ApiFrameworkIntegration
 {
     public class SyncEndpointInitializer : IEndpointInitializer
     {

@@ -45,7 +45,6 @@ namespace EventFrameworkWithApiFrameworkTestBed
                 .AddApi<TestApi>("/hello");
                 
             services.AddEventFramework()
-                .AddHttpGateway()
                 .AddHandler<TestHandler>();
         }
 

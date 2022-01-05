@@ -11,7 +11,6 @@ using Weikio.ApiFramework.Core.StartupTasks;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway.Http;
-using Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration;
 using Weikio.EventFramework.Extensions.EventAggregator;
 using Xunit;
 using Xunit.Abstractions;
@@ -33,7 +32,6 @@ namespace Weikio.EventFramework.IntegrationTests.ApiFramework
                     .AddApi<TestApi>("/hello");
 
                 services.AddEventFramework()
-                    .AddHttpGateway()
                     .AddHandler<TestHandler>();
             });
 
@@ -68,7 +66,6 @@ namespace Weikio.EventFramework.IntegrationTests.ApiFramework
                 });
 
                 services.AddEventFramework()
-                    .AddHttpGateway(endpoint: "/myevents")
                     .AddHandler<TestHandler>();
             });
 
@@ -96,7 +93,6 @@ namespace Weikio.EventFramework.IntegrationTests.ApiFramework
                 });
 
                 services.AddEventFramework()
-                    .AddHttpGateway()
                     .AddHandler<TestHandler>();
             });
 

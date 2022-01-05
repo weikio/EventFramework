@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.SDK;
 
-namespace Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration
+namespace Weikio.EventFramework.EventSource.Api.SDK.ApiFrameworkIntegration
 {
     public class CustomEndpointConfigurationProvider : IEndpointConfigurationProvider
     {

@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventGateway\Weikio.EventFramework.EventGateway.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.Api.SDK\Weikio.EventFramework.EventSource.Api.SDK.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Extensions.EventAggregator\Weikio.EventFramework.Extensions.EventAggregator.csproj" />
   </ItemGroup>

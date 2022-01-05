@@ -143,6 +143,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.Http.Sample", "..\samples\Event Sources\Weikio.EventFramework.EventSource.Http.Sample\Weikio.EventFramework.EventSource.Http.Sample.csproj", "{B52187CD-4740-4721-807E-14E2F5448414}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.Api.SDK", "Weikio.EventFramework.EventSource.Api.SDK\Weikio.EventFramework.EventSource.Api.SDK.csproj", "{7EB77250-E0E3-4638-8F8B-BD5F0D78E111}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -373,6 +375,10 @@ Global
 		{B52187CD-4740-4721-807E-14E2F5448414}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B52187CD-4740-4721-807E-14E2F5448414}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B52187CD-4740-4721-807E-14E2F5448414}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EB77250-E0E3-4638-8F8B-BD5F0D78E111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EB77250-E0E3-4638-8F8B-BD5F0D78E111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EB77250-E0E3-4638-8F8B-BD5F0D78E111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EB77250-E0E3-4638-8F8B-BD5F0D78E111}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Weikio.ApiFramework.Core.Infrastructure;
 
-namespace Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration
+namespace Weikio.EventFramework.EventSource.Api.SDK.ApiFrameworkIntegration
 {
     public class CustomHttpVerbResolver : IEndpointHttpVerbResolver
     {

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Polly.Bulkhead;
 using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.Channels.CloudEvents;
@@ -12,6 +13,7 @@ using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
 using Weikio.EventFramework.Extensions;
 using Weikio.EventFramework.EventFlow.CloudEvents;
+using Weikio.EventFramework.EventSource.Api.SDK;
 using Weikio.EventFramework.Router;
 
 namespace Weikio.EventFramework.AspNetCore.Extensions
@@ -25,17 +27,10 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.AddCloudEventPublisher();
             builder.AddCloudEventCreator();
             builder.AddCloudEventAggregator();
-            builder.AddCloudEventGateway();
             builder.AddCloudEventSources();
+            builder.AddApiEventSources();
             builder.AddCloudEventDataflowChannels();
             builder.AddCloudEventIntegrationFlows();
-
-            builder.Services.TryAddSingleton<ICloudEventRouteCollection, CloudEventRouteCollection>();
-
-            services.AddHostedService<ServiceCreationHostedService>();
-            services.AddHostedService<RouteInitializationStartupTask>();
-            
-            builder.Services.TryAddSingleton<RouteInitializer>();
 
             var options = new EventFrameworkOptions();
             setupAction?.Invoke(options);

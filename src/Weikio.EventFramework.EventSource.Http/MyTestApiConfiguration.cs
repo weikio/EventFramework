@@ -5,10 +5,7 @@ using Weikio.EventFramework.EventSource.SDK;
 
 namespace Weikio.EventFramework.EventSource.Http
 {
-    public class HttpCloudEventReceiverApiConfiguration : ApiEventSourceConfigurationBase
+    public class MyTestApiConfiguration : ApiEventSourceConfigurationBase
     {
-        public string PolicyName { get; set; }
-        
-        public ICloudEventPublisher CloudEventPublisher { get; set; }
     }
 }

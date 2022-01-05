@@ -15,7 +15,7 @@ using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.EventFlow.CloudEvents;
 using Weikio.EventFramework.EventGateway.Http;
-using Weikio.EventFramework.EventGateway.Http.ApiFrameworkIntegration;
+using Weikio.EventFramework.EventSource.Api.SDK.ApiFrameworkIntegration;
 
 namespace Weikio.EventFramework.EventSource.Http.Sample
 {
@@ -40,7 +40,7 @@ namespace Weikio.EventFramework.EventSource.Http.Sample
             });
 
             services.AddEventFramework()
-                .AddEventFlow(EventFlowBuilder.From<MyApiTestEventSource>(options =>
+                .AddEventFlow(EventFlowBuilder.From<MyApiTestEventSourceBase>(options =>
                     {
                         options.Autostart = true;
                         options.Id = "web";

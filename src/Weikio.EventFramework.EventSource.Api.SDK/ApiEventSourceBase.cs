@@ -2,38 +2,36 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.Core.Apis;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Api.SDK;
 
 namespace Weikio.EventFramework.EventGateway.Http
 {
-    public abstract class ApiEventSource : BackgroundService
+    public abstract class ApiEventSourceBase : BackgroundService
     {
-        private readonly ILogger<ApiEventSource> _logger;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<ApiEventSourceBase> _logger;
         private readonly IEndpointManager _endpointManager;
         private readonly IApiProvider _apiProvider;
         private readonly ICloudEventPublisher _cloudEventPublisher;
-        private readonly HttpEventSourceConfiguration _configuration;
-
+        private object _configuration;
         protected abstract Type ApiEventSourceType { get; }
-        
-        public ApiEventSource(ILogger<ApiEventSource> logger, IEndpointManager endpointManager, IApiProvider apiProvider,
-            ICloudEventPublisher cloudEventPublisher, HttpEventSourceConfiguration configuration = null)
+        protected abstract Type ApiEventSourceConfigurationType { get; }
+
+        public ApiEventSourceBase(IServiceProvider serviceProvider, ILogger<ApiEventSourceBase> logger, IEndpointManager endpointManager, IApiProvider apiProvider,
+            ICloudEventPublisher cloudEventPublisher, object configuration = null)
         {
+            _serviceProvider = serviceProvider;
             _logger = logger;
             _endpointManager = endpointManager;
             _apiProvider = apiProvider;
             _cloudEventPublisher = cloudEventPublisher;
-
-            if (configuration == null)
-            {
-                configuration = new HttpEventSourceConfiguration();
-            }
-
             _configuration = configuration;
         }
 
@@ -43,24 +41,29 @@ namespace Weikio.EventFramework.EventGateway.Http
 
             var catalog = new TypeApiCatalog(ApiEventSourceType);
             await catalog.Initialize(stoppingToken);
-            
+
+            foreach (var VARIABLE in catalog.List())
+            {
+                
+            }
             _apiProvider.Add(catalog);
             
             var apiDefinition = catalog.List().Single();
             var api = _apiProvider.Get(apiDefinition);
 
-            // Create HTTP Endpoint for the gateway
-            var endpoint = new Endpoint("/mytest", api, new PublisherConfig()
+            if (_configuration == null && ApiEventSourceConfigurationType != null)
             {
-                CloudEventPublisher = _cloudEventPublisher
-            });
-            //
-            // var endpoint = new Endpoint(_configuration.Endpoint, api,
-            //     new HttpCloudEventReceiverApiConfiguration()
-            //     {
-            //         PolicyName = _configuration.PolicyName, CloudEventPublisher = _cloudEventPublisher, 
-            //     });
-
+                _configuration = ActivatorUtilities.CreateInstance(_serviceProvider, ApiEventSourceConfigurationType);
+            }
+            
+            if (_configuration != null)
+            {
+                ((IApiEventSourceConfiguration)_configuration).CloudEventPublisher = _cloudEventPublisher;
+            }
+            
+            // Create HTTP Endpoint for the gateway
+            var endpoint = new Endpoint("/mytest", api, _configuration);
+            
             _endpointManager.AddEndpoint(endpoint);
             _endpointManager.Update();
 

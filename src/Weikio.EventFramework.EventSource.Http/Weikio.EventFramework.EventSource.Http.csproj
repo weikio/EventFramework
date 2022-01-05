@@ -5,8 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Weikio.ApiFramework.Core" Version="1.1.0" />
-    <PackageReference Include="Weikio.ApiFramework.SDK" Version="1.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="Weikio.PluginFramework" Version="1.5.1" />
     <PackageReference Include="Weikio.PluginFramework.Abstractions" Version="1.5.1" />
@@ -14,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.Api.SDK\Weikio.EventFramework.EventSource.Api.SDK.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj" />
   </ItemGroup>
   

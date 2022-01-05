@@ -27,8 +27,7 @@ namespace Weikio.EventFramework.Samples.Client
             services.AddServerSideBlazor();
 
             services.AddCloudEventCreator();
-            services.AddCloudEventPublisher()
-                .AddRemoteHttpGateway("https://localhost:5003/api/events");
+            services.AddCloudEventPublisher();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

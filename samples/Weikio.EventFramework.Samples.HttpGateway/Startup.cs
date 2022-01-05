@@ -29,9 +29,6 @@ namespace Weikio.EventFramework.Samples.HttpGateway
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-
-            services.AddHttpGateway()
-                .AddHandler<NewInvoiceHandler>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

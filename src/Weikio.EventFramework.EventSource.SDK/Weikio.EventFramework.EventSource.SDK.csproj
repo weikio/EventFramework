@@ -16,5 +16,5 @@
     <ProjectReference Include="..\Weikio.EventFramework.EventPublisher\Weikio.EventFramework.EventPublisher.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj" />
   </ItemGroup>
-
+  
 </Project>

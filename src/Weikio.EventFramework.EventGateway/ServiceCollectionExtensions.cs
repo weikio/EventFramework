@@ -18,19 +18,19 @@ namespace Weikio.EventFramework.EventGateway
 
         public static IServiceCollection AddCloudEventGateway(this IServiceCollection services, Action<CloudEventGatewayOptions> setupAction = null)
         {
-            services.AddCloudEventAggregatorCore();
-            services.AddChannels();
-            
-            services.TryAddSingleton<ICloudEventGatewayManager, CloudEventGatewayManager>();
-            services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
-            services.AddHostedService<ServiceCreationHostedService>();
-            services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
-            services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
-
-            if (setupAction != null)
-            {
-                services.Configure(setupAction);
-            }
+            // services.AddCloudEventAggregatorCore();
+            // services.AddChannels();
+            //
+            // services.TryAddSingleton<ICloudEventGatewayManager, CloudEventGatewayManager>();
+            // services.TryAddSingleton<ICloudEventGatewayInitializer, CloudEventGatewayInitializer>();
+            // services.AddHostedService<ServiceCreationHostedService>();
+            // services.TryAddSingleton<ICloudEventRouterServiceFactory, CloudEventRouterServiceFactory>();
+            // services.TryAddTransient<ICloudEventRouterService, CloudEventRouterService>();
+            //
+            // if (setupAction != null)
+            // {
+            //     services.Configure(setupAction);
+            // }
 
             return services;
         }

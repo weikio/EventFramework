@@ -7,46 +7,13 @@ using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Weikio.ApiFramework.Abstractions;
-using Weikio.ApiFramework.Core.Endpoints;
-using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Api.SDK;
 
-namespace Weikio.EventFramework.EventGateway.Http
+namespace Weikio.EventFramework.EventSource.Http
 {
-    public class MyApiTestEventSource : ApiEventSource
-    {
-        public MyApiTestEventSource(ILogger<MyApiTestEventSource> logger, IEndpointManager endpointManager, 
-            IApiProvider apiProvider, ICloudEventPublisher cloudEventPublisher, 
-            HttpEventSourceConfiguration configuration = null) : base(logger, endpointManager, apiProvider, cloudEventPublisher, configuration)
-        {
-        }
-
-        protected override Type ApiEventSourceType { get; } = typeof(MyTestApi);
-    }
-    
-    public class MyTestApi
-    {
-        public PublisherConfig Configuration { get; set; }
-        
-        public async Task<IActionResult> Handle()
-        {
-            var ev = new MyTestEvent();
-            
-            await Configuration.CloudEventPublisher.Publish(ev);
-            
-            return new OkResult();
-        }
-    }
-
-    public class MyTestEvent
-    {
-        public string Name { get; set; }
-    }
-
-    public class HttpCloudEventReceiverApi
+    public class HttpCloudEventReceiverApi : IApiEventSource<HttpCloudEventReceiverApiConfiguration>
     {
         private readonly IAuthorizationService _authorizationService;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -60,7 +27,7 @@ namespace Weikio.EventFramework.EventGateway.Http
 
         public HttpCloudEventReceiverApiConfiguration Configuration { get; set; }
 
-        public async Task<IActionResult> ReceiveEvent()
+        public async Task<IActionResult> Handle()
         {
             var httpContext = _contextAccessor.HttpContext;
 

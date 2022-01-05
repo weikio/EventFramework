@@ -21,7 +21,6 @@ namespace Weikio.EventFramework.Samples.Gateway
             services.AddRazorPages();
 
             // 1. Create a Http Gateway which can accept CloudEvents. By default this accepts messages at /api/events
-            services.AddHttpGateway();
 
             // 2. Configure the gateway to write all the received events into the Datastore
             services.Configure<CloudEventGatewayOptions>(options =>
