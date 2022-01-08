@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+      <IsPackable>true</IsPackable>
+      <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+      <Description>Logger Component for Event Framework</Description>
+      <PackageDescription>Logger Component for Event Framework</PackageDescription>
+      <PackageId>Weikio.EventFramework.Components.Logger</PackageId>
+      <Product>Weikio.EventFramework.Components.Logger</Product>
+      <PackageTags>cloudevents;Logger</PackageTags>
+      <Title>Logger Component for Event Framework</Title>
+    </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Components.Sdk\Weikio.EventFramework.Components.Sdk.csproj" />
+  </ItemGroup>
+</Project>

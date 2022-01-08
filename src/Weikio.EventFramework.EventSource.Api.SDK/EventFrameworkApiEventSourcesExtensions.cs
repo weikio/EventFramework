@@ -30,18 +30,12 @@ namespace Weikio.EventFramework.EventSource.Api.SDK
 
             if (services.All(x => x.ServiceType != typeof(IEndpointInitializer)))
             {
-                // TODO: Collection concurrent problem in Api Framework
-                services.TryAddSingleton<IEndpointInitializer, SyncEndpointInitializer>();
-services.TryAddSingleton<IApiProvider>();
                 services.AddApiFrameworkCore(options =>
                 {
                     options.AutoResolveEndpoints = false;
                     options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
                 });
-                
             }
-            
-            
 
             return services;
         }

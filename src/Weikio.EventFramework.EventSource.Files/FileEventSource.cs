@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventPublisher;
 
 namespace Weikio.EventFramework.EventSource.Files
@@ -31,7 +32,8 @@ namespace Weikio.EventFramework.EventSource.Files
                 throw new Exception("Configuration is required");
             }
 
-            _fileSystemWatcher = new FileSystemWatcher(_configuration.Folder, _configuration.Filter) { IncludeSubdirectories = _configuration.IncludeSubfolders };
+            _fileSystemWatcher =
+                new FileSystemWatcher(_configuration.Folder, _configuration.Filter) { IncludeSubdirectories = _configuration.IncludeSubfolders };
 
             _fileSystemWatcher.Created += (sender, args) =>
             {

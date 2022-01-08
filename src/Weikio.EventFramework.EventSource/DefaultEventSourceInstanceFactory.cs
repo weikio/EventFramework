@@ -73,6 +73,8 @@ namespace Weikio.EventFramework.EventSource
             var eventSourceOptions = _eventSourceOptionsAccessor.CurrentValue;
             var channelName = eventSourceOptions.EventSourceInstanceChannelNameFactory(id);
 
+            var eventSourceInstanceContext = new EventSourceInstanceContext { EventChannel = channelName, EventSourceInstanceId = id };
+
             try
             {
                 _logger.LogInformation("Creating event source instance from event source {EventSource}", eventSource);
@@ -120,7 +122,14 @@ namespace Weikio.EventFramework.EventSource
                             extraParams.Add(publisher);
                         }
 
-                        inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
+                        if (eventSourceType.GetConstructors().FirstOrDefault()?.GetParameters()
+                                .Any(x => x.ParameterType == typeof(EventSourceInstanceContext)) ==
+                            true)
+                        {
+                            extraParams.Add(eventSourceInstanceContext);
+                        }
+
+                        inst = (IHostedService)ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
 
                         if (configure != null)
                         {
@@ -240,8 +249,9 @@ namespace Weikio.EventFramework.EventSource
             var esChannel = CreateEventSourceInstanceChannel(instanceOptions, channelName, id);
 
             _channelManager.Add(esChannel);
-         
+
             var publisherFactoryOptions = new CloudEventPublisherFactoryOptions();
+
             publisherFactoryOptions.ConfigureOptions.Add(options =>
             {
                 options.DefaultChannelName = channelName;
@@ -285,13 +295,14 @@ namespace Weikio.EventFramework.EventSource
             }
 
             channelOptions.CloudEventCreationOptions.AdditionalExtensions = channelOptions.CloudEventCreationOptions.AdditionalExtensions != null
-                ? channelOptions.CloudEventCreationOptions.AdditionalExtensions.Concat(new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) })
+                ? channelOptions.CloudEventCreationOptions.AdditionalExtensions
+                    .Concat(new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) })
                     .ToArray()
                 : new ICloudEventExtension[] { new EventFrameworkEventSourceExtension(id) };
 
             channelOptions.Endpoints.Add(channelEndpoint);
             instanceOptions.ConfigureChannel?.Invoke(channelOptions);
-            
+
             var esChannel = new CloudEventsChannel(channelOptions);
 
             return esChannel;

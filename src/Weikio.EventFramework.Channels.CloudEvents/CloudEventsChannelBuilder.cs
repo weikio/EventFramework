@@ -97,12 +97,12 @@ namespace Weikio.EventFramework.Channels.CloudEvents
             return new CloudEventsChannel(new CloudEventsChannelOptions() { Name = channelName });
         }
 
-        public IChannel Create(CloudEventsChannelOptions options)
+        public CloudEventsChannel Create(CloudEventsChannelOptions options)
         {
             return new CloudEventsChannel(options);
         }
 
-        public async Task<IChannel> Build(IServiceProvider serviceProvider)
+        public async Task<CloudEventsChannel> Build(IServiceProvider serviceProvider)
         {
             for (var index = 0; index < _components.Count; index++)
             {

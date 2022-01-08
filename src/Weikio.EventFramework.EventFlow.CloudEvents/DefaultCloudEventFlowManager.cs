@@ -72,6 +72,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 _logger.LogDebug("Integration flow with ID {Id} requires a new event source", flowInstance.Id);
 
                 var esOptions = new EventSourceInstanceOptions();
+                esOptions.Id = flowInstance.Id;
 
                 if (flowInstance.ConfigureEventSourceInstanceOptions != null)
                 {
@@ -82,8 +83,6 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                     esOptions.Autostart = true;
                     esOptions.PollingFrequency = TimeSpan.FromSeconds(2);
                 }
-
-                esOptions.Id = flowInstance.Id;
 
                 TypePluginCatalog typePluginCatalog = null;
 

@@ -9,6 +9,7 @@ using Weikio.EventFramework.AspNetCore.Extensions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventAggregator.Core;
+using Weikio.EventFramework.EventFlow.CloudEvents;
 using Weikio.EventFramework.Extensions.EventAggregator;
 
 namespace Weikio.EventFramework.EventSource.Files.Sample
@@ -16,6 +17,7 @@ namespace Weikio.EventFramework.EventSource.Files.Sample
     public class Startup
     {
         public const string FolderToMonitor = @"c:\temp\listen";
+        public const string FolderToMonitorForCloudEvents = @"c:\temp\listencloudevents";
 
         public Startup(IConfiguration configuration)
         {
@@ -51,8 +53,19 @@ namespace Weikio.EventFramework.EventSource.Files.Sample
                 {
                     var json = ev.ToJson();
                     Console.WriteLine(json);
-                });
-            
+                })
+                .AddEventFlow(EventFlowBuilder.From<FileCloudEventSource>(options =>
+                    {
+                        options.Id = "fileev";
+                        options.Autostart = true;
+                        options.Configuration = new FileCloudEventSourceConfiguration() { Folder = FolderToMonitorForCloudEvents, IncludeSubfolders = false };
+                    })
+                    .Handle(ev =>
+                    {
+                        var json = ev.ToJson();
+                        Console.WriteLine(json);
+                    }));
+
             services.Configure<DefaultChannelOptions>(options =>
             {
                 options.DefaultChannelName = "local";

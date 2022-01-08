@@ -33,12 +33,6 @@ namespace Weikio.EventFramework.EventSource.Http.Sample
         {
             services.AddControllers();
 
-            services.AddApiFrameworkCore(options =>
-            {
-                options.AutoResolveEndpoints = false;
-                options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
-            });
-
             services.AddEventFramework()
                 .AddEventFlow(EventFlowBuilder.From<MyTestApiEventSource>(options =>
                     {

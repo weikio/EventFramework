@@ -1,16 +1,18 @@
-using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace Weikio.EventFramework.EventSource.Files.Sample
+namespace Weikio.EventFramework.Components.File.Sample
 {
     public class Program
     {
         public static void Main(string[] args)
         {
-            Directory.CreateDirectory(Startup.FolderToMonitor);
-            Directory.CreateDirectory(Startup.FolderToMonitorForCloudEvents);
-
             CreateHostBuilder(args).Build().Run();
         }
 
