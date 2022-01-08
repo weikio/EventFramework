@@ -40,16 +40,44 @@ namespace Weikio.EventFramework.EventSource.Http.Sample
             });
 
             services.AddEventFramework()
-                .AddEventFlow(EventFlowBuilder.From<MyApiTestEventSourceBase>(options =>
+                .AddEventFlow(EventFlowBuilder.From<MyTestApiEventSource>(options =>
                     {
                         options.Autostart = true;
                         options.Id = "web";
+                        options.Configuration = new MyTestApiConfiguration() { Route = "testev" };
                     })
                     .Handle(
                         (ev, provider) =>
                         {
                             var logger = provider.GetRequiredService<ILogger<Startup>>();
                             logger.LogInformation(ev.ToJson());
+                        }))
+                .AddEventFlow(EventFlowBuilder.From<MyTestApiEventSource>(options =>
+                    {
+                        options.Autostart = true;
+                        options.Id = "web2";
+                        options.Configuration = new MyTestApiConfiguration() { Route = "myweb" };
+                    })
+                    .Handle(
+                        (ev, provider) =>
+                        {
+                            var logger = provider.GetRequiredService<ILogger<Startup>>();
+                            logger.LogInformation("MyWeb received");
+                        }))
+                .AddEventFlow(EventFlowBuilder.From<HttpCloudEventEventSource>(options =>
+                    {
+                        options.Autostart = true;
+                        options.Id = "http";
+                        options.Configuration = new HttpCloudEventReceiverApiConfiguration()
+                        {
+                            Route = "http"
+                        };
+                    })
+                    .Handle(
+                        (ev, provider) =>
+                        {
+                            var logger = provider.GetRequiredService<ILogger<Startup>>();
+                            logger.LogInformation("Http Event received");
                         }));
         }
 

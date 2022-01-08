@@ -4,35 +4,42 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource.Api.SDK;
 
 namespace Weikio.EventFramework.EventSource.Http
 {
     public class HttpCloudEventReceiverApi : IApiEventSource<HttpCloudEventReceiverApiConfiguration>
     {
-        private readonly IAuthorizationService _authorizationService;
         private readonly IHttpContextAccessor _contextAccessor;
 
-        public HttpCloudEventReceiverApi(IAuthorizationService authorizationService,
-            IHttpContextAccessor contextAccessor)
+        public HttpCloudEventReceiverApi(IHttpContextAccessor contextAccessor)
         {
-            _authorizationService = authorizationService;
             _contextAccessor = contextAccessor;
         }
 
         public HttpCloudEventReceiverApiConfiguration Configuration { get; set; }
 
-        public async Task<IActionResult> Handle()
+        public async Task<IActionResult> Handle(ICloudEventPublisher cloudEventPublisher)
         {
             var httpContext = _contextAccessor.HttpContext;
 
             var jsonReader = new JsonTextReader(new StreamReader(httpContext.Request.Body, Encoding.UTF8, true, 8192, true));
-            var jToken = await JToken.LoadAsync(jsonReader);
+
+            JToken jToken;
+
+            try
+            {
+                jToken = await JToken.LoadAsync(jsonReader);
+            }
+            catch (Exception)
+            {
+                return new BadRequestResult();
+            }
 
             var cloudEventFormatter = new JsonEventFormatter();
 
@@ -67,20 +74,7 @@ namespace Weikio.EventFramework.EventSource.Http
                 return new StatusCodeResult(500);
             }
 
-            // Assert policy
-            if (!string.IsNullOrWhiteSpace(Configuration?.PolicyName))
-            {
-                var user = httpContext.User;
-
-                var authResult = await _authorizationService.AuthorizeAsync(user, Configuration.PolicyName);
-
-                if (!authResult.Succeeded)
-                {
-                    return new UnauthorizedResult();
-                }
-            }
-
-            await Configuration.CloudEventPublisher.Publish(receivedEvents);
+            await cloudEventPublisher.Publish(receivedEvents);
 
             return new OkResult();
         }

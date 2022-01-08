@@ -13,6 +13,7 @@ using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
+using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource.Abstractions;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.LongPolling;
@@ -112,8 +113,12 @@ namespace Weikio.EventFramework.EventSource
                             extraParams.Add(instanceOptions.Configuration);
                         }
 
-                        var publisher = _publisherFactory.CreatePublisher(id);
-                        extraParams.Add(publisher);
+                        if (eventSourceType.GetConstructors().FirstOrDefault()?.GetParameters().Any(x => x.ParameterType == typeof(ICloudEventPublisher)) ==
+                            true)
+                        {
+                            var publisher = _publisherFactory.CreatePublisher(id);
+                            extraParams.Add(publisher);
+                        }
 
                         inst = (IHostedService) ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
 

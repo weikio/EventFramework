@@ -4,6 +4,7 @@ namespace Weikio.EventFramework.EventSource.Api.SDK
 {
     public interface IApiEventSourceConfiguration
     {
-        ICloudEventPublisher CloudEventPublisher { get; set; }
+        string Route { get; set; }
+        string AuthorizationPolicy { get; set; }
     }
 }
