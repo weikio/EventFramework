@@ -161,6 +161,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.GitHub.Sample", "..\samples\Event Sources\Weikio.EventFramework.EventSource.GitHub.Sample\Weikio.EventFramework.EventSource.GitHub.Sample.csproj", "{6F10F7F0-1E10-4B20-9FA2-290D112F6709}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components.Security", "Weikio.EventFramework.Components.Security\Weikio.EventFramework.Components.Security.csproj", "{18B78502-C0F7-4681-889F-48C9C83CC678}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components.Security.Sample", "..\samples\Components\Weikio.EventFramework.Components.Security.Sample\Weikio.EventFramework.Components.Security.Sample.csproj", "{28733BD1-9C9F-4E4F-8320-06FB6238D732}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Security", "Security", "{7DFDC6A3-7BD5-437F-A42F-E8407CF277FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -415,6 +421,14 @@ Global
 		{6F10F7F0-1E10-4B20-9FA2-290D112F6709}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F10F7F0-1E10-4B20-9FA2-290D112F6709}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F10F7F0-1E10-4B20-9FA2-290D112F6709}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18B78502-C0F7-4681-889F-48C9C83CC678}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18B78502-C0F7-4681-889F-48C9C83CC678}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18B78502-C0F7-4681-889F-48C9C83CC678}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18B78502-C0F7-4681-889F-48C9C83CC678}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28733BD1-9C9F-4E4F-8320-06FB6238D732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28733BD1-9C9F-4E4F-8320-06FB6238D732}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28733BD1-9C9F-4E4F-8320-06FB6238D732}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28733BD1-9C9F-4E4F-8320-06FB6238D732}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
@@ -460,5 +474,8 @@ Global
 		{0677CD0A-174F-4487-AFFB-9144AD85E268} = {62534DED-236B-4C1A-91FC-2DC8D2911168}
 		{D51589F3-E0B0-4326-8F17-3369D4EB46A4} = {0677CD0A-174F-4487-AFFB-9144AD85E268}
 		{6F10F7F0-1E10-4B20-9FA2-290D112F6709} = {0677CD0A-174F-4487-AFFB-9144AD85E268}
+		{7DFDC6A3-7BD5-437F-A42F-E8407CF277FE} = {0A1BE512-CDBF-4809-85D1-29B82828B898}
+		{18B78502-C0F7-4681-889F-48C9C83CC678} = {7DFDC6A3-7BD5-437F-A42F-E8407CF277FE}
+		{28733BD1-9C9F-4E4F-8320-06FB6238D732} = {7DFDC6A3-7BD5-437F-A42F-E8407CF277FE}
 	EndGlobalSection
 EndGlobal

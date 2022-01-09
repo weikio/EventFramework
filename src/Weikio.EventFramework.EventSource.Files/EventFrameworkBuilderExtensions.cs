@@ -21,7 +21,7 @@ namespace Weikio.EventFramework.EventSource.Files
         public static IServiceCollection AddFileEventSource(this IServiceCollection services,
             Action<EventSourceInstanceOptions> configureInstance = null)
         {
-            services.AddEventSource<FileEventSource>(configureInstance, typeof(FileEventSourceConfiguration));
+            services.AddEventSource<FileSystemEventSource>(configureInstance, typeof(FileSystemEventSourceConfiguration));
 
             return services;
         } 

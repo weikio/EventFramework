@@ -144,11 +144,11 @@ public sealed class GitHubEvent
         }
         
         headers.TryGetValue("User-Agent", out var userAgent);
-        headers.TryGetValue("X-GitHub-Delivery", out var delivery);
-        headers.TryGetValue("X-GitHub-Event", out var @event);
-        headers.TryGetValue("X-GitHub-Hook-ID", out var hookId);
-        headers.TryGetValue("X-GitHub-Hook-Installation-Target-ID", out var hookInstallationTargetId);
-        headers.TryGetValue("X-GitHub-Hook-Installation-Target-Type", out var hookInstallationTargetType);
+        headers.TryGetValue("X-Github-Delivery", out var delivery);
+        headers.TryGetValue("X-Github-Event", out var @event);
+        headers.TryGetValue("X-Github-Hook-Id", out var hookId);
+        headers.TryGetValue("X-Github-Hook-Installation-Target-Id", out var hookInstallationTargetId);
+        headers.TryGetValue("X-Github-Hook-Installation-Target-Type", out var hookInstallationTargetType);
 
         var parsedBody = GitHubEventBody.Parse(body);
 

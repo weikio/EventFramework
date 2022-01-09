@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
+      <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.Http\Weikio.EventFramework.Components.Http.csproj" />
+      <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.Security\Weikio.EventFramework.Components.Security.csproj" />
+      <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource.Files\Weikio.EventFramework.EventSource.Files.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="public.key">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+
+</Project>

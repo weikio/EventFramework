@@ -34,7 +34,7 @@ namespace Weikio.EventFramework.EventSource.Files.Sample
             services.AddEventFramework()
                 .AddFileEventSource(options =>
                 {
-                    options.Configuration = new FileEventSourceConfiguration() { Filter = "*.txt", Folder = FolderToMonitor };
+                    options.Configuration = new FileSystemEventSourceConfiguration() { Filter = "*.txt", Folder = FolderToMonitor };
                     options.Autostart = true;
                     options.Id = "mylocalfiles";
                 })

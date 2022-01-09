@@ -11,14 +11,14 @@ using Weikio.EventFramework.EventPublisher;
 namespace Weikio.EventFramework.EventSource.Files
 {
     [DisplayName("FileEventSource")]
-    public class FileEventSource : IHostedService
+    public class FileSystemEventSource : IHostedService
     {
-        private readonly ILogger<FileEventSource> _logger;
+        private readonly ILogger<FileSystemEventSource> _logger;
         private readonly ICloudEventPublisher _cloudEventPublisher;
-        private readonly FileEventSourceConfiguration _configuration;
+        private readonly FileSystemEventSourceConfiguration _configuration;
         private FileSystemWatcher _fileSystemWatcher;
 
-        public FileEventSource(ILogger<FileEventSource> logger, ICloudEventPublisher cloudEventPublisher, FileEventSourceConfiguration configuration = null)
+        public FileSystemEventSource(ILogger<FileSystemEventSource> logger, ICloudEventPublisher cloudEventPublisher, FileSystemEventSourceConfiguration configuration = null)
         {
             _logger = logger;
             _cloudEventPublisher = cloudEventPublisher;

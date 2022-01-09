@@ -5,25 +5,17 @@ using System.Net.Mime;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource.Api.SDK;
 using Weikio.EventFramework.EventSource.GitHub.Events;
 
 namespace Weikio.EventFramework.EventSource.GitHub
 {
-    public class GitHubEventSource : ApiEventSourceBase
-    {
-        protected override Type ApiEventSourceType { get; } = typeof(GitHubApi);
-        protected override Type ApiEventSourceConfigurationType { get; } = typeof(GitHubConfiguration);
-
-        public GitHubEventSource(IServiceProvider serviceProvider, ICloudEventPublisher cloudEventPublisher, IApiEventSourceConfiguration configuration = null) : base(serviceProvider, cloudEventPublisher, configuration)
-        {
-        }
-    }
-
     public class GitHubApi : IApiEventSource<GitHubConfiguration>
     {
         private readonly IHttpContextAccessor _contextAccessor;
@@ -66,7 +58,11 @@ namespace Weikio.EventFramework.EventSource.GitHub
                 var headers = context.Request.Headers.ToDictionary(kv => kv.Key, kv => kv.Value);
                 var message = GitHubEvent.Parse(headers, body);
 
-                await cloudEventPublisher.Publish(message);
+                var evType = message.Kind.ToString();
+                var source = new Uri(message.Body.Repository.Url);
+                var ev = CloudEventCreator.Create(message, id: message.Delivery, eventTypeName: evType, source: source);
+                
+                await cloudEventPublisher.Publish(ev);
 
                 return new OkResult();
             }
