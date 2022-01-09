@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.AspNetCore.Extensions;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.EventFlow.CloudEvents;
 using Weikio.EventFramework.EventSource.Files;
 
@@ -30,16 +31,32 @@ namespace Weikio.EventFramework.Components.Security.Sample
         {
             services.AddControllers();
 
-            var fileToWebFlow = EventFlowBuilder.From<FileSystemEventSource>(options =>
+            var fileToEncryptedEvent = EventFlowBuilder.From<FileSystemEventSource>(options =>
                 {
                     options.Autostart = true;
                     options.Configuration = new FileSystemEventSourceConfiguration() { Folder = @"c:\temp\listen" };
                 })
                 .Encrypt(publicKeyPath: "public.key")
-                .Http("https://webhook.site/0633b58b-2eab-4875-a1f4-609264847c4d");
-            
+                .File(@"c:\temp\encrypt");
+
+            var encryptedFileToWeb = EventFlowBuilder.From<FileCloudEventSource>(options =>
+                {
+                    options.Id = "decrypttest";
+                    options.Configuration = new FileCloudEventSourceConfiguration() { Folder = @"c:\temp\encrypt" };
+                })
+                .Decrypt(Configuration["PrivateKey"], deadLetterChannel: "deadletter")
+                .Http("https://webhook.site/0633b58b-2eab-4875-a1f4-609264847c4d?");
+
             services.AddEventFramework()
-                .AddEventFlow(fileToWebFlow);
+                .AddEventFlow(fileToEncryptedEvent)
+                .AddEventFlow(encryptedFileToWeb)
+                .AddChannel("deadletter", (provider, options) =>
+                {
+                    options.Endpoint = ev =>
+                    {
+                        provider.GetRequiredService<ILogger<Startup>>().LogError("Decrypt deadletter");
+                    };
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

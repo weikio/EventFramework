@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
+using Weikio.EventFramework.Abstractions;
 using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
@@ -58,9 +59,17 @@ namespace Weikio.EventFramework.Components.Security
 
             try
             {
-                _decryptor.Decrypt(encryptedEvent, encryptedKey);
+                var decryptedEventData = _decryptor.Decrypt(encryptedEvent, encryptedKey);
+                
+                // Validate data hasn't changed
+                var data = cloudEvent.ToJObject()["data"].ToString();
 
-                return cloudEvent;
+                if (string.Equals(data, decryptedEventData))
+                {
+                    return cloudEvent;
+                }
+
+                throw new Exception("Data has changed");
             }
             catch (Exception)
             {

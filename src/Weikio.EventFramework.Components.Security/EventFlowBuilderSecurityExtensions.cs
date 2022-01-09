@@ -6,7 +6,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
     {
         public static IEventFlowBuilder Decrypt(this IEventFlowBuilder builder, string privateKey = "", string privateKeyPath = "", string deadLetterChannel = "")
         {
-            var options = new DecryptorComponentOptions() { PrivateKey = privateKey, PrivateKeyPath = privateKeyPath };
+            var options = new DecryptorComponentOptions() { PrivateKey = privateKey, PrivateKeyPath = privateKeyPath, DeadletterChannel = deadLetterChannel};
 
             var componentBuilder = new DecryptorComponentBuilder(options);
 

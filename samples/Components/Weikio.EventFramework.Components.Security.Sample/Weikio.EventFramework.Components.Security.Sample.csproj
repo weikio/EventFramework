@@ -6,6 +6,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
+      <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.File\Weikio.EventFramework.Components.File.csproj" />
       <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.Http\Weikio.EventFramework.Components.Http.csproj" />
       <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.Security\Weikio.EventFramework.Components.Security.csproj" />
       <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource.Files\Weikio.EventFramework.EventSource.Files.csproj" />

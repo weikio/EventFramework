@@ -73,15 +73,12 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 var esOptions = new EventSourceInstanceOptions();
                 esOptions.Id = flowInstance.Id;
+                esOptions.Autostart = true;
+                esOptions.PollingFrequency = TimeSpan.FromSeconds(2);
 
                 if (flowInstance.ConfigureEventSourceInstanceOptions != null)
                 {
                     flowInstance.ConfigureEventSourceInstanceOptions(esOptions);
-                }
-                else
-                {
-                    esOptions.Autostart = true;
-                    esOptions.PollingFrequency = TimeSpan.FromSeconds(2);
                 }
 
                 TypePluginCatalog typePluginCatalog = null;

@@ -20,7 +20,8 @@ namespace Weikio.EventFramework.Components.Security
 
         public Task<CloudEvent> Encrypt(CloudEvent cloudEvent)
         {
-            var json = cloudEvent.ToJson();
+            // Encrypt the data
+            var json = cloudEvent.ToJObject()["data"].ToString();
             var encyptedEvent = _encryptor.Encrypt(json);
 
             var keyExtension = new EncryptedKeyCloudEventExtension(encyptedEvent.EncryptedKey);
