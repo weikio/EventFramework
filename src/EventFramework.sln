@@ -155,6 +155,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Compo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.Components.Logger", "Weikio.EventFramework.Components.Logger\Weikio.EventFramework.Components.Logger.csproj", "{CB046C25-35FB-4CCB-91E1-7CCA28D34A87}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Github", "Github", "{0677CD0A-174F-4487-AFFB-9144AD85E268}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.GitHub", "Weikio.EventFramework.EventSource.GitHub\Weikio.EventFramework.EventSource.GitHub.csproj", "{D51589F3-E0B0-4326-8F17-3369D4EB46A4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weikio.EventFramework.EventSource.GitHub.Sample", "..\samples\Event Sources\Weikio.EventFramework.EventSource.GitHub.Sample\Weikio.EventFramework.EventSource.GitHub.Sample.csproj", "{6F10F7F0-1E10-4B20-9FA2-290D112F6709}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -401,6 +407,14 @@ Global
 		{CB046C25-35FB-4CCB-91E1-7CCA28D34A87}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB046C25-35FB-4CCB-91E1-7CCA28D34A87}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB046C25-35FB-4CCB-91E1-7CCA28D34A87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D51589F3-E0B0-4326-8F17-3369D4EB46A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D51589F3-E0B0-4326-8F17-3369D4EB46A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D51589F3-E0B0-4326-8F17-3369D4EB46A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D51589F3-E0B0-4326-8F17-3369D4EB46A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F10F7F0-1E10-4B20-9FA2-290D112F6709}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F10F7F0-1E10-4B20-9FA2-290D112F6709}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F10F7F0-1E10-4B20-9FA2-290D112F6709}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F10F7F0-1E10-4B20-9FA2-290D112F6709}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{75C9F1DD-0DE1-4D0D-991B-99B03409C2E4} = {9A41116E-CA7C-4013-8BFC-0E2EDB39ECC4}
@@ -443,5 +457,8 @@ Global
 		{649CB4D6-D972-4400-977B-21B5EDA2EDDE} = {BE6BE7E8-5DBF-441D-ACA8-8BCCDF996D1E}
 		{37065F49-94EE-4040-818A-E098B296B55B} = {8E9FB034-871C-407A-B14E-85CC57D3869B}
 		{CB046C25-35FB-4CCB-91E1-7CCA28D34A87} = {0A1BE512-CDBF-4809-85D1-29B82828B898}
+		{0677CD0A-174F-4487-AFFB-9144AD85E268} = {62534DED-236B-4C1A-91FC-2DC8D2911168}
+		{D51589F3-E0B0-4326-8F17-3369D4EB46A4} = {0677CD0A-174F-4487-AFFB-9144AD85E268}
+		{6F10F7F0-1E10-4B20-9FA2-290D112F6709} = {0677CD0A-174F-4487-AFFB-9144AD85E268}
 	EndGlobalSection
 EndGlobal
