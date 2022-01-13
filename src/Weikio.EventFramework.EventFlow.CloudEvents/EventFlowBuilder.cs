@@ -27,7 +27,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         public List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>> Components { get; set; } =
             new List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>>();
 
-        public static IEventFlowBuilder From()
+        public static EventFlowBuilder From()
         {
             var builder = new EventFlowBuilder();
 

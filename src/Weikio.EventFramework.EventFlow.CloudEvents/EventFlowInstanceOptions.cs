@@ -15,11 +15,18 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         public object Configuration { get; set; }
         public MulticastDelegate Configure { get; set; }
 
+        public string ChannelRoot
+        {
+            get
+            {
+                return $"system/flows/{Id}";
+            }
+        }
         public string InputChannel
         {
             get
             {
-                return $"system/flows/{Id}/channels/in";
+                return $"{ChannelRoot}/channels/in";
             }
         }
         
@@ -27,7 +34,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         {
             get
             {
-                return $"system/flows/{Id}/channels/out";
+                return $"{ChannelRoot}/channels/out";
             }
         }
 

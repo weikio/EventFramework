@@ -88,14 +88,14 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 var componentFactory = eventFlow.ComponentFactories[index];
 
                 // TODO: Find a place for this
-                var componentChannelName = $"system/flows/{options.Id}/componentchannels/{index}";
+                var componentChannelName = $"system/flows/{options.Id}/channels/{index}";
                 var isLastComponent = eventFlow.ComponentFactories.Count <= index + 1;
 
                 string nextComponentChannelName = null;
 
                 if (!isLastComponent)
                 {
-                    nextComponentChannelName = $"system/flows/{options.Id}/componentchannels/{index + 1}";
+                    nextComponentChannelName = $"system/flows/{options.Id}/channels/{index + 1}";
                 }
 
                 var tags = new List<(string, object)>

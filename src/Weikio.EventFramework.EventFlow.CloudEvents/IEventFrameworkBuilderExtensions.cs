@@ -41,7 +41,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 var options = new EventFlowInstanceOptions()
                 {
-                    Id = "flowinstance_" + Guid.NewGuid()
+                    Id = Guid.NewGuid().ToString()
                 };
                 
                 var instanceFactory = serviceProvider.GetRequiredService<IEventFlowInstanceFactory>();
@@ -133,7 +133,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 var options = new EventFlowInstanceOptions()
                 {
-                    Id = "flowinstance_" + Guid.NewGuid(), Configuration = configuration, Configure = configure
+                    Id = Guid.NewGuid().ToString(), Configuration = configuration, Configure = configure
                 };
                 
                 var result = await instanceFactory.Create(flow, options);

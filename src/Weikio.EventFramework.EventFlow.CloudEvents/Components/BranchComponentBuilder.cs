@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,23 +30,26 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 
             var createdFlows = new List<(Predicate<CloudEvent> Predicate, string ChannelId)>();
 
+            var mainFlowId = context.Tags?.FirstOrDefault(x => x.Key == "flowid").Value ?? "";
             for (var index = 0; index < _branches.Length; index++)
             {
-                var branchChannelName = $"system/flows/branches/{Guid.NewGuid()}/in";
-                var branchChannelOptions = new CloudEventsChannelOptions() { Name = branchChannelName };
-                var branchInputChannel = new CloudEventsChannel(branchChannelOptions);
-                channelManager.Add(branchInputChannel);
+                var branchInstanceOptions = new EventFlowInstanceOptions() { Id = $"{mainFlowId}/branches/{index}" };
+
+                // var branchChannelName = branchInstanceOptions.InputChannel;
+                // var branchChannelOptions = new CloudEventsChannelOptions() { Name = branchChannelName };
+                // var branchInputChannel = new CloudEventsChannel(branchChannelOptions);
+                // channelManager.Add(branchInputChannel);
 
                 var branch = _branches[index];
-                var flowBuilder = EventFlowBuilder.From(branchChannelName);
+                var flowBuilder = EventFlowBuilder.From();
                 branch.BuildBranch(flowBuilder);
 
                 var branchFlow = await flowBuilder.Build(context.ServiceProvider);
 
                 await instanceManager.Execute(branchFlow,
-                    new EventFlowInstanceOptions() { Id = $"system/flows/branches/{Guid.NewGuid()}" });
+                    branchInstanceOptions);
 
-                createdFlows.Add((branch.Predicate, branchChannelName));
+                createdFlows.Add((branch.Predicate, branchInstanceOptions.InputChannel));
             }
 
             var branchComponent = new CloudEventsComponent(async ev =>

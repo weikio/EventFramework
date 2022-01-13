@@ -49,7 +49,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
         public async Task<EventFlowInstance> Execute(EventFlow eventFlow)
         {
-            var options = new EventFlowInstanceOptions() { Id = "flowinstance_" + Guid.NewGuid() };
+            var options = new EventFlowInstanceOptions() { Id = Guid.NewGuid().ToString() };
 
             return await Execute(eventFlow, options);
         }
