@@ -71,6 +71,8 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
             _channelManager.Add(endpointChannel);
 
+            // Create the endpoint which transfers all the processed events into the flow's output channel.
+            // We can use the output channel to create subscriptions between flows etc.
             var outputChannelEndpoint = new CloudEventsEndpoint(async ev =>
             {
                 var flowOutputChannel = _channelManager.Get(options.OutputChannel);
@@ -83,6 +85,9 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             // Interceptors are added to each channel
             // Endpoints are added only to the last channel
             // Each component channel has an endpoint which points to the next component channel 
+
+            var steps = new List<Step>();
+
             for (var index = 0; index < eventFlow.ComponentFactories.Count; index++)
             {
                 var componentFactory = eventFlow.ComponentFactories[index];
@@ -93,16 +98,20 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 string nextComponentChannelName = null;
 
+                Step step;
+
                 if (!isLastComponent)
                 {
+                    // TODO: Find a place for this
                     nextComponentChannelName = $"system/flows/{options.Id}/channels/{index + 1}";
+                    step = new Step(componentChannelName, nextComponentChannelName);
                 }
-
-                var tags = new List<(string, object)>
+                else
                 {
-                    ("flowid", options.Id), 
-                    ("nextchannelname", nextComponentChannelName)
-                };
+                    step = new Step(componentChannelName, outputChannelOptions.Name);
+                }
+                
+                var tags = new List<(string, object)> { ("flowid", options.Id), ("nextchannelname", nextComponentChannelName), ("step", step), ("steps", steps) };
 
                 var context = new ComponentFactoryContext(_serviceProvider,
                     index,
@@ -113,10 +122,11 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 var componentChannelOptions = new CloudEventsChannelOptions() { Name = componentChannelName };
 
+                // Insert an interceptor which adds a IntegrationFlowExtension to the event's attributes
+                // The idea is that when event moves around flows and sub flows, it always knows the context
                 componentChannelOptions.Interceptors.Add((InterceptorTypeEnum.PreComponents, new CurrentFlowChannelInterceptor(componentChannelName)));
 
-                // Insert a component which adds a IntegrationFlowExtension to the event's attributes
-                // The idea is that when event moves around flows and sub flows, it always knows the context
+                // If we have some default components configured, add them to each flow channel
                 if (defaultComponents?.Any() == true)
                 {
                     foreach (var defaultComponent in defaultComponents)
@@ -134,8 +144,6 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 }
                 else
                 {
-                    // TODO: Find a place for this
-
                     var nextChannelEndpoint = new CloudEventsEndpoint(async ev =>
                     {
                         var nextComponentChannel = _channelManager.Get(nextComponentChannelName);
@@ -150,6 +158,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 _channelManager.Add(componentChannel);
 
                 createdComponentChannels.Add(componentChannel.Name);
+                steps.Add(step);
             }
 
             var flowInstance = new EventFlowInstance(eventFlow, options);
@@ -161,16 +170,18 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
             // If the flow is based on event source, we deliver events from the source to this new flow channel.
             // If the flow is based on another channel, we subscribe source channel to the flow channel.
             // If the flow doesn't have source, we just create the flow channel and wait for something to get delivered to it. 
-            var channelName = flowInstance.InputChannel;
-            var flowChannelOptions = new CloudEventsChannelOptions() { Name = channelName };
+            var flowInputChannelName = flowInstance.InputChannel;
+            var flowInputChannelOptions = new CloudEventsChannelOptions() { Name = flowInputChannelName };
 
             if (defaultComponents?.Any() == true)
             {
                 foreach (var defaultComponent in defaultComponents)
                 {
-                    flowChannelOptions.Components.Add(defaultComponent);
+                    flowInputChannelOptions.Components.Add(defaultComponent);
                 }
             }
+
+            var stepOutputs = new List<string>();
 
             if (createdComponentChannels.Any())
             {
@@ -182,18 +193,28 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                     await firstComponentChannel.Send(ev);
                 });
 
-                flowChannelOptions.Endpoints.Add(firstComponentEndpoint);
+                flowInputChannelOptions.Endpoints.Add(firstComponentEndpoint);
+                stepOutputs.Add(firstComponentChannelId);
             }
             else
             {
-                flowChannelOptions.Endpoints.AddRange(flowInstance.Endpoints);
+                flowInputChannelOptions.Endpoints.AddRange(flowInstance.Endpoints);
+
+                foreach (var _ in flowInstance.Endpoints)
+                {
+                    stepOutputs.Add("endpoint");
+                }
             }
 
-            var flowChannel = new CloudEventsChannel(flowChannelOptions);
-            _channelManager.Add(flowChannel);
+            var flowInputChannel = new CloudEventsChannel(flowInputChannelOptions);
+            _channelManager.Add(flowInputChannel);
+            
+            steps.Insert(0, new Step(flowInputChannelName, stepOutputs));
 
-            _logger.LogInformation("Created new input channel for flow {FlowId} with name {ChannelId}", flowInstance.Id, channelName);
+            _logger.LogInformation("Created new input channel for flow {FlowId} with name {ChannelId}", flowInstance.Id, flowInputChannelName);
 
+            flowInstance.Steps = steps;
+            
             return flowInstance;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
@@ -49,6 +50,29 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 
                 await instanceManager.Execute(subflow, new EventFlowInstanceOptions() { Id = flowId });
             }
+            
+            var nextChannel = context.Tags.FirstOrDefault(x => string.Equals(x.Key, "nextchannelname"));
+            var hasNext = nextChannel != default;
+
+            if (context?.Tags?.Any(x => x.Key == "step") == true)
+            {
+                var step = (Step)context.Tags.FirstOrDefault(x => x.Key == "step").Value;
+
+                var subflowDescriptor = flowId;
+
+                if (string.IsNullOrWhiteSpace(subflowDescriptor))
+                {
+                    subflowDescriptor = _flowDefinition.ToString();
+                }
+
+                step.Nexts[0] = subflowDescriptor;
+
+                if (hasNext)
+                {
+                    var steps = (List<Step>)context.Tags.FirstOrDefault(x => x.Key == "steps").Value;
+                    steps.Add(new Step(subflowDescriptor, nextChannel.Value.ToString()));
+                }
+            }
 
             var flowComponent = new CloudEventsComponent(async ev =>
             {
@@ -68,9 +92,6 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
                 {
                     throw new UnknownEventFlowInstance("", "Couldn't locate target flow using id or flow definition");
                 }
-
-                var nextChannel = context.Tags.FirstOrDefault(x => string.Equals(x.Key, "nextchannelname"));
-                var hasNext = nextChannel != default;
 
                 if (hasNext)
                 {

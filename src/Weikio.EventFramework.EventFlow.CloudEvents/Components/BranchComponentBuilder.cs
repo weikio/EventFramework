@@ -31,14 +31,10 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
             var createdFlows = new List<(Predicate<CloudEvent> Predicate, string ChannelId)>();
 
             var mainFlowId = context.Tags?.FirstOrDefault(x => x.Key == "flowid").Value ?? "";
+
             for (var index = 0; index < _branches.Length; index++)
             {
-                var branchInstanceOptions = new EventFlowInstanceOptions() { Id = $"{mainFlowId}/branches/{index}" };
-
-                // var branchChannelName = branchInstanceOptions.InputChannel;
-                // var branchChannelOptions = new CloudEventsChannelOptions() { Name = branchChannelName };
-                // var branchInputChannel = new CloudEventsChannel(branchChannelOptions);
-                // channelManager.Add(branchInputChannel);
+                var branchInstanceOptions = new EventFlowInstanceOptions() { Id = $"{mainFlowId}/branches/{context.ComponentIndex}/{index}" };
 
                 var branch = _branches[index];
                 var flowBuilder = EventFlowBuilder.From();
@@ -46,10 +42,18 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 
                 var branchFlow = await flowBuilder.Build(context.ServiceProvider);
 
-                await instanceManager.Execute(branchFlow,
+                var branchFlowInstance = await instanceManager.Execute(branchFlow,
                     branchInstanceOptions);
 
                 createdFlows.Add((branch.Predicate, branchInstanceOptions.InputChannel));
+
+                if (context?.Tags?.Any(x => x.Key == "step") == true)
+                {
+                    var step = (Step)context.Tags.FirstOrDefault(x => x.Key == "step").Value;
+                    step.Next(branchFlowInstance.InputChannel);
+                    var steps = (List<Step>)context.Tags.FirstOrDefault(x => x.Key == "steps").Value;
+                    steps.AddRange(branchFlowInstance.Steps);
+                }
             }
 
             var branchComponent = new CloudEventsComponent(async ev =>

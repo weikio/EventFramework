@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using CloudNative.CloudEvents;
+using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.EventFlow.Abstractions;
 using Weikio.EventFramework.EventSource.Abstractions;
@@ -67,6 +68,8 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
         public string InputChannel => _options.InputChannel;
 
         public string OutputChannel => _options.OutputChannel;
+
+        public List<Step> Steps = new List<Step>();
 
         public EventFlowInstance(EventFlow eventFlow, EventFlowInstanceOptions options)
         {
