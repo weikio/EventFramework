@@ -26,7 +26,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 
             var createdFlows = new List<(Predicate<CloudEvent> Predicate, string ChannelId)>();
 
-            var mainFlowId = context.Tags?.FirstOrDefault(x => x.Key == "flowid").Value ?? "";
+            var mainFlowId = context.Tags["flowid"].FirstOrDefault().Value ?? "";
 
             for (var index = 0; index < _branches.Length; index++)
             {
@@ -45,9 +45,9 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 
                 if (context?.Tags?.Any(x => x.Key == "step") == true)
                 {
-                    var step = (Step)context.Tags.FirstOrDefault(x => x.Key == "step").Value;
+                    var step = (Step)context.Tags["step"].FirstOrDefault().Value;
                     step.Link(new StepLink(StepLinkType.Branch, branchFlowInstance.InputChannel));
-                    var steps = (List<Step>)context.Tags.FirstOrDefault(x => x.Key == "steps").Value;
+                    var steps = (List<Step>) context.Tags["steps"].FirstOrDefault().Value;
                     steps.AddRange(branchFlowInstance.Steps);
                 }
             }

@@ -50,13 +50,13 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 
                 await instanceManager.Execute(subflow, new EventFlowInstanceOptions() { Id = flowId });
             }
-            
-            var nextChannel = context.Tags.FirstOrDefault(x => string.Equals(x.Key, "nextchannelname"));
+
+            var nextChannel = context.Tags["nextchannelname"].FirstOrDefault();
             var hasNext = nextChannel != default;
 
             if (context?.Tags?.Any(x => x.Key == "step") == true)
             {
-                var step = (Step)context.Tags.FirstOrDefault(x => x.Key == "step").Value;
+                var step = (Step)context.Tags["step"].FirstOrDefault().Value;
 
                 var subflowDescriptor = flowId;
 
@@ -69,7 +69,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 
                 if (hasNext)
                 {
-                    var steps = (List<Step>)context.Tags.FirstOrDefault(x => x.Key == "steps").Value;
+                    var steps = (List<Step>) context.Tags["steps"].FirstOrDefault().Value;
                     steps.Add(new Step(subflowDescriptor, new StepLink(StepLinkType.Channel, flowId)));
                 }
             }
