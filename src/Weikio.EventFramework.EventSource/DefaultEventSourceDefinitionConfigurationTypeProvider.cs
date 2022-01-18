@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.Api;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 
 namespace Weikio.EventFramework.EventSource
@@ -43,9 +44,11 @@ namespace Weikio.EventFramework.EventSource
             var result = _cache.GetOrAdd(key, s =>
             {
                 var isHostedService = typeof(IHostedService).IsAssignableFrom(eventSourceType);
-                var requiresPolling = isHostedService == false;
+                var isApi = typeof(IApiEventSource).IsAssignableFrom(eventSourceType);
 
-                if (!isHostedService)
+                var requiresPolling = (isHostedService || isApi) == false;
+
+                if (!isHostedService && !isApi)
                 {
                     var eventSourceTypes = _typeToEventSourceTypeProvider.GetSourceTypes(eventSourceType);
 
@@ -54,7 +57,7 @@ namespace Weikio.EventFramework.EventSource
                         requiresPolling = false;
                     }
                 }
-                
+
                 var configurationTypeResult = _optionsMonitor.Get(eventSourceType.FullName).ConfigurationType;
 
                 if (configurationTypeResult != null)

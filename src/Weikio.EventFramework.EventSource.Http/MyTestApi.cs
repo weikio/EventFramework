@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Api;
 using Weikio.EventFramework.EventSource.Api.SDK;
 
 namespace Weikio.EventFramework.EventSource.Http

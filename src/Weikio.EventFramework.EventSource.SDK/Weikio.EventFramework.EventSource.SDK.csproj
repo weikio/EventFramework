@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Event Source SDK for building plugins for Event Framework. Event Framework is a CloudEvents router and gateway for .NET.</Description>
@@ -16,5 +16,9 @@
     <ProjectReference Include="..\Weikio.EventFramework.EventPublisher\Weikio.EventFramework.EventPublisher.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>

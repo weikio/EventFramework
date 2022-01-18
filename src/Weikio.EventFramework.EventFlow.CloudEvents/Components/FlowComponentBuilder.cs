@@ -65,12 +65,12 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
                     subflowDescriptor = _flowDefinition.ToString();
                 }
 
-                step.Nexts[0] = subflowDescriptor;
+                step.Links[0] = new StepLink(StepLinkType.Subflow, subflowDescriptor);
 
                 if (hasNext)
                 {
                     var steps = (List<Step>)context.Tags.FirstOrDefault(x => x.Key == "steps").Value;
-                    steps.Add(new Step(subflowDescriptor, nextChannel.Value.ToString()));
+                    steps.Add(new Step(subflowDescriptor, new StepLink(StepLinkType.Channel, flowId)));
                 }
             }
 

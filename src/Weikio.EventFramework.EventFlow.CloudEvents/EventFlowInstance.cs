@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using CloudNative.CloudEvents;
 using Weikio.EventFramework.Channels.Abstractions;
+using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Channels.Dataflow.Abstractions;
 using Weikio.EventFramework.EventFlow.Abstractions;
 using Weikio.EventFramework.EventSource.Abstractions;

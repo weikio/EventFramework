@@ -59,7 +59,9 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
             var integrationFlow = new EventFlow(Definition, _eventSourceType, Source)
             {
-                ConfigureEventSourceInstanceOptions = _configureEventSourceInstance, Interceptors = Interceptors, ComponentFactories = Components
+                ConfigureEventSourceInstanceOptions = _configureEventSourceInstance, 
+                Interceptors = Interceptors, 
+                ComponentFactories = Components
             };
 
             return Task.FromResult(integrationFlow);

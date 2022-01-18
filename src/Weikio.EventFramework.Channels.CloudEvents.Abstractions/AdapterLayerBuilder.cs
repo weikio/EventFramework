@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -11,6 +12,49 @@ using Weikio.EventFramework.EventCreator;
 
 namespace Weikio.EventFramework.Channels.CloudEvents
 {
+    public class Step
+    {
+        public string Id { get; set; }
+        public List<StepLink> Links { get; set; } = new List<StepLink>();
+        public Predicate<CloudEvent> Predicate { get; set; }
+        public Step(string current, StepLink link) : this(current, new List<StepLink>() { link })
+        {
+        }
+
+        public Step(string current, List<StepLink> links)
+        {
+            Id = current;
+            Links.AddRange(links);
+        }
+
+        public void Link(StepLink link)
+        {
+            Links.Add(link);
+        }
+    }
+    public class StepLink
+    {
+        public StepLinkType Type { get; set; }
+        public string Id { get; set; }
+        public Predicate<CloudEvent> Predicate { get; set; }
+
+        public StepLink(StepLinkType type, string id, Predicate<CloudEvent> predicate = null)
+        {
+            Type = type;
+            Id = id;
+            Predicate = predicate;
+        }
+    }
+
+    public enum StepLinkType
+    {
+        Component,
+        Channel,
+        Branch,
+        Endpoint,
+        Subflow
+    }
+    
     internal class AdapterLayerBuilder
     {
         public DataflowLayerGeneric<object, CloudEvent> Build(CloudEventsChannelOptions options)

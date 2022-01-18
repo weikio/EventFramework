@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Api;
 using Weikio.EventFramework.EventSource.Api.SDK;
 
 namespace Weikio.EventFramework.EventSource.Http

@@ -8,9 +8,9 @@ using Weikio.ApiFramework;
 using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
-using Weikio.EventFramework.EventSource.Api.SDK.ApiFrameworkIntegration;
+using Weikio.EventFramework.EventSource.Api.SDK;
 
-namespace Weikio.EventFramework.EventSource.Api.SDK
+namespace Weikio.EventFramework.EventSource
 {
     public static class EventFrameworkApiEventSourcesExtensions
     {
@@ -30,11 +30,7 @@ namespace Weikio.EventFramework.EventSource.Api.SDK
 
             if (services.All(x => x.ServiceType != typeof(IEndpointInitializer)))
             {
-                services.AddApiFrameworkCore(options =>
-                {
-                    options.AutoResolveEndpoints = false;
-                    options.EndpointHttpVerbResolver = new CustomHttpVerbResolver();
-                });
+                services.AddApiFrameworkCore();
             }
 
             return services;

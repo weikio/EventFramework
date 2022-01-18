@@ -1,4 +1,5 @@
-﻿using Weikio.EventFramework.EventSource.Api.SDK;
+﻿using Weikio.EventFramework.EventSource.Api;
+using Weikio.EventFramework.EventSource.Api.SDK;
 
 namespace Weikio.EventFramework.EventSource.Http
 {

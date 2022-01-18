@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
 using System.Threading.Tasks;
 using EventFrameworkTestBed;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -101,9 +99,51 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
                 logger.LogInformation(channel.Name);
             }
         }
-
+        
         [Fact]
         public async Task CanOutputSimpleSteps()
+        {
+            var server = Init();
+            var logger = server.GetRequiredService<ILogger<MarkdownTests>>();
+
+            var handlerCounter = new Counter();
+
+            var flowBuilder = EventFlowBuilder.From<NumberEventSource>()
+                .Channel("hellochannel")
+                .Channel("specialchannel")
+                .Transform(ev =>
+                {
+                    ev.Subject = "transformed";
+
+                    return ev;
+                })
+                .Filter(ev => ev.Type != "CounterEvent")
+                .Handle<FlowHandler>(configure: handler =>
+                {
+                    handler.Counter = handlerCounter;
+                });
+
+            var flow = await flowBuilder.Build(server);
+
+            var manager = server.GetRequiredService<ICloudEventFlowManager>();
+            var instance = await manager.Execute(flow);
+
+            var steps = instance.Steps;
+            var sb = new StringBuilder();
+
+            foreach (var step in steps)
+            {
+                foreach (var link in step.Links)
+                {
+                    sb.AppendLine($"{step.Id}-->|{link.Type}|{link.Id}");
+                }
+            }
+
+            logger.LogInformation(sb.ToString());
+        }
+
+        [Fact]
+        public async Task CanOutputPredicate()
         {
             var server = Init();
             var logger = server.GetRequiredService<ILogger<MarkdownTests>>();
@@ -135,9 +175,9 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
 
             foreach (var step in steps)
             {
-                foreach (var stepNext in step.Nexts)
+                foreach (var link in step.Links)
                 {
-                    sb.AppendLine($"{step.Current}-->{stepNext}");
+                    sb.AppendLine($"{step.Id}-->|{link.Type}|{link.Id}");
                 }
             }
 
@@ -149,16 +189,16 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
         {
             var server = Init();
             var logger = server.GetRequiredService<ILogger<MarkdownTests>>();
-
+        
             var handlerCounter = new Counter();
-
+        
             var flowBuilder = EventFlowBuilder.From<NumberEventSource>()
                 .Channel("hellochannel")
                 .Channel("specialchannel", ev => ev.Type == "special")
                 .Transform(ev =>
                 {
                     ev.Subject = "transformed";
-
+        
                     return ev;
                 })
                 .Branch((ev =>
@@ -178,77 +218,77 @@ namespace Weikio.EventFramework.IntegrationTests.EventFlow
                 {
                     handler.Counter = handlerCounter;
                 });
-
-            var flow = await flowBuilder.Build(server);
-
-            var manager = server.GetRequiredService<ICloudEventFlowManager>();
-            var instance = await manager.Execute(flow);
-
-            var steps = instance.Steps;
-            var sb = new StringBuilder();
-
-            foreach (var step in steps)
-            {
-                foreach (var stepNext in step.Nexts)
-                {
-                    sb.AppendLine($"{step.Current}-->{stepNext}");
-                }
-            }
-
-            logger.LogInformation(sb.ToString());
-        }
         
-        [Fact]
-        public async Task CanOutputSubflowSteps()
-        {
-            var server = Init();
-            var logger = server.GetRequiredService<ILogger<MarkdownTests>>();
-
-            var handlerCounter = new Counter();
-
-            var flowBuilder = EventFlowBuilder.From<NumberEventSource>()
-                .Channel("hellochannel")
-                .Channel("specialchannel", ev => ev.Type == "special")
-                .Transform(ev =>
-                {
-                    ev.Subject = "transformed";
-
-                    return ev;
-                })
-                .Filter(ev => ev.Type != "CounterEvent")
-                .Flow("MySub")
-                .Handle<FlowHandler>(configure: handler =>
-                {
-                    handler.Counter = handlerCounter;
-                });
-
             var flow = await flowBuilder.Build(server);
-
-            var subFlowBuilder = EventFlowBuilder.From()
-                .WithDefinition("MySub")
-                .Handle(ev =>
-                {
-                    logger.LogInformation(ev.ToJson());
-                });
-
+        
             var manager = server.GetRequiredService<ICloudEventFlowManager>();
             var instance = await manager.Execute(flow);
-
-            var subflow = await subFlowBuilder.Build(server);
-            await manager.Execute(subflow);
-
+        
             var steps = instance.Steps;
             var sb = new StringBuilder();
-
+        
             foreach (var step in steps)
             {
-                foreach (var stepNext in step.Nexts)
+                foreach (var link in step.Links)
                 {
-                    sb.AppendLine($"{step.Current}-->{stepNext}");
+                    sb.AppendLine($"{step.Id}-->|{link.Type}|{link.Id}");
                 }
             }
-
+        
             logger.LogInformation(sb.ToString());
         }
+        //
+        // [Fact]
+        // public async Task CanOutputSubflowSteps()
+        // {
+        //     var server = Init();
+        //     var logger = server.GetRequiredService<ILogger<MarkdownTests>>();
+        //
+        //     var handlerCounter = new Counter();
+        //
+        //     var flowBuilder = EventFlowBuilder.From<NumberEventSource>()
+        //         .Channel("hellochannel")
+        //         .Channel("specialchannel", ev => ev.Type == "special")
+        //         .Transform(ev =>
+        //         {
+        //             ev.Subject = "transformed";
+        //
+        //             return ev;
+        //         })
+        //         .Filter(ev => ev.Type != "CounterEvent")
+        //         .Flow("MySub")
+        //         .Handle<FlowHandler>(configure: handler =>
+        //         {
+        //             handler.Counter = handlerCounter;
+        //         });
+        //
+        //     var flow = await flowBuilder.Build(server);
+        //
+        //     var subFlowBuilder = EventFlowBuilder.From()
+        //         .WithDefinition("MySub")
+        //         .Handle(ev =>
+        //         {
+        //             logger.LogInformation(ev.ToJson());
+        //         });
+        //
+        //     var manager = server.GetRequiredService<ICloudEventFlowManager>();
+        //     var instance = await manager.Execute(flow);
+        //
+        //     var subflow = await subFlowBuilder.Build(server);
+        //     await manager.Execute(subflow);
+        //
+        //     var steps = instance.Steps;
+        //     var sb = new StringBuilder();
+        //
+        //     foreach (var step in steps)
+        //     {
+        //         foreach (var stepNext in step.Nexts)
+        //         {
+        //             sb.AppendLine($"{step.Current}-->{stepNext}");
+        //         }
+        //     }
+        //
+        //     logger.LogInformation(sb.ToString());
+        // }
     }
 }

@@ -1,6 +1,6 @@
-﻿using Weikio.EventFramework.EventPublisher;
+﻿using Weikio.EventFramework.EventSource.Api.SDK;
 
-namespace Weikio.EventFramework.EventSource.Api.SDK
+namespace Weikio.EventFramework.EventSource.Api
 {
     public abstract class ApiEventSourceConfigurationBase : IApiEventSourceConfiguration
     {
@@ -8,7 +8,7 @@ namespace Weikio.EventFramework.EventSource.Api.SDK
         public virtual string AuthorizationPolicy { get; set; }
     }
 
-    internal class DefaultApiEventSourceConfiguration : ApiEventSourceConfigurationBase
+    public class DefaultApiEventSourceConfiguration : ApiEventSourceConfigurationBase
     {
     }
 }

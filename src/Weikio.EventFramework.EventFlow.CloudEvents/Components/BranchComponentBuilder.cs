@@ -8,10 +8,6 @@ using Weikio.EventFramework.Channels;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
 
-namespace Weikio.EventFramework.EventFlow.CloudEvents
-{
-}
-
 namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
 {
     public class BranchComponentBuilder : IComponentBuilder
@@ -50,7 +46,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents.Components
                 if (context?.Tags?.Any(x => x.Key == "step") == true)
                 {
                     var step = (Step)context.Tags.FirstOrDefault(x => x.Key == "step").Value;
-                    step.Next(branchFlowInstance.InputChannel);
+                    step.Link(new StepLink(StepLinkType.Branch, branchFlowInstance.InputChannel));
                     var steps = (List<Step>)context.Tags.FirstOrDefault(x => x.Key == "steps").Value;
                     steps.AddRange(branchFlowInstance.Steps);
                 }

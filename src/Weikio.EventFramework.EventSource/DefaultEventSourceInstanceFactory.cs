@@ -15,6 +15,8 @@ using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventGateway;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.Api;
+using Weikio.EventFramework.EventSource.Api.SDK;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;
@@ -99,146 +101,22 @@ namespace Weikio.EventFramework.EventSource
                 }
 
                 var isHostedService = eventSourceType != null && typeof(IHostedService).IsAssignableFrom(eventSourceType);
-
+                var isApi = eventSourceType != null && typeof(IApiEventSource).IsAssignableFrom(eventSourceType);
                 if (isHostedService)
                 {
-                    var cancellationToken = new CancellationTokenSource();
-
-                    IHostedService inst = null;
-
-                    start = (provider, esInstance) =>
-                    {
-                        var extraParams = new List<object>();
-
-                        if (instanceOptions.Configuration != null)
-                        {
-                            extraParams.Add(instanceOptions.Configuration);
-                        }
-
-                        if (eventSourceType.GetConstructors().FirstOrDefault()?.GetParameters().Any(x => x.ParameterType == typeof(ICloudEventPublisher)) ==
-                            true)
-                        {
-                            var publisher = _publisherFactory.CreatePublisher(id);
-                            extraParams.Add(publisher);
-                        }
-
-                        if (eventSourceType.GetConstructors().FirstOrDefault()?.GetParameters()
-                                .Any(x => x.ParameterType == typeof(EventSourceInstanceContext)) ==
-                            true)
-                        {
-                            extraParams.Add(eventSourceInstanceContext);
-                        }
-
-                        inst = (IHostedService)ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
-
-                        if (configure != null)
-                        {
-                            configure.DynamicInvoke(inst);
-                        }
-
-                        _logger.LogDebug("Starting hosted service based event source {EventSourceType} with id {Id}", eventSourceType, id);
-
-                        inst.StartAsync(cancellationToken.Token);
-                        esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started);
-
-                        return Task.FromResult(true);
-                    };
-
-                    stop = (provider, esInstance) =>
-                    {
-                        inst.StopAsync(cancellationToken.Token);
-                        esInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped);
-
-                        return Task.FromResult(true);
-                    };
+                    start = HandleHostedService(instanceOptions, eventSourceType, id, eventSourceInstanceContext, configure, out stop);
+                }
+                else if (isApi)
+                {
+                    start = HandleApi(instanceOptions, eventSourceType, id, eventSourceInstanceContext, configure, out stop);
                 }
                 else if (eventSourceType != null)
                 {
-                    var cancellationToken = new CancellationTokenSource();
-
-                    start = (provider, esInstance) =>
-                    {
-                        var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
-                        var typeToEventSourceTypeProvider = _serviceProvider.GetRequiredService<ITypeToEventSourceTypeProvider>();
-                        var factory = new TypeToEventSourceFactory(esInstance, logger, _configurationTypeProvider, typeToEventSourceTypeProvider);
-
-                        // Event source can contain multiple event sources...
-
-                        var sources = factory.Create(_serviceProvider);
-
-                        foreach (var eventSourceActionWrapper in sources.PollingEventSources)
-                        {
-                            var childId = eventSourceActionWrapper.Id;
-
-                            var childEventSource = eventSourceActionWrapper.EventSource;
-
-                            var opts = new JobOptions
-                            {
-                                Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSource = esInstance
-                            };
-                            _optionsCache.TryAdd(childId, opts);
-
-                            var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, esInstance);
-                            _scheduleService.Add(schedule);
-
-                            esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Started polling");
-                        }
-
-                        foreach (var eventSourceActionWrapper in sources.LongPollingEventSources)
-                        {
-                            var method = eventSourceActionWrapper.Source;
-                            var poller = method.Invoke();
-
-                            var host = _serviceProvider.GetRequiredService<ILongPollingEventSourceHost>();
-                            host.Initialize(esInstance, poller, cancellationToken);
-
-                            host.StartPolling(cancellationToken.Token);
-                        }
-
-                        _changeNotifier.Notify();
-
-                        return Task.FromResult(true);
-                    };
-
-                    stop = (provider, esInstance) =>
-                    {
-                        var currentPollingSchedule = _scheduleService.FirstOrDefault(x => x.EventSourceInstance.Id == esInstance.Id);
-
-                        if (currentPollingSchedule != null)
-                        {
-                            _scheduleService.Remove(currentPollingSchedule);
-                        }
-
-                        cancellationToken.Cancel();
-
-                        _changeNotifier.Notify();
-
-                        esInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped);
-
-                        return Task.FromResult(true);
-                    };
+                    start = HandleType(pollingFrequency, cronExpression, out stop);
                 }
                 else
                 {
-                    start = (provider, esInstance) =>
-                    {
-                        var wrapper = _serviceProvider.GetRequiredService<EventSourceActionWrapper>();
-                        var wrapped = wrapper.Wrap(action);
-
-                        var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState, EventSource = esInstance };
-
-                        _optionsCache.TryAdd(id, jobOptions);
-
-                        var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, esInstance);
-                        _scheduleService.Add(schedule);
-
-                        return Task.FromResult(true);
-                    };
-
-                    stop = (provider, esInstance) =>
-                    {
-                        return Task.FromResult(true);
-                    };
+                    start = HandleAction(action, id, pollingFrequency, cronExpression, out stop);
                 }
             }
             catch (Exception e)
@@ -259,10 +137,215 @@ namespace Weikio.EventFramework.EventSource
 
             _optionsMonitorCache.TryAdd(id, publisherFactoryOptions);
 
-            var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop);
-            result.InternalChannelId = channelName;
+            var result = new EventSourceInstance(id, eventSource, instanceOptions, start, stop) { InternalChannelId = channelName };
 
             return result;
+        }
+
+        private Func<IServiceProvider, EventSourceInstance, Task<bool>> HandleAction(MulticastDelegate action, string id, TimeSpan? pollingFrequency, string cronExpression, out Func<IServiceProvider, EventSourceInstance, Task<bool>> stop)
+        {
+            Func<IServiceProvider, EventSourceInstance, Task<bool>> start;
+
+            start = (provider, esInstance) =>
+            {
+                var wrapper = _serviceProvider.GetRequiredService<EventSourceActionWrapper>();
+                var wrapped = wrapper.Wrap(action);
+
+                var jobOptions = new JobOptions { Action = wrapped.Action, ContainsState = wrapped.ContainsState, EventSource = esInstance };
+
+                _optionsCache.TryAdd(id, jobOptions);
+
+                var schedule = new PollingSchedule(id, pollingFrequency, cronExpression, esInstance);
+                _scheduleService.Add(schedule);
+
+                return Task.FromResult(true);
+            };
+
+            stop = (provider, esInstance) => { return Task.FromResult(true); };
+
+            return start;
+        }
+
+        private Func<IServiceProvider, EventSourceInstance, Task<bool>> HandleType(TimeSpan? pollingFrequency, string cronExpression, out Func<IServiceProvider, EventSourceInstance, Task<bool>> stop)
+        {
+            Func<IServiceProvider, EventSourceInstance, Task<bool>> start;
+            var cancellationToken = new CancellationTokenSource();
+
+            start = (provider, esInstance) =>
+            {
+                var logger = _serviceProvider.GetRequiredService<ILogger<TypeToEventSourceFactory>>();
+                var typeToEventSourceTypeProvider = _serviceProvider.GetRequiredService<ITypeToEventSourceTypeProvider>();
+                var factory = new TypeToEventSourceFactory(esInstance, logger, _configurationTypeProvider, typeToEventSourceTypeProvider);
+
+                // Event source can contain multiple event sources...
+
+                var sources = factory.Create(_serviceProvider);
+
+                foreach (var eventSourceActionWrapper in sources.PollingEventSources)
+                {
+                    var childId = eventSourceActionWrapper.Id;
+
+                    var childEventSource = eventSourceActionWrapper.EventSource;
+
+                    var opts = new JobOptions
+                    {
+                        Action = childEventSource.Action, ContainsState = childEventSource.ContainsState, EventSource = esInstance
+                    };
+                    _optionsCache.TryAdd(childId, opts);
+
+                    var schedule = new PollingSchedule(childId, pollingFrequency, cronExpression, esInstance);
+                    _scheduleService.Add(schedule);
+
+                    esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started, "Started polling");
+                }
+
+                foreach (var eventSourceActionWrapper in sources.LongPollingEventSources)
+                {
+                    var method = eventSourceActionWrapper.Source;
+                    var poller = method.Invoke();
+
+                    var host = _serviceProvider.GetRequiredService<ILongPollingEventSourceHost>();
+                    host.Initialize(esInstance, poller, cancellationToken);
+
+                    host.StartPolling(cancellationToken.Token);
+                }
+
+                _changeNotifier.Notify();
+
+                return Task.FromResult(true);
+            };
+
+            stop = (provider, esInstance) =>
+            {
+                var currentPollingSchedule = _scheduleService.FirstOrDefault(x => x.EventSourceInstance.Id == esInstance.Id);
+
+                if (currentPollingSchedule != null)
+                {
+                    _scheduleService.Remove(currentPollingSchedule);
+                }
+
+                cancellationToken.Cancel();
+
+                _changeNotifier.Notify();
+
+                esInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped);
+
+                return Task.FromResult(true);
+            };
+
+            return start;
+        }
+
+        private Func<IServiceProvider, EventSourceInstance, Task<bool>> HandleHostedService(EventSourceInstanceOptions instanceOptions, Type eventSourceType, string id,
+            EventSourceInstanceContext eventSourceInstanceContext, MulticastDelegate configure, out Func<IServiceProvider, EventSourceInstance, Task<bool>> stop)
+        {
+            Func<IServiceProvider, EventSourceInstance, Task<bool>> start;
+            var cancellationToken = new CancellationTokenSource();
+
+            IHostedService inst = null;
+
+            start = (provider, esInstance) =>
+            {
+                var extraParams = new List<object>();
+
+                if (instanceOptions.Configuration != null)
+                {
+                    extraParams.Add(instanceOptions.Configuration);
+                }
+
+                if (eventSourceType.GetConstructors().FirstOrDefault()?.GetParameters().Any(x => x.ParameterType == typeof(ICloudEventPublisher)) == true)
+                {
+                    var publisher = _publisherFactory.CreatePublisher(id);
+                    extraParams.Add(publisher);
+                }
+
+                if (eventSourceType.GetConstructors().FirstOrDefault()?.GetParameters().Any(x => x.ParameterType == typeof(EventSourceInstanceContext)) == true)
+                {
+                    extraParams.Add(eventSourceInstanceContext);
+                }
+
+                inst = (IHostedService)ActivatorUtilities.CreateInstance(_serviceProvider, eventSourceType, extraParams.ToArray());
+
+                if (configure != null)
+                {
+                    configure.DynamicInvoke(inst);
+                }
+
+                _logger.LogDebug("Starting hosted service based event source {EventSourceType} with id {Id}", eventSourceType, id);
+
+                inst.StartAsync(cancellationToken.Token);
+                esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started);
+
+                return Task.FromResult(true);
+            };
+
+            stop = (provider, esInstance) =>
+            {
+                inst.StopAsync(cancellationToken.Token);
+                esInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped);
+
+                return Task.FromResult(true);
+            };
+
+            return start;
+        }
+        
+          private Func<IServiceProvider, EventSourceInstance, Task<bool>> HandleApi(EventSourceInstanceOptions instanceOptions, Type eventSourceType, string id,
+            EventSourceInstanceContext eventSourceInstanceContext, MulticastDelegate configure, out Func<IServiceProvider, EventSourceInstance, Task<bool>> stop)
+        {
+            Func<IServiceProvider, EventSourceInstance, Task<bool>> start;
+            var cancellationToken = new CancellationTokenSource();
+
+            ApiEventSourceRunner inst = null;
+
+            var serviceType = typeof(ApiEventSourceRunner);
+
+            start = (provider, esInstance) =>
+            {
+                var extraParams = new List<object>();
+
+                if (instanceOptions.Configuration != null)
+                {
+                    extraParams.Add(instanceOptions.Configuration);
+                }
+
+                if (serviceType.GetConstructors().FirstOrDefault()?.GetParameters().Any(x => x.ParameterType == typeof(ICloudEventPublisher)) == true)
+                {
+                    var publisher = _publisherFactory.CreatePublisher(id);
+                    extraParams.Add(publisher);
+                }
+
+                if (serviceType.GetConstructors().FirstOrDefault()?.GetParameters().Any(x => x.ParameterType == typeof(EventSourceInstanceContext)) == true)
+                {
+                    extraParams.Add(eventSourceInstanceContext);
+                }
+
+                inst = (ApiEventSourceRunner)ActivatorUtilities.CreateInstance(_serviceProvider, serviceType, extraParams.ToArray());
+
+                if (configure != null)
+                {
+                    configure.DynamicInvoke(inst);
+                }
+                
+                inst.Initialize(eventSourceType, null);
+                
+                _logger.LogDebug("Starting hosted service based event source {EventSourceType} with id {Id}", eventSourceType, id);
+
+                inst.StartAsync(cancellationToken.Token);
+                esInstance.Status.UpdateStatus(EventSourceStatusEnum.Started);
+
+                return Task.FromResult(true);
+            };
+
+            stop = (provider, esInstance) =>
+            {
+                inst.StopAsync(cancellationToken.Token);
+                esInstance.Status.UpdateStatus(EventSourceStatusEnum.Stopped);
+
+                return Task.FromResult(true);
+            };
+
+            return start;
         }
 
         private CloudEventsChannel CreateEventSourceInstanceChannel(EventSourceInstanceOptions instanceOptions, string channelName, string id)

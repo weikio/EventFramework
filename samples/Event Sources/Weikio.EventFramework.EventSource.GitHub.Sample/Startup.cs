@@ -29,7 +29,7 @@ namespace Weikio.EventFramework.EventSource.GitHub.Sample
         {
             services.AddControllers();
 
-            var flow = EventFlowBuilder.From<GitHubEventSource>(options =>
+            var flow = EventFlowBuilder.From<GitHubApi>(options =>
                 {
                     options.Autostart = true;
                 })

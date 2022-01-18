@@ -32,4 +32,35 @@ namespace Weikio.EventFramework.EventSource.Api.SDK
             await factory.Create(ApiEventSourceConfigurationType, ApiEventSourceType, _cloudEventPublisher, _configuration, stoppingToken);
         }
     }
+    
+    public class ApiEventSourceRunner : BackgroundService
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ICloudEventPublisher _cloudEventPublisher;
+        private readonly IApiEventSourceConfiguration _configuration;
+        protected Type ApiEventSourceType { get; set; }
+        protected Type ApiEventSourceConfigurationType { get; set; }
+
+        public ApiEventSourceRunner(IServiceProvider serviceProvider, ICloudEventPublisher cloudEventPublisher, IApiEventSourceConfiguration configuration = null)
+        {
+            _serviceProvider = serviceProvider;
+            _cloudEventPublisher = cloudEventPublisher;
+            _configuration = configuration;
+        }
+
+        public void Initialize(Type apiEventSourceType, Type apiEventSourceConfigurationType)
+        {
+            ApiEventSourceType = apiEventSourceType;
+            ApiEventSourceConfigurationType = apiEventSourceConfigurationType;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            var logger = _serviceProvider.GetRequiredService<ILogger<ApiEventSourceBase>>();
+            logger.LogInformation("Initializing API event source with configuration {Configuration}", _configuration);
+            
+            var factory = _serviceProvider.GetRequiredService<ApiEventSourceFactory>();
+            await factory.Create(ApiEventSourceConfigurationType, ApiEventSourceType, _cloudEventPublisher, _configuration, stoppingToken);
+        }
+    }
 }

@@ -104,11 +104,11 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 {
                     // TODO: Find a place for this
                     nextComponentChannelName = $"system/flows/{options.Id}/channels/{index + 1}";
-                    step = new Step(componentChannelName, nextComponentChannelName);
+                    step = new Step(componentChannelName, new StepLink(StepLinkType.Channel, nextComponentChannelName));
                 }
                 else
                 {
-                    step = new Step(componentChannelName, outputChannelOptions.Name);
+                    step = new Step(componentChannelName, new StepLink(StepLinkType.Channel, outputChannelOptions.Name));
                 }
                 
                 var tags = new List<(string, object)> { ("flowid", options.Id), ("nextchannelname", nextComponentChannelName), ("step", step), ("steps", steps) };
@@ -120,6 +120,8 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 var component = await componentFactory(context);
                 eventFlow.Components.Add(component);
 
+                step.Predicate = component.Predicate;
+                
                 var componentChannelOptions = new CloudEventsChannelOptions() { Name = componentChannelName };
 
                 // Insert an interceptor which adds a IntegrationFlowExtension to the event's attributes
@@ -181,7 +183,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 }
             }
 
-            var stepOutputs = new List<string>();
+            var stepOutputs = new List<StepLink>();
 
             if (createdComponentChannels.Any())
             {
@@ -194,7 +196,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
                 });
 
                 flowInputChannelOptions.Endpoints.Add(firstComponentEndpoint);
-                stepOutputs.Add(firstComponentChannelId);
+                stepOutputs.Add(new StepLink(StepLinkType.Channel, firstComponentChannelId));
             }
             else
             {
@@ -202,7 +204,7 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 
                 foreach (var _ in flowInstance.Endpoints)
                 {
-                    stepOutputs.Add("endpoint");
+                    stepOutputs.Add(new StepLink(StepLinkType.Endpoint, "endpoint"));
                 }
             }
 

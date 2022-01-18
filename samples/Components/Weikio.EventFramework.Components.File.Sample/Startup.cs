@@ -29,7 +29,7 @@ namespace Weikio.EventFramework.Components.File.Sample
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var httpToFileFlow = EventFlowBuilder.From<HttpCloudEventEventSource>(options =>
+            var httpToFileFlow = EventFlowBuilder.From<HttpCloudEventReceiverApi>(options =>
                 {
                     options.Autostart = true;
                     options.Configuration = new HttpCloudEventReceiverApiConfiguration() { Route = "/incoming" };

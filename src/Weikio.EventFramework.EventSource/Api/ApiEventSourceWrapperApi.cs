@@ -4,16 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Api.SDK;
 
-namespace Weikio.EventFramework.EventSource.Api.SDK
+namespace Weikio.EventFramework.EventSource.Api
 {
-    public interface IApiEventSource<TConfigurationType> where TConfigurationType : IApiEventSourceConfiguration
-    {
-        Task<IActionResult> Handle(ICloudEventPublisher cloudEventPublisher);
-        TConfigurationType Configuration { get; set; }
-    }
-
     public class ApiEventSourceWrapperApi
     {
         private readonly IServiceProvider _serviceProvider;
@@ -34,9 +28,9 @@ namespace Weikio.EventFramework.EventSource.Api.SDK
             {
                 return new StatusCodeResult(503);
             }
-            
+
             var httpContext = _contextAccessor.HttpContext;
-            
+
             if (!string.IsNullOrWhiteSpace(Configuration?.EndpointConfiguration?.AuthorizationPolicy))
             {
                 var user = httpContext.User;
@@ -57,13 +51,5 @@ namespace Weikio.EventFramework.EventSource.Api.SDK
 
             return result;
         }
-    }
-
-    public class ApiEventSourceWrapperApiConfiguration
-    {
-        public ICloudEventPublisher CloudEventPublisher { get; set; }
-        public IApiEventSourceConfiguration EndpointConfiguration { get; set; }
-        public Type ApiType { get; set; }
-        public Type ApiConfigurationType { get; set; }
     }
 }

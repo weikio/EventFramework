@@ -21,6 +21,7 @@
     <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.3.3" />
     <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
     <PackageReference Include="Weikio.PluginFramework" Version="1.5.1" />
+    <PackageReference Include="Weikio.ApiFramework.Core" Version="1.1.0" />
   </ItemGroup>
   
   <ItemGroup>
@@ -28,6 +29,7 @@
     <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Channels.CloudEvents\Weikio.EventFramework.Channels.CloudEvents.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework.Router\Weikio.EventFramework.Router.csproj" />
     <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
   </ItemGroup>

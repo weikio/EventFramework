@@ -82,6 +82,8 @@ namespace Weikio.EventFramework.EventSource
             services.TryAddSingleton<IEventSourceInstanceStorageFactory, DefaultEventSourceInstanceStorageFactory>();
             services.TryAddTransient<IPersistableEventSourceInstanceDataStore, FileEventSourceInstanceDataStore>();
 
+            services.AddApiEventSources();
+
             if (services.All(x => x.ImplementationType != typeof(DefaultPollingEventSourceHostedService)))
             {
                 services.AddHostedService<DefaultPollingEventSourceHostedService>();

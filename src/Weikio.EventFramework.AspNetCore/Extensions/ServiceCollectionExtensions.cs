@@ -28,7 +28,6 @@ namespace Weikio.EventFramework.AspNetCore.Extensions
             builder.AddCloudEventCreator();
             builder.AddCloudEventAggregator();
             builder.AddCloudEventSources();
-            builder.AddApiEventSources();
             builder.AddCloudEventDataflowChannels();
             builder.AddCloudEventIntegrationFlows();
 
