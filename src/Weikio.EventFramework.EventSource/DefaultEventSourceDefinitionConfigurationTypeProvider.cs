@@ -94,7 +94,24 @@ namespace Weikio.EventFramework.EventSource
                     break;
                 }
 
-                return new EventSourceConfigurationType(requiresPolling, configurationTypeResult);
+                if (configurationTypeResult != null)
+                {
+                    return new EventSourceConfigurationType(requiresPolling, configurationTypeResult);
+                }
+
+                if (isApi == false)
+                {
+                    return new EventSourceConfigurationType(requiresPolling, null);
+                }
+
+                // All Api Framework based event sources should be of type IApiEventSource<TConfigurationType>
+                var apiConfigurationType = eventSourceType
+                    .GetInterfaces()
+                    .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IApiEventSource<>))
+                    .SelectMany(i => i.GetGenericArguments())
+                    .FirstOrDefault();
+                
+                return new EventSourceConfigurationType(false, apiConfigurationType);
             });
 
             return result;

@@ -1,6 +1,7 @@
 ﻿using System;
+using Weikio.EventFramework.EventSource.Api.SDK;
 
-namespace Weikio.EventFramework.EventSource.Api.SDK
+namespace Weikio.EventFramework.EventSource.Api
 {
     public class ApiEventSourceOptions
     {

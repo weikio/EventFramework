@@ -1,16 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weikio.ApiFramework;
-using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
-using Weikio.EventFramework.EventSource.Api.SDK;
 
-namespace Weikio.EventFramework.EventSource
+namespace Weikio.EventFramework.EventSource.Api
 {
     public static class EventFrameworkApiEventSourcesExtensions
     {

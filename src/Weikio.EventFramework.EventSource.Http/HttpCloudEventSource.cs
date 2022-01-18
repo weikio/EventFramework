@@ -14,16 +14,16 @@ using Weikio.EventFramework.EventSource.Api.SDK;
 
 namespace Weikio.EventFramework.EventSource.Http
 {
-    public class HttpCloudEventReceiverApi : IApiEventSource<HttpCloudEventReceiverApiConfiguration>
+    public class HttpCloudEventSource : IApiEventSource<HttpCloudEventSourceConfiguration>
     {
         private readonly IHttpContextAccessor _contextAccessor;
 
-        public HttpCloudEventReceiverApi(IHttpContextAccessor contextAccessor)
+        public HttpCloudEventSource(IHttpContextAccessor contextAccessor)
         {
             _contextAccessor = contextAccessor;
         }
 
-        public HttpCloudEventReceiverApiConfiguration Configuration { get; set; }
+        public HttpCloudEventSourceConfiguration Configuration { get; set; }
 
         public async Task<IActionResult> Handle(ICloudEventPublisher cloudEventPublisher)
         {

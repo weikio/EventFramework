@@ -12,6 +12,7 @@ using Quartz.Impl;
 using Quartz.Spi;
 using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.Api;
 using Weikio.EventFramework.EventSource.EventSourceWrapping;
 using Weikio.EventFramework.EventSource.LongPolling;
 using Weikio.EventFramework.EventSource.Polling;

@@ -327,7 +327,7 @@ namespace Weikio.EventFramework.EventSource
                     configure.DynamicInvoke(inst);
                 }
                 
-                inst.Initialize(eventSourceType, null);
+                inst.Initialize(eventSourceType);
                 
                 _logger.LogDebug("Starting hosted service based event source {EventSourceType} with id {Id}", eventSourceType, id);
 

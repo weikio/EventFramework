@@ -9,8 +9,9 @@ using Weikio.ApiFramework.Abstractions;
 using Weikio.ApiFramework.Core.Apis;
 using Weikio.ApiFramework.Core.Endpoints;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Api.SDK;
 
-namespace Weikio.EventFramework.EventSource.Api.SDK
+namespace Weikio.EventFramework.EventSource.Api
 {
     internal class ApiEventSourceFactory
     {

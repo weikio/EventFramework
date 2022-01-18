@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Weikio.EventFramework.EventPublisher;
 using Endpoint = Weikio.ApiFramework.Abstractions.Endpoint;
 
-namespace Weikio.EventFramework.EventSource.Api.SDK
+namespace Weikio.EventFramework.EventSource.Api
 {
     public class ApiEventContext
     {
