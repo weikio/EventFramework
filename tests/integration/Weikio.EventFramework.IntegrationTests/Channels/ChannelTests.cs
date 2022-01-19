@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using CloudNative.CloudEvents;
 using EventFrameworkTestBed;
 using EventFrameworkTestBed.Events;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -11,6 +12,7 @@ using Weikio.EventFramework.EventCreator;
 using Weikio.EventFramework.EventFlow.CloudEvents;
 using Weikio.EventFramework.EventPublisher;
 using Weikio.EventFramework.EventSource;
+using Weikio.EventFramework.Extensions.EventAggregator;
 using Weikio.EventFramework.IntegrationTests.EventSource.Sources;
 using Weikio.EventFramework.IntegrationTests.Infrastructure;
 using Xunit;
@@ -34,6 +36,7 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
 
             var firstCounter = 0;
             var secondCounter = 0;
+
             var channel = await CloudEventsChannelBuilder.From()
                 .WithName("testchannel")
                 .Component(ev =>
@@ -72,7 +75,7 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
                     return Task.FromResult(comp);
                 })
                 .Build(server);
-            
+
             server.GetRequiredService<IChannelManager>().Add(channel);
 
             var msg1 = new CustomerCreatedEvent();
@@ -84,15 +87,43 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
             await channel.Send(msg3);
 
             await Task.Delay(TimeSpan.FromSeconds(1));
-            
+
             Assert.Equal(3, firstCounter);
             Assert.Equal(2, secondCounter);
         }
-        
+
+        [Fact]
+        public async Task CanUseTypedComponentBuilders()
+        {
+            var server = Init(services =>
+            {
+                services.AddEventFramework()
+                    .AddChannel("other")
+                    .AddChannel(CloudEventsChannelBuilder.From("local")
+                        .Subscribe("other")
+                        .EventAggregator())
+                    .AddHandler<HandleCustomer>();
+            });
+
+            var publisher = server.GetRequiredService<ICloudEventPublisherFactory>().CreatePublisher("other");
+            await publisher.Publish(new CustomerCreatedEvent() { Name = "MK" });
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        public class HandleCustomer
+        {
+            public Task Handle(CloudEvent ev)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
         [Fact]
         public async Task ChannelEndpointsAreNotDuplicated()
         {
             var count = 0;
+
             var server = Init(services =>
             {
                 services.AddEventFramework()
@@ -108,6 +139,7 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
                         options.Endpoints.Add((ev =>
                         {
                             count += 1;
+
                             return Task.CompletedTask;
                         }, null));
                     })
@@ -116,6 +148,7 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
                         options.Endpoints.Add((ev =>
                         {
                             count += 1;
+
                             return Task.CompletedTask;
                         }, null));
                     });
@@ -124,7 +157,7 @@ namespace Weikio.EventFramework.IntegrationTests.Channels
                 {
                     options.DefaultChannelName = "bus2";
                 });
-                
+
                 services.AddTransient<ICloudEventPublisherBuilder, TestCloudEventPublisherBuilder>();
             });
 

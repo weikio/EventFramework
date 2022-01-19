@@ -17,30 +17,33 @@ namespace Weikio.EventFramework.Channels.CloudEvents
         private readonly ICloudEventsChannelManager _cloudEventsChannelManager;
         private readonly ICloudEventsChannelBuilder _cloudEventsChannelBuilder;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IEnumerable<CloudEventsChannelBuilder> _channelBuilders;
 
         public CloudEventsChannelStartupHandler(ILogger<CloudEventsChannelStartupHandler> logger, IEnumerable<ChannelInstanceOptions> channelInstances,
-            ICloudEventsChannelManager cloudEventsChannelManager, ICloudEventsChannelBuilder cloudEventsChannelBuilder, IServiceProvider serviceProvider)
+            ICloudEventsChannelManager cloudEventsChannelManager, ICloudEventsChannelBuilder cloudEventsChannelBuilder, IServiceProvider serviceProvider, IEnumerable<CloudEventsChannelBuilder> channelBuilders)
         {
             _logger = logger;
             _channelInstances = channelInstances;
             _cloudEventsChannelManager = cloudEventsChannelManager;
             _cloudEventsChannelBuilder = cloudEventsChannelBuilder;
             _serviceProvider = serviceProvider;
+            _channelBuilders = channelBuilders;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             try
             {
                 _logger.LogDebug("Starting cloud event channels. Channels are initialized on startup based on the registered ChannelInstanceOptions");
 
                 var channelInstances = _channelInstances.ToList();
+                var channelBuilders = _channelBuilders.ToList();
 
-                if (channelInstances.Count < 0)
+                if (channelInstances.Count + channelBuilders.Count  <= 0)
                 {
                     _logger.LogDebug("No channels to create on system startup");
 
-                    return Task.CompletedTask;
+                    return;
                 }
 
                 _logger.LogTrace("Found {InitialInstanceCount} channels to create on system startup", channelInstances.Count);
@@ -71,6 +74,16 @@ namespace Weikio.EventFramework.Channels.CloudEvents
 
                     createdChannels.Add(channel);
                 }
+                
+                _logger.LogTrace("Found {BuilderCount} channel builders from which to create a channel on system startup", channelBuilders.Count);
+
+                foreach (var channelBuilder in channelBuilders)
+                {
+                    var channel = await channelBuilder.Build(_serviceProvider);
+                    _cloudEventsChannelManager.Add(channel);
+                    
+                    createdChannels.Add(channel);
+                }
 
                 _logger.LogInformation("Created {InitialChannelCount} channels on system startup", createdChannels.Count);
 
@@ -79,7 +92,19 @@ namespace Weikio.EventFramework.Channels.CloudEvents
                     _logger.LogDebug("Channel: {CreatedChannelDetails}", createdChannel);
                 }
 
-                return Task.CompletedTask;
+                foreach (var channelBuilder in channelBuilders)
+                {
+                    var subscriber = _cloudEventsChannelManager.Get(channelBuilder.Name);
+
+                    foreach (var subscribeTo in channelBuilder.Subscriptions)
+                    {
+                        // TODO: Error handling
+                        var publisher = _cloudEventsChannelManager.Get(subscribeTo);
+                        publisher.Subscribe(subscriber);
+                        
+                        _logger.LogDebug("Channel {Subscriber} subscribed to publisher channel {Publisher}", channelBuilder.Name, subscribeTo);
+                    }
+                }
             }
             catch (Exception e)
             {

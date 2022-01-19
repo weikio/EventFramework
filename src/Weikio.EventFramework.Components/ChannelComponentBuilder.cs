@@ -6,9 +6,36 @@ using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Components;
+using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
+    public static class CloudEventsChannelBuilderExtensions
+    {
+        public static CloudEventsChannelBuilder EventAggregator(this CloudEventsChannelBuilder builder)
+        {
+            builder.Component(new EventAggregatorComponentBuilder());
+
+            return builder;
+        }
+    }
+    public class EventAggregatorComponentBuilder : IComponentBuilder
+    {
+        public Task<CloudEventsComponent> Build(ComponentFactoryContext context)
+        {
+            var aggr = context.ServiceProvider.GetRequiredService<ICloudEventAggregator>();
+
+            var result = new CloudEventsComponent(async ev =>
+            {
+                await aggr.Publish(ev);
+
+                return ev;
+            });
+
+            return Task.FromResult(result);
+        }
+    }
+
     public class ChannelComponentBuilder : IComponentBuilder
     {
         private readonly string _channelName;

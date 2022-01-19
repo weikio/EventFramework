@@ -36,6 +36,20 @@ namespace Weikio.EventFramework.Channels.CloudEvents
             return builder;
         }
 
+        public static IEventFrameworkBuilder AddChannel(this IEventFrameworkBuilder builder, CloudEventsChannelBuilder channelBuilder)
+        {
+            builder.Services.AddChannel(channelBuilder);
+
+            return builder;
+        }
+        
+        public static IServiceCollection AddChannel(this IServiceCollection services, CloudEventsChannelBuilder channelBuilder)
+        {
+            services.AddSingleton(channelBuilder);
+            
+            return services;
+        }
+
         public static IServiceCollection AddChannel(this IServiceCollection services, string name,
             Action<IServiceProvider, CloudEventsChannelOptions> configure = null)
         {

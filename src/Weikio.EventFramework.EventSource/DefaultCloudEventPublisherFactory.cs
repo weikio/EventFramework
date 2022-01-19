@@ -28,7 +28,8 @@ namespace Weikio.EventFramework.EventSource
 
                 // Get the default settings
                 var options = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<CloudEventPublisherOptions>>().Value;
-
+                options.DefaultChannelName = name;
+                
                 // Get the named settings
                 var optionsSnapshopt = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<CloudEventPublisherFactoryOptions>>();
                 var factoryOptions = optionsSnapshopt.Get(name);

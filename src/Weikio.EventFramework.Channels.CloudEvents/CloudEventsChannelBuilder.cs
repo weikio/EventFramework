@@ -12,6 +12,15 @@ namespace Weikio.EventFramework.Channels.CloudEvents
         private CloudEventsChannelOptions _options;
         private List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>> _components = new List<Func<ComponentFactoryContext, Task<CloudEventsComponent>>>();
         private List<Func<ComponentFactoryContext, Task<CloudEventsEndpoint>>> _endpoints = new List<Func<ComponentFactoryContext, Task<CloudEventsEndpoint>>>();
+        public List<string> Subscriptions { get; set; } = new List<string>();
+
+        public string Name
+        {
+            get
+            {
+                return _options.Name;
+            }
+        }
 
         public static CloudEventsChannelBuilder From(string channelName = ChannelName.Default)
         {
@@ -21,6 +30,13 @@ namespace Weikio.EventFramework.Channels.CloudEvents
         public CloudEventsChannelBuilder WithName(string channelName)
         {
             _options.Name = channelName;
+
+            return this;
+        }
+
+        public CloudEventsChannelBuilder Subscribe(string channelName)
+        {
+            Subscriptions.Add(channelName);
 
             return this;
         }
