@@ -6,62 +6,40 @@ using Microsoft.Extensions.DependencyInjection;
 using Weikio.EventFramework.Channels.Abstractions;
 using Weikio.EventFramework.Channels.CloudEvents;
 using Weikio.EventFramework.Components;
-using Weikio.EventFramework.EventAggregator.Core;
 
 namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
-    public static class CloudEventsChannelBuilderExtensions
-    {
-        public static CloudEventsChannelBuilder EventAggregator(this CloudEventsChannelBuilder builder)
-        {
-            builder.Component(new EventAggregatorComponentBuilder());
-
-            return builder;
-        }
-    }
-    public class EventAggregatorComponentBuilder : IComponentBuilder
-    {
-        public Task<CloudEventsComponent> Build(ComponentFactoryContext context)
-        {
-            var aggr = context.ServiceProvider.GetRequiredService<ICloudEventAggregator>();
-
-            var result = new CloudEventsComponent(async ev =>
-            {
-                await aggr.Publish(ev);
-
-                return ev;
-            });
-
-            return Task.FromResult(result);
-        }
-    }
-
     public class ChannelComponentBuilder : IComponentBuilder
     {
         private readonly string _channelName;
         private readonly Predicate<CloudEvent> _predicate;
+        private readonly bool _autoCreateChannel;
 
-        public ChannelComponentBuilder(string channelName, Predicate<CloudEvent> predicate)
+        public ChannelComponentBuilder(string channelName, Predicate<CloudEvent> predicate, bool autoCreateChannel)
         {
             _channelName = channelName;
             _predicate = predicate;
+            _autoCreateChannel = autoCreateChannel;
         }
 
         public Task<CloudEventsComponent> Build(ComponentFactoryContext context)
         {
             var channelManager = context.ServiceProvider.GetRequiredService<ICloudEventsChannelManager>();
 
-            var channel =
-                channelManager.Channels.FirstOrDefault(x => string.Equals(_channelName, x.Name, StringComparison.InvariantCultureIgnoreCase)) as
-                    CloudEventsChannel;
-
-            if (channel == null)
+            var result = new ChannelComponent(_channelName, s =>
             {
-                channel = new CloudEventsChannel(_channelName);
-                channelManager.Add(channel);
-            }
+                var channel =
+                    channelManager.Channels.FirstOrDefault(x => string.Equals(_channelName, x.Name, StringComparison.InvariantCultureIgnoreCase)) as
+                        CloudEventsChannel;
 
-            var result = new ChannelComponent(channel, _predicate);
+                if (channel == null && _autoCreateChannel)
+                {
+                    channel = new CloudEventsChannel(_channelName);
+                    channelManager.Add(channel);
+                }
+
+                return channel;
+            }, _predicate);
 
             return Task.FromResult<CloudEventsComponent>(result);
         }

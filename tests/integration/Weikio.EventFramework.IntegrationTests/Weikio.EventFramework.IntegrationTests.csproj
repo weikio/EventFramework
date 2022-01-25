@@ -25,9 +25,17 @@
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.CloudEvents\Weikio.EventFramework.Channels.CloudEvents.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Channels.Dataflow\Weikio.EventFramework.Channels.Dataflow.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.File\Weikio.EventFramework.Components.File.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.Http\Weikio.EventFramework.Components.Http.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.Logger\Weikio.EventFramework.Components.Logger.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.Components.Security\Weikio.EventFramework.Components.Security.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventAggregator.AspNetCore\Weikio.EventFramework.EventAggregator.AspNetCore.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventDefinition\Weikio.EventFramework.EventDefinition.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventGateway.Http\Weikio.EventFramework.EventGateway.Http.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource.AzureServiceBus\Weikio.EventFramework.EventSource.AzureServiceBus.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource.Files\Weikio.EventFramework.EventSource.Files.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource.Http\Weikio.EventFramework.EventSource.Http.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource.Schedule\Weikio.EventFramework.EventSource.Schedule.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventFlow.CloudEvents\Weikio.EventFramework.EventFlow.CloudEvents.csproj" />
     <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventFlow\Weikio.EventFramework.EventFlow.csproj" />

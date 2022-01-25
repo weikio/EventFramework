@@ -25,9 +25,9 @@ namespace Weikio.EventFramework.EventSource.AzureServiceBus.Sample
             services.AddControllers();
 
             services.AddEventFramework()
-                .AddEventFlow(EventFlowBuilder.From<AzureServiceBusEventSource>(options =>
+                .AddEventFlow(EventFlowBuilder.From<AzureServiceBusCloudEventSource>(options =>
                     {
-                        options.Configuration = new AzureServiceBusConfiguration() { QueueName = "bus", ConnectionString = "" };
+                        options.Configuration = new AzureServiceBusCloudEventSourceConfiguration() { QueueName = "bus", ConnectionString = "" };
                         options.Autostart = true;
                     })
                     .Handle((ev, sp) =>

@@ -53,7 +53,7 @@ namespace Weikio.EventFramework.Channels.Dataflow.Abstractions
         {
             return new Endpoint<TOutput>(func);
         }
-
+        
         public static implicit operator Endpoint<TOutput>((Func<TOutput, Task> Func, Predicate<TOutput> Predicate) def)
         {
             return new Endpoint<TOutput>(def.Func, def.Predicate);

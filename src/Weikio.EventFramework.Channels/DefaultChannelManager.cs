@@ -29,11 +29,6 @@ namespace Weikio.EventFramework.Channels
                 return this[_defaultChannelOptions.DefaultChannelName];
             }
 
-            if (Count == 1)
-            {
-                return this.Single().Value;
-            }
-
             throw new NoDefaultChannelFoundException();
         }
 

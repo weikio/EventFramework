@@ -35,12 +35,13 @@ namespace Weikio.EventFramework.EventSource
         private readonly IEventSourceDefinitionConfigurationTypeProvider _configurationTypeProvider;
         private readonly IChannelManager _channelManager;
         private readonly IOptionsMonitor<EventSourceOptions> _eventSourceOptionsAccessor;
+        private readonly DefaultChannelOptions _defaultChannel;
 
         public DefaultEventSourceInstanceFactory(IServiceProvider serviceProvider, IOptionsMonitorCache<JobOptions> optionsCache,
             PollingScheduleService scheduleService, ILogger<DefaultEventSourceInstanceFactory> logger, EventSourceChangeNotifier changeNotifier,
             IOptionsMonitorCache<CloudEventPublisherFactoryOptions> optionsMonitorCache, ICloudEventPublisherFactory publisherFactory,
             IEventSourceDefinitionConfigurationTypeProvider configurationTypeProvider,
-            IChannelManager channelManager, IOptionsMonitor<EventSourceOptions> eventSourceOptionsAccessor)
+            IChannelManager channelManager, IOptionsMonitor<EventSourceOptions> eventSourceOptionsAccessor, IOptions<DefaultChannelOptions> defaultChannel)
         {
             _serviceProvider = serviceProvider;
             _optionsCache = optionsCache;
@@ -52,6 +53,7 @@ namespace Weikio.EventFramework.EventSource
             _configurationTypeProvider = configurationTypeProvider;
             _channelManager = channelManager;
             _eventSourceOptionsAccessor = eventSourceOptionsAccessor;
+            _defaultChannel = defaultChannel.Value;
         }
 
         public EventSourceInstance Create(Abstractions.EventSource eventSource, EventSourceInstanceOptions instanceOptions)
@@ -354,20 +356,11 @@ namespace Weikio.EventFramework.EventSource
 
             CloudEventsEndpoint channelEndpoint;
 
-            if (instanceOptions.PublishToChannel)
+            if (instanceOptions.PublishToChannel && (!string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName) || !string.IsNullOrWhiteSpace(_defaultChannel.DefaultChannelName)))
             {
                 channelEndpoint = new CloudEventsEndpoint(async ev =>
                 {
-                    IChannel channel;
-
-                    if (string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName))
-                    {
-                        channel = _channelManager.GetDefaultChannel();
-                    }
-                    else
-                    {
-                        channel = _channelManager.Get(instanceOptions.TargetChannelName);
-                    }
+                    var channel = _channelManager.Get(string.IsNullOrWhiteSpace(instanceOptions.TargetChannelName) ? _defaultChannel.DefaultChannelName : instanceOptions.TargetChannelName);
 
                     await channel.Send(ev);
                 });

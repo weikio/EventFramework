@@ -8,9 +8,9 @@ namespace Weikio.EventFramework.EventFlow.CloudEvents
 {
     public static class EventFlowBuilderExtensions
     {
-        public static IEventFlowBuilder Channel(this IEventFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null)
+        public static IEventFlowBuilder Channel(this IEventFlowBuilder builder, string channelName, Predicate<CloudEvent> predicate = null, bool autoCreateChannel = true)
         {
-            var component = new ChannelComponentBuilder(channelName, predicate);
+            var component = new ChannelComponentBuilder(channelName, predicate, autoCreateChannel);
             
             builder.Component(component);
 

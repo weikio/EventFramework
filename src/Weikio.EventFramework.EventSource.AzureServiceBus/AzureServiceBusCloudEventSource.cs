@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,18 +9,53 @@ using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weikio.EventFramework.Abstractions;
+using Weikio.EventFramework.Abstractions.DependencyInjection;
 using Weikio.EventFramework.EventPublisher;
+using Weikio.EventFramework.EventSource.Abstractions;
+using Weikio.EventFramework.EventSource.SDK;
 
 namespace Weikio.EventFramework.EventSource.AzureServiceBus
 {
-    public class AzureServiceBusEventSource : BackgroundService
+    public static class EventFrameworkBuilderServiceBusExtensions
     {
-        private readonly ILogger<AzureServiceBusEventSource> _logger;
-        private readonly ICloudEventPublisher _cloudEventPublisher;
-        private readonly AzureServiceBusConfiguration _configuration;
+        public static IEventFrameworkBuilder AddAzureServiceBusCloudEventSource(this IEventFrameworkBuilder builder, string connectionString, string queue)
+        {
+            var busConfiguration = new AzureServiceBusCloudEventSourceConfiguration() { ConnectionString = connectionString, QueueName = queue };
 
-        public AzureServiceBusEventSource(ILogger<AzureServiceBusEventSource> logger, ICloudEventPublisher cloudEventPublisher,
-            AzureServiceBusConfiguration configuration)
+            Action<EventSourceInstanceOptions> configureInstance = options =>
+            {
+                options.Autostart = true;
+                options.Id = "asb";
+                options.Configuration = busConfiguration;
+            };
+            
+            var services = builder.Services;
+
+            services.AddEventSource<AzureServiceBusCloudEventSource>(configureInstance, typeof(AzureServiceBusCloudEventSourceConfiguration));
+
+            return builder;
+        }
+
+        public static IEventFrameworkBuilder AddAzureServiceBusCloudEventSource(this IEventFrameworkBuilder builder,
+            Action<EventSourceInstanceOptions> configureInstance = null)
+        {
+            var services = builder.Services;
+
+            services.AddEventSource<AzureServiceBusCloudEventSource>(configureInstance, typeof(AzureServiceBusCloudEventSourceConfiguration));
+
+            return builder;
+        }
+    }
+
+    [DisplayName("AzureServiceBusCloudEventSource")]
+    public class AzureServiceBusCloudEventSource : BackgroundService
+    {
+        private readonly ILogger<AzureServiceBusCloudEventSource> _logger;
+        private readonly ICloudEventPublisher _cloudEventPublisher;
+        private readonly AzureServiceBusCloudEventSourceConfiguration _configuration;
+
+        public AzureServiceBusCloudEventSource(ILogger<AzureServiceBusCloudEventSource> logger, ICloudEventPublisher cloudEventPublisher,
+            AzureServiceBusCloudEventSourceConfiguration configuration)
         {
             _logger = logger;
             _cloudEventPublisher = cloudEventPublisher;

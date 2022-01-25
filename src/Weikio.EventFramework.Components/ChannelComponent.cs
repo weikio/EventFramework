@@ -7,11 +7,16 @@ namespace Weikio.EventFramework.Components
 {
     public class ChannelComponent : CloudEventsComponent
     {
-        public ChannelComponent(IChannel channel, Predicate<CloudEvent> predicate)
+        public ChannelComponent(string channelName, Func<string, IChannel> getChannel, Predicate<CloudEvent> predicate)
         {
             Func = async ev =>
             {
-                await channel.Send(ev);
+                var channel = getChannel(channelName);
+
+                if (channel != null)
+                {
+                    await channel.Send(ev);
+                }
 
                 return ev;
             };
