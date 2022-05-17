@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Event Source API based SDK for building plugins for Event Framework. Event Framework is a CloudEvents router and gateway for .NET.</Description>
+    <PackageDescription>Event Source API based SDK for building plugins for Event Framework. Event Framework is a CloudEvents router and gateway for .NET.</PackageDescription>
+    <PackageId>Weikio.EventFramework.EventSource.Api.SDK</PackageId>
+    <Product>Weikio.EventFramework.EventSource.Api.SDK</Product>
+    <PackageTags>cloudevents;SDK;event gateway;event router</PackageTags>
+    <Title>Event Source SDK for Event Framework</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Event Source hosting for Event Framework. Event Framework is a CloudEvents router and gateway for .NET.</Description>
+    <PackageDescription>Event Source hosting for Event Framework. Event Framework is a CloudEvents router and gateway for .NET.</PackageDescription>
+    <PackageId>Weikio.EventFramework.EventSource</PackageId>
+    <Product>Weikio.EventFramework.EventSource</Product>
+    <PackageTags>cloudevents;event gateway;event router</PackageTags>
+    <Title>Event Source hosting for ASP.NET Core</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Quartz" Version="3.3.3" />
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.3.3" />
+    <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
+    <PackageReference Include="Weikio.PluginFramework" Version="1.5.1" />
+    <PackageReference Include="Weikio.ApiFramework.Core" Version="1.1.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Channels.CloudEvents\Weikio.EventFramework.Channels.CloudEvents.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.Abstractions\Weikio.EventFramework.EventSource.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework\Weikio.EventFramework.csproj" />
+  </ItemGroup>
+  
+  
+</Project>

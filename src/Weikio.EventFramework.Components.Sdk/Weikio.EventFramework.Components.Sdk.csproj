@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Components SDK for Event Framework. Event Framework is a CloudEvents router and gateway for .NET. Easily send, receive and handle CloudEvents.</Description>
+    <PackageDescription>Components SDK for Event Framework. Event Framework is a CloudEvents router and gateway for .NET. Easily send, receive and handle CloudEvents.</PackageDescription>
+    <PackageId>Weikio.EventFramework.Components.Sdk</PackageId>
+    <Product>Weikio.EventFramework.Components.Sdk</Product>
+    <PackageTags>cloudevents;sdk;event gateway;event router</PackageTags>
+    <Title>Components SDK for Event Framework</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Channel Abstractions for Event Framework for .NET.</Description>
+    <PackageDescription>Channel Abstractions for Event Framework for .NET.</PackageDescription>
+    <PackageId>Weikio.EventFramework.Channels.Abstractions</PackageId>
+    <Product>Weikio.EventFramework.Channels</Product>
+    <PackageTags>cloudevents;event channels;</PackageTags>
+    <Title>Channel Abstractions for Event Framework for .NET.</Title>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+</Project>

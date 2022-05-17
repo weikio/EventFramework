@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Files Component for Event Framework</Description>
+    <PackageDescription>Files Component for Event Framework</PackageDescription>
+    <PackageId>Weikio.EventFramework.Components.File</PackageId>
+    <Product>Weikio.EventFramework.Components.File</Product>
+    <PackageTags>cloudevents;files</PackageTags>
+    <Title>Files Component for Event Framework</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventFlow.Abstractions\Weikio.EventFramework.EventFlow.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions\Weikio.EventFramework.EventFlow.CloudEvents.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Sdk\Weikio.EventFramework.Sdk.csproj" />
+  </ItemGroup>
+  
+</Project>

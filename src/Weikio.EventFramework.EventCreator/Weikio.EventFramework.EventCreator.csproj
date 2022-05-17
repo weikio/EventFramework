@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>CloudEvent Creator provides functionality for converting objects to CloudEvents.</Description>
+    <PackageDescription>CloudEvent Creator provides functionality for converting objects to CloudEvents.</PackageDescription>
+    <PackageId>Weikio.EventFramework.EventCreator</PackageId>
+    <Product>Weikio.EventFramework.EventCreator</Product>
+    <PackageTags>cloudevents;event framework</PackageTags>
+    <Title>CloudEvent Creator for .NET</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CloudNative.CloudEvents" Version="1.3.80" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

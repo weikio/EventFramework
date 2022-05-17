@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>CloudEvents Definitions for Event Framework.</Description>
+    <PackageDescription>CloudEvents Definitions for Event Framework.</PackageDescription>
+    <PackageId>Weikio.EventFramework.EventDefinition</PackageId>
+    <Product>Weikio.EventFramework.EventDefinition</Product>
+    <PackageTags>cloudevents;event framework</PackageTags>
+    <Title>CloudEvents Definitions for Event Framework.</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.2" />
+    <PackageReference Include="NJsonSchema" Version="10.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
+  </ItemGroup>
+</Project>

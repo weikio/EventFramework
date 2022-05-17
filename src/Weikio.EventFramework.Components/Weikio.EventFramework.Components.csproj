@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Built-in Components for Event Framework for .NET.</Description>
+    <PackageDescription>Built-in Components for Event Framework for .NET.</PackageDescription>
+    <PackageId>Weikio.EventFramework.Components</PackageId>
+    <Product>Weikio.EventFramework.Components</Product>
+    <PackageTags>cloudevents;event channels;components</PackageTags>
+    <Title>Built-in Components for Event Framework for .NET.</Title>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource\Weikio.EventFramework.EventSource.csproj" />
+  </ItemGroup>
+
+</Project>

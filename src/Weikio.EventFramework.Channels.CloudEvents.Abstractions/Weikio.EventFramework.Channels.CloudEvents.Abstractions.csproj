@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Abstractions for CloudEvents Channels for Event Framework for .NET.</Description>
+    <PackageDescription>Abstractions for CloudEvents Channels for Event Framework for .NET.</PackageDescription>
+    <PackageId>Weikio.EventFramework.Channels.CloudEvents.Abstractions</PackageId>
+    <Product>Weikio.EventFramework.Channels.CloudEvents.Abstractions</Product>
+    <PackageTags>cloudevents;event channels;</PackageTags>
+    <Title>Abstractions for CloudEvents Channels for Event Framework for .NET.</Title>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Channels.Dataflow.Abstractions\Weikio.EventFramework.Channels.Dataflow.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CloudNative.CloudEvents" Version="1.3.80" />
+  </ItemGroup>
+</Project>

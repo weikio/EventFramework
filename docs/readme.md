@@ -1,0 +1,1 @@
+Documentation is available from [https://www.weik.io/eventframework](https://www.weik.io/eventframework)

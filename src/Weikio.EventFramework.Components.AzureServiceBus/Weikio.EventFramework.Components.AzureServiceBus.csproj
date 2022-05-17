@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Azure Service Bus Component for Event Framework</Description>
+    <PackageDescription>Azure Service Bus Component for Event Framework</PackageDescription>
+    <PackageId>Weikio.EventFramework.Components.AzureServiceBus</PackageId>
+    <Product>Weikio.EventFramework.Components.AzureServiceBus</Product>
+    <PackageTags>cloudevents;Azure Service Bus</PackageTags>
+    <Title>Azure Service Bus Component for Event Framework</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.1.1"/>
+    <PackageReference Include="CloudNative.CloudEvents" Version="1.3.80"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj"/>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>HTTP Event Source for Event Framework</Description>
+    <PackageDescription>HTTP Event Source for Event Framework</PackageDescription>
+    <PackageId>Weikio.EventFramework.EventSource.Http</PackageId>
+    <Product>Weikio.EventFramework.EventSource.Http</Product>
+    <PackageTags>cloudevents;HTTP</PackageTags>
+    <Title>HTTP Event Source for Event Framework</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Weikio.PluginFramework" Version="1.5.1" />
+    <PackageReference Include="Weikio.PluginFramework.Abstractions" Version="1.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.EventSource.SDK\Weikio.EventFramework.EventSource.SDK.csproj" />
+  </ItemGroup>
+  
+</Project>

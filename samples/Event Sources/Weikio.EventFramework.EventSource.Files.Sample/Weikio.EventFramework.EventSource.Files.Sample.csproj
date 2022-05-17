@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.AspNetCore\Weikio.EventFramework.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\..\src\Weikio.EventFramework.EventSource.Files\Weikio.EventFramework.EventSource.Files.csproj" />
+  </ItemGroup>
+  
+</Project>

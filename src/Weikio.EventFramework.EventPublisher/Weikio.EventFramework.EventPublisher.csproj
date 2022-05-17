@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Cloud Event publisher for .NET.</Description>
+    <PackageDescription>Cloud Event publisher for .NET.</PackageDescription>
+    <PackageId>Weikio.EventFramework.EventPublisher</PackageId>
+    <Product>Weikio.EventFramework.EventPublisher</Product>
+    <PackageTags>cloudevents;event publisher</PackageTags>
+    <Title>Cloud Event publisher for .NET</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions.DependencyInjection\Weikio.EventFramework.Abstractions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Abstractions\Weikio.EventFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.Channels\Weikio.EventFramework.Channels.csproj" />
+    <ProjectReference Include="..\Weikio.EventFramework.EventCreator\Weikio.EventFramework.EventCreator.csproj" />
+  </ItemGroup>
+  
+</Project>
